@@ -311,7 +311,9 @@ PROTECTED = ["agent", "sitegen", "scripts", ".github", "config/rubric.yaml", "co
 
 def gate_protected_paths() -> list[str]:
     """The agent may not edit its own harness, the rubric or the requirements (no grading itself)."""
-    git("fetch", "origin", "main", "--quiet", check=False)
+    git("fetch", "origin", "main:refs/remotes/origin/main", "--quiet", check=False)
+    if not git("rev-parse", "--verify", "--quiet", "origin/main", check=False):
+        return ["cannot compare with origin/main, so protected paths could not be checked"]
     changed = git("diff", "--name-only", "origin/main...HEAD", "--", *PROTECTED, check=False)
     dirty = git("status", "--porcelain", "--", *PROTECTED, check=False)
     paths = sorted(set(changed.split()) | {line[3:] for line in dirty.splitlines()})

@@ -23,7 +23,7 @@ Every section below follows the same pattern, so you always know where to look:
 - **What could go wrong**: the mistakes this step could hide.
 - **Technical infrastructure**: which files and commands are involved.
 
-The project runs in cycles. An agent builds or improves the analysis overnight, the page is rebuilt, and then everyone has a few days to read it and leave feedback under each section. Your feedback becomes the requirements for the next cycle.
+The project runs in cycles. An agent builds or improves the analysis, the page is rebuilt, and then everyone has a few days to read it and leave feedback under each section. Your feedback becomes the requirements for the next cycle.
 
 ## What could go wrong
 
@@ -36,4 +36,4 @@ The project runs in cycles. An agent builds or improves the analysis overnight, 
 - Analysis code: `src/fml/` (run everything with `fml run-all`).
 - This page: generated from `content/sections/` by `python -m sitegen build` and published with GitHub Pages.
 - The data (full article texts) lives in a separate private repository; this public one only holds code, results and short excerpts.
-- How the overnight agent works: `AGENTS.md` and `agent/`.
+- How the agent works: `AGENTS.md` and `agent/`.

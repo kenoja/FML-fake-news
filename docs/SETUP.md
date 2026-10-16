@@ -45,7 +45,9 @@ Go to https://claude.ai/code, open the environment picker (cloud icon) → **Add
   attached to requests to `api.anthropic.com`. Do **not** call it `ANTHROPIC_API_KEY`.
 - **Setup script:** leave empty. `python -m agent run` installs what it needs on first start.
 
-## 4. The overnight routine
+## 4. The agent routine (started by hand)
+
+The agent never runs on its own. You start it whenever you want it to work.
 
 https://claude.ai/code/routines → **New routine**:
 
@@ -54,12 +56,12 @@ https://claude.ai/code/routines → **New routine**:
 - **Repositories:** `kenoja/FML-fake-news` and `kenoja/FML-data`
 - **Environment:** `fml`
 - **Connectors:** remove all (the agent does not need any)
-- **Trigger:** Schedule → Daily → **22:07**. If the form lets you add a second schedule trigger,
-  add **03:07** as well, so a run paused by a usage limit gets a second chance the same night.
+- **Trigger:** **API** only, and do **not** generate a token. No schedule. Without a token nobody can
+  start it remotely, so the only way to start it is the **Run now** button.
 - **Prompt** (copy exactly):
 
 ```text
-You run the overnight agent for this project. Do not edit any files yourself.
+You run the agent for this project. Do not edit any files yourself.
 
 1. In the FML-fake-news repository, run `python -m agent run` with a command timeout of
    25 minutes. It works for up to 20 minutes, saves progress, pushes to the branch
@@ -69,7 +71,8 @@ You run the overnight agent for this project. Do not edit any files yourself.
 4. End with a short summary: the last STATUS line and the contents of .agent_state/last_run.md.
 ```
 
-Then select **Run now** once to start cycle 1, and open the session to watch the first steps.
+**To start work:** open the routine → **Run now**. Each run continues where the last one stopped, so
+start it as often as you like. When a cycle is already finished, a run ends right away with `DONE`.
 
 ## 5. Each cycle
 
@@ -78,8 +81,8 @@ Then select **Run now** once to start cycle 1, and open the session to watch the
 2. The walkthrough updates automatically. Tell the team the feedback period has started.
 3. At the end of the period: Actions → **Collect feedback** → *Run workflow* → enter the cycle number.
    It opens a pull request with `requirements/cycle-(NN+1).md`.
-4. Edit that file (remove rejected items, decide conflicts), merge. The next night's run starts the
-   new cycle on its own.
+4. Edit that file (remove rejected items, decide conflicts), merge. Then select **Run now** on the
+   routine to start the new cycle.
 
 ## Useful controls
 
@@ -87,4 +90,5 @@ Then select **Run now** once to start cycle 1, and open the session to watch the
 - **Status of the last run:** `.agent_state/last_run.md` on the `claude/cycle-NN` branch.
 - **Start a cycle over:** delete `.agent_state/cycle-NN.sqlite` on its branch (or run
   `python -m agent reset-cycle NN` in a cloud session) and run again.
-- **Stop everything:** switch the routine off at claude.ai/code/routines.
+- **Stop a run:** open its session at claude.ai/code and stop it. Everything up to the last finished
+  step is kept.

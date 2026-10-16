@@ -34,7 +34,7 @@ When you understand a section and agree with it, react with 👍 on the discussi
 
 ## 5. What happens next
 
-At the end of a feedback period, the repo owner collects all comments. They become a numbered requirements file for the next cycle, and conflicting requests are listed side by side for the team to decide. After the next overnight run, the walkthrough is updated and the next feedback period starts.
+At the end of a feedback period, the repo owner collects all comments. They become a numbered requirements file for the next cycle, and conflicting requests are listed side by side for the team to decide. After the next agent run, the walkthrough is updated and the next feedback period starts.
 
 ## If something doesn't work
 
