@@ -70,6 +70,14 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   (filtered) are not comparable; like-for-like row (all-docs model on filtered validation docs) is 0.940, filtered
   model 0.927. Descriptive only, no test claimed. `fml run-all` still stops at the stages not yet written.
 
+- **2026-10-16 · T5 feature groups.** Added `src/fml/features/` (n-grams 1–3, epistemic lexicon, style) with
+  new config keys under `features:` (`ngram_range`, `ngram_min_df`=3, `ngram_max_features`=200000,
+  `mattr_window`=100). These values are first choices, not tuned; the ablation task may revisit them on
+  validation only. The epistemic lexicon is a short hand-picked list inspired by the cited categories, not
+  a copy of a published list. Section 07 uses two invented snippets instead of real article text.
+  `feature_summary.csv` is computed on training rows of the filtered set only (1,787 documents).
+  Known weakness kept and tested: negation is ignored ("no evidence of cover-up" counts "cover-up").
+
 ## Needs a team decision
 
 - **Licence of the LOCO texts.** Unconfirmed (see above). Conservative reading chosen: texts not

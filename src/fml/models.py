@@ -22,7 +22,8 @@ TEXT_COLUMN = "txt"
 C_GRID = (0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0)
 CLASS_WEIGHTS = (None, "balanced")
 SELECTION_METRIC = "f1"          # conspiracy-class F1 on validation
-DEFAULT_FEATURES = {"ngram_range": (1, 1), "min_df": 2, "sublinear_tf": True, "numeric_columns": []}
+DEFAULT_FEATURES = {"ngram_range": (1, 1), "min_df": 2, "max_features": None, "sublinear_tf": True,
+                    "numeric_columns": [], "dense_groups": []}
 
 
 def build_pipeline(feature_cfg: dict | None = None, C: float = 1.0, class_weight=None,
@@ -33,10 +34,16 @@ def build_pipeline(feature_cfg: dict | None = None, C: float = 1.0, class_weight
     newer sklearn versions deprecate the `penalty` argument.
 
     Input X is a DataFrame with a `txt` column and any `numeric_columns` named in `feature_cfg`.
+    `dense_groups` names feature groups from `fml.features.NUMERIC_GROUPS` ("epistemic", "style"); they are
+    computed from `txt` and scaled inside the pipeline, so their scaler is fitted on the training rows only.
     """
+    from .features import scaled
+
     cfg = {**DEFAULT_FEATURES, **(feature_cfg or {})}
     parts = [("tfidf", TfidfVectorizer(ngram_range=tuple(cfg["ngram_range"]), min_df=cfg["min_df"],
-                                       sublinear_tf=cfg["sublinear_tf"], lowercase=True), TEXT_COLUMN)]
+                                       sublinear_tf=cfg["sublinear_tf"], lowercase=True,
+                                       max_features=cfg["max_features"]), TEXT_COLUMN)]
+    parts += [(group, scaled(group), TEXT_COLUMN) for group in cfg["dense_groups"]]
     if cfg["numeric_columns"]:
         parts.append(("scale", StandardScaler(), list(cfg["numeric_columns"])))
     seed = project_config()["split"]["seed"] if random_state is None else random_state

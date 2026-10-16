@@ -98,6 +98,30 @@ def bootstrap_ci(y_true, y_pred, groups=None, n: int = N_BOOTSTRAP, seed: int = 
     return out
 
 
+def paired_delta_ci(y_true, pred_ref, pred_new, groups=None, n: int = N_BOOTSTRAP, seed: int = BOOTSTRAP_SEED,
+                    level: float = 0.95, metric: str = "f1") -> dict[str, float]:
+    """Paired bootstrap CI of metric(new) - metric(ref) on the same documents.
+
+    Both models are scored on the SAME resampled documents (or websites, if `groups` is given), so
+    the difference is not blurred by sampling noise that hits both models alike. A CI that contains 0
+    means the data cannot tell the two models apart; it must not be read as an improvement.
+    """
+    t, a, b = (np.asarray(v, dtype=bool) for v in (y_true, pred_ref, pred_new))
+    rng = np.random.default_rng(seed)
+    if groups is None:
+        draws = [rng.integers(0, len(t), len(t)) for _ in range(n)]
+    else:
+        g = np.asarray(groups)
+        sites = np.unique(g)
+        members = [np.flatnonzero(g == s) for s in sites]
+        draws = [np.concatenate([members[k] for k in rng.integers(0, len(sites), len(sites))]) for _ in range(n)]
+    deltas = np.array([classification_metrics(t[i], b[i])[metric] - classification_metrics(t[i], a[i])[metric]
+                       for i in draws])
+    lo, hi = _percentile_ci(deltas, level)
+    return {"estimate": float(classification_metrics(t, b)[metric] - classification_metrics(t, a)[metric]),
+            "ci_low": lo, "ci_high": hi}
+
+
 def mcnemar_exact(y_true, pred_a, pred_b) -> dict[str, float]:
     """Exact McNemar test on paired predictions.
 

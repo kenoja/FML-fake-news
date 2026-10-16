@@ -24,7 +24,8 @@ from sklearn.metrics import average_precision_score  # noqa: E402
 from .clean import clean_corpus, website_names  # noqa: E402
 from .data import load_corpus, on_topic_mask  # noqa: E402
 from .evaluate import (BOOTSTRAP_SEED, N_BOOTSTRAP, bootstrap_ci, classification_metrics, confusion,  # noqa: E402
-                       majority_baseline, pr_curve_data, stratified_random_baseline)
+                       majority_baseline, mcnemar_exact, METRIC_NAMES, paired_delta_ci, pr_curve_data,
+                       stratified_random_baseline)
 from .models import build_pipeline, split_frames, top_coefficients, tune_on_validation  # noqa: E402
 from .paths import project_config  # noqa: E402
 from .results import CONSPIRACY_COLOUR, MAINSTREAM_COLOUR, results_dir, savefig, write_metrics, write_table  # noqa: E402
@@ -436,6 +437,8 @@ class ModelSpec:
     """Everything that defines a model: `config` is hashed, `fit_predict` trains on train, predicts test."""
     config: dict
     fit_predict: Callable[[pd.DataFrame, pd.DataFrame], np.ndarray]
+    fit_predict_proba: Callable[[pd.DataFrame, pd.DataFrame], tuple[np.ndarray, np.ndarray]] | None = None
+    filtered: bool = False      # True: train and test on the off-topic-filtered frame (all models after T4)
 
 
 def config_hash(config: dict) -> str:
@@ -485,16 +488,24 @@ def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] |
         raise PermissionError(f"{model_id} was already scored on test with a different configuration; "
                               "a new configuration needs a new model id (and is a new test access).")
 
-    frame = cleaned_frame(keep_all=True) if frame is None else frame
+    if frame is None:
+        frame = analysis_frame() if spec.filtered else cleaned_frame(keep_all=True)
     split = load_split()
     train = frame[frame["doc_id"].isin(set(split.loc[split["split"] == "train", "doc_id"]))].reset_index(drop=True)
     test = frame[frame["doc_id"].isin(set(split.loc[split["split"] == "test", "doc_id"]))].reset_index(drop=True)
-    pred = spec.fit_predict(train, test)
+    if spec.fit_predict_proba is not None:
+        pred, proba = spec.fit_predict_proba(train, test)
+    else:
+        pred, proba = spec.fit_predict(train, test), None
     y = test["label"].to_numpy()
     out = {"model_id": model_id, "config_hash": digest, "n_docs": int(len(test)),
            "confusion": confusion(y, pred),
            "metrics_documents": bootstrap_ci(y, pred),
-           "metrics_websites": bootstrap_ci(y, pred, groups=test["website"].to_numpy())}
+           "metrics_websites": bootstrap_ci(y, pred, groups=test["website"].to_numpy()),
+           "test_websites": int(test["website"].nunique()), "test_conspiracy": int(y.sum())}
+    if proba is not None:       # per-document predictions: ids, label, prediction, probability; never text
+        out["predictions"] = pd.DataFrame({"model_id": model_id, "doc_id": test["doc_id"], "label": y,
+                                           "pred": np.asarray(pred, dtype=bool), "proba": proba})
     if not previous:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         with log_path.open("a", encoding="utf-8") as f:
@@ -504,11 +515,159 @@ def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] |
     return out
 
 
+# ---------------------------------------------------------------- stage: ablation
+
+LR_WORDS_ID, LR_EXTENDED_ID = "lr_words", "lr_extended"
+ABLATION_GROUPS = {"H2": ("ngrams", "lr_plus_ngrams", "lr_extended_minus_ngrams"),
+                   "H3": ("epistemic", "lr_plus_epistemic", "lr_extended_minus_epistemic"),
+                   "H4": ("style", "lr_plus_style", "lr_extended_minus_style")}
+
+
+def ablation_variants() -> dict[str, dict]:
+    """Model id -> label, kind and feature settings: M1, M1 + one group, M2 (all) and M2 minus one group."""
+    ng = project_config()["features"]
+    ngram = {"ngram_range": list(ng["ngram_range"]), "min_df": ng["ngram_min_df"], "max_features": ng["ngram_max_features"]}
+    words = dict(M1_FEATURES)
+
+    def cfg(use_ngrams: bool, dense: list[str]) -> dict:
+        return {**(words | ngram if use_ngrams else words), "dense_groups": dense}
+
+    v = {LR_WORDS_ID: ("M1: words", "reference", cfg(False, [])),
+         "lr_plus_ngrams": ("+ n-grams (1-3)", "add_one", cfg(True, [])),
+         "lr_plus_epistemic": ("+ epistemic", "add_one", cfg(False, ["epistemic"])),
+         "lr_plus_style": ("+ style", "add_one", cfg(False, ["style"])),
+         LR_EXTENDED_ID: ("M2: n-grams + epistemic + style", "all", cfg(True, ["epistemic", "style"])),
+         "lr_extended_minus_ngrams": ("M2 without n-grams (words)", "drop_one", cfg(False, ["epistemic", "style"])),
+         "lr_extended_minus_epistemic": ("M2 without epistemic", "drop_one", cfg(True, ["style"])),
+         "lr_extended_minus_style": ("M2 without style", "drop_one", cfg(True, ["epistemic"]))}
+    return {k: {"label": a, "kind": b, "features": c} for k, (a, b, c) in v.items()}
+
+
+def plot_ablation(table: pd.DataFrame, chosen: str):
+    """Horizontal bars of validation F1 with both 95% CIs (thin = documents, thick = websites)."""
+    t = table.iloc[::-1].reset_index(drop=True)
+    fig, ax = plt.subplots(figsize=(8, 4.6))
+    colours = ["#3b5b8c" if m == chosen else "#9a9a9a" for m in t["model_id"]]
+    ax.barh(t.index, t["f1"], color=colours, height=0.6)
+    for i, r in t.iterrows():
+        ax.plot([r["f1_ci_doc_low"], r["f1_ci_doc_high"]], [i, i], color="black", lw=1)
+        ax.plot([r["f1_ci_site_low"], r["f1_ci_site_high"]], [i + 0.2, i + 0.2], color="#b5651d", lw=2.5)
+        ax.text(r["f1"], i - 0.38, f"{r['f1']:.3f}", ha="center", va="center", fontsize=8)
+    ax.axvline(float(table.loc[table["kind"] == "reference", "f1"].iloc[0]), color="black", ls="--", lw=0.8)
+    ax.set_yticks(t.index, t["label"])
+    ax.set_xlim(max(0.0, float(t["f1_ci_site_low"].min()) - 0.03), 1.0)
+    ax.set_xlabel("Validation F1 (conspiracy class)")
+    ax.set_title("Ablation: black = 95% CI by documents, orange = 95% CI by websites\n(dashed = M1; blue = preferred model)",
+                 fontsize=9)
+    fig.tight_layout()
+    return fig
+
+
+def _ablation_selected() -> dict:
+    sel = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))["ablation"].get("selected")
+    if not sel:
+        raise RuntimeError("run the ablation stage first: the tuned settings come from validation")
+    return sel
+
+
+def _lr_spec(model_id: str) -> ModelSpec:
+    """Test-time spec of an ablation model: settings (features, C, class weight) fixed by validation tuning."""
+    sel = _ablation_selected()[model_id]
+    cw = None if sel["class_weight"] == "none" else sel["class_weight"]
+    config = {"model_id": model_id, "features": sel["features"], "C": sel["C"], "class_weight": cw,
+              "data": "filtered_documents_cleaned", "split": project_config()["split"]["file"]}
+
+    def fit(train: pd.DataFrame):
+        return build_pipeline(config["features"], C=config["C"], class_weight=cw).fit(train, train["label"])
+
+    def fit_predict_proba(train: pd.DataFrame, test: pd.DataFrame):
+        pipe = fit(train)
+        return pipe.predict(test), pipe.predict_proba(test)[:, 1]
+
+    return ModelSpec(config, lambda train, test: fit(train).predict(test), fit_predict_proba, filtered=True)
+
+
+MODEL_BUILDERS.update({m: (lambda m=m: _lr_spec(m)) for m in (LR_WORDS_ID, LR_EXTENDED_ID)})
+
+
+def _nan_to_none(d: dict) -> dict:
+    return {k: (None if isinstance(v, float) and v != v else v) for k, v in d.items()}
+
+
+def ablation() -> dict:
+    """Ablation on the filtered set (validation only), then the single test scoring of M1 and M2.
+
+    Tuning, tables and verdicts use validation rows. Only after the validation results are written to
+    metrics.json does `evaluate_final` score `lr_words` and `lr_extended` once each on test.
+    """
+    from .ablation import choose_between, coefficient_tables, group_verdicts, metric_columns, run_ablation
+
+    f = split_frames(analysis_frame(), ("train", "validation"))
+    train, valid = f["train"], f["validation"]
+    variants = ablation_variants()
+    drop = tuple(k for k, v in variants.items() if v["kind"] == "drop_one")
+    table, pipes, _ = run_ablation(train, valid, variants, reference=LR_WORDS_ID, full=LR_EXTENDED_ID, drop_one=drop)
+    write_table("ablation", table.round(4))
+
+    groups = {g: {"added": a, "dropped": d} for g, (_, a, d) in ABLATION_GROUPS.items()}
+    verdicts = group_verdicts(table, {g: groups[g] for g in groups})
+    chosen = choose_between(table, LR_WORDS_ID, LR_EXTENDED_ID)
+    y, sites = valid["label"].to_numpy(), valid["website"].to_numpy()
+    preds = {m: p.predict(valid) for m, p in pipes.items()}
+    pair = lambda ref, new: paired_delta_ci(y, preds[ref], preds[new], groups=sites)   # noqa: E731
+    verdicts["H2"]["ngrams_minus_epistemic_added_f1_site_ci"] = pair("lr_plus_epistemic", "lr_plus_ngrams")
+    verdicts["H2"]["ngrams_minus_style_added_f1_site_ci"] = pair("lr_plus_style", "lr_plus_ngrams")
+    verdicts["H4"]["ngrams_minus_style_added_f1_site_ci"] = pair("lr_plus_style", "lr_plus_ngrams")
+    top, dense = [], []
+    for m in ("lr_plus_ngrams", LR_EXTENDED_ID):
+        t, d = coefficient_tables(pipes[m], m)
+        top.append(t)
+        dense.append(d)
+    write_table("top_ngrams", pd.concat(top).round(4))
+    write_table("dense_coefficients", dense[1].round(4))
+    savefig(plot_ablation(table, chosen["chosen"]), "ablation_f1")
+
+    selected = {m: {"features": variants[m]["features"], "C": float(r["C"]), "class_weight": r["class_weight"]}
+                for m, r in table.set_index("model_id").iterrows()}
+    values = {"data": "filtered documents, split_v1, validation rows only",
+              "protocol": "per model: C in C_GRID x class_weight in (none, balanced), best conspiracy-F1 on validation",
+              "bootstrap": {"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95},
+              "documents": {"train": int(len(train)), "validation": int(len(valid)),
+                            "validation_conspiracy": int(y.sum()), "validation_websites": int(len(set(sites)))},
+              "selected": selected, "models": {r["model_id"]: _nan_to_none(r) for r in table.to_dict("records")},
+              "verdicts": verdicts, "chosen_lr": chosen}
+    write_metrics("ablation", round_floats(values, 4))
+
+    tests = {m: evaluate_final(m) for m in (LR_WORDS_ID, LR_EXTENDED_ID)}
+    rows, test_values = [], {}
+    for m, out in tests.items():
+        rows.append({"model_id": m, "config_hash": out["config_hash"], "documents": out["n_docs"],
+                     "conspiracy": out["test_conspiracy"], "websites": out["test_websites"], **out["confusion"],
+                     **metric_columns(out["metrics_documents"], out["metrics_websites"])})
+        test_values[m] = {k: v for k, v in out.items() if k != "predictions"}
+    write_table("test_lr", pd.DataFrame(rows).round(4))
+    pred_table = pd.concat([out["predictions"] for out in tests.values()]).round({"proba": 6})
+    write_table("predictions_lr", pred_table)
+
+    current = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))
+    write_metrics("ablation", {**current["ablation"], "test": round_floats(test_values, 4)})
+    write_metrics("baseline", {**current["baseline"], "test": round_floats(test_values[LR_WORDS_ID], 4)})
+    return values
+
+
 # ---------------------------------------------------------------- entry points
 
+def feature_summary_stage() -> dict:
+    """Feature table and style figure on training rows (imported late: features.summary imports this module)."""
+    from .features.summary import features_stage
+
+    return features_stage()
+
+
 STAGES: list[tuple[str, Callable[[], object]]] = [("baseline_all_docs", baseline_all_docs), ("topic_filter", topic_filter),
-                                                  ("baseline", baseline_filtered)]
-PENDING_STAGES = ["ablation", "llm", "comparison", "errors"]
+                                                  ("baseline", baseline_filtered), ("features", feature_summary_stage),
+                                                  ("ablation", ablation)]
+PENDING_STAGES = ["llm", "comparison", "errors"]
 
 
 def run_all() -> None:
