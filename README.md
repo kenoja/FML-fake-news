@@ -14,8 +14,8 @@ our training data, and study where each approach works and fails.
 
 ## How it is built
 
-The analysis is written and improved in cycles by a LangGraph agent that runs overnight in Anthropic's
-cloud. Each cycle ends with a pull request. The team reads the walkthrough, leaves feedback per
+The analysis is written and improved in cycles by a LangGraph agent that runs in Anthropic's cloud
+whenever the repo owner starts it. Each cycle ends with a pull request. The team reads the walkthrough, leaves feedback per
 section, and that feedback becomes the next cycle's requirements (`requirements/`).
 
 ```

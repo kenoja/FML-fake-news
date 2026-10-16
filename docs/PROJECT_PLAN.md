@@ -19,7 +19,7 @@ This file will live in the repo as `docs/PROJECT_PLAN.md`. It is the agent's mas
 | JFK transfer test: **parked** (not in scope for now) | Team decision |
 | Everything in English | Team decision |
 | **Public** analysis repo (`kenoja/FML-fake-news`) + **private** data repo (`kenoja/FML-data`). No names, institutions, course codes or other personal data anywhere public | Team decision |
-| The agent runs in **Anthropic's cloud** as a scheduled routine (uses the cloud-session credit); GitHub Actions only publishes the site and collects feedback | Team decision |
+| The agent runs in **Anthropic's cloud** as a routine started by hand (uses the cloud-session credit); GitHub Actions only publishes the site and collects feedback | Team decision |
 | Off-topic documents (no mention of 9/11) are removed **after** the first words-only run, with an explanation | Team decision |
 | LLM is asked the **source question** (conspiracy-oriented vs mainstream website), the same target LR is scored on | Team decision |
 | Emotion features (G4) are **out** | Team decision |
@@ -176,11 +176,11 @@ The **presentation** (40% of the grade) and the **individual statements** are no
 | `finalize` | code | Appends to the AI-use log, builds the report files, commits, pushes the `cycle-NN` branch, opens or updates a PR |
 
 **Runtime and payment (verified in the Claude Code docs, and tested in a cloud session on 16 Oct):**
-- **Where it runs:** as a scheduled **routine** in Anthropic's cloud (claude.ai/code/routines). Each run is a cloud session with both repos cloned; nothing runs on a laptop. A nested `claude -p` call from a script inside a cloud session was tested and works, which is what the LangGraph nodes need.
+- **Where it runs:** as a **routine** in Anthropic's cloud (claude.ai/code/routines), started by hand with **Run now** (no schedule). Each run is a cloud session with both repos cloned; nothing runs on a laptop. A nested `claude -p` call from a script inside a cloud session was tested and works, which is what the LangGraph nodes need.
 - **Who pays:** cloud sessions draw on the Claude plan (and the cloud-session credit); Sonnet 5.5 does the agent work. Only the Haiku article classification uses an API key, stored as the cloud-environment variable `LLM_CLASSIFIER_API_KEY` (deliberately not `ANTHROPIC_API_KEY`, which Claude Code would pick up for its own billing). The cloud's network secrets cannot be used for this key: they are never attached to `api.anthropic.com`.
 - **Short resumable steps:** a single command in a cloud session may run about 10 minutes, plus up to 30 more in the background. So `python -m agent run` works for at most `run_minutes` (default 20), checkpoints after every node, commits and pushes to `claude/cycle-NN`, and prints `STATUS: CONTINUE | DONE | PAUSED | FAILED`. The routine's prompt repeats the command while the status is `CONTINUE`.
 - **Stop boundaries** (in `config/agent.yaml`): `run_minutes`, `task_timeout_minutes`, `max_turns_per_task`, `max_tasks_per_plan`, `max_gate_fix_attempts`, `max_review_rounds`, `max_runs_per_cycle`.
-- **Resuming:** the LangGraph checkpoint (`.agent_state/cycle-NN.sqlite`) is committed to the cycle branch. A usage limit sets `PAUSED`; the next scheduled routine run continues from the last finished node.
+- **Resuming:** the LangGraph checkpoint (`.agent_state/cycle-NN.sqlite`) is committed to the cycle branch. A usage limit sets `PAUSED`; the next run (started by hand) continues from the last finished node.
 - **Self-grading guard:** a gate fails the run if the agent edits its own harness, the rubric or the requirements (`agent/`, `sitegen/`, `scripts/`, `.github/`, `config/rubric.yaml`, `config/agent.yaml`, `requirements/`).
 - **Plan B (documented, not built):** run the graph in GitHub Actions and start cloud routines through their API trigger for the Claude steps.
 
@@ -263,7 +263,7 @@ The reviewer scores each criterion 0–10 and must cite evidence (file, section 
 ## 13. Cost estimate
 
 - **Classification:** Haiku 5.5 costs $0.10 per million input tokens and $0.50 per million output tokens (prompts under 100k tokens). Validation + test are about 780 filtered articles; at ~1,200 tokens each plus the instruction, one pass is about 1.2M input tokens, roughly **$0.15**. Prompt variants plus the stability pass stay **under ~$3**, well within the 20 € of API credit. The agent records actual token counts.
-- **Agent work:** Sonnet 5.5 in cloud sessions, on the Pro plan and the cloud-session credit. A night's run may pause at a usage limit and resume on the next scheduled run.
+- **Agent work:** Sonnet 5.5 in cloud sessions, on the Pro plan and the cloud-session credit. A run may pause at a usage limit and resume on the next run.
 - **GitHub Actions:** free for public repos (site publishing and feedback collection only).
 
 ## 14. Risks
@@ -275,7 +275,7 @@ The reviewer scores each criterion 0–10 and must cite evidence (file, section 
 | The LLM has seen 9/11 conspiracy content in training | Stated as a limitation. It is the point of the comparison, not a flaw |
 | Word-list features misread negation | Kept alongside n-grams. Limitation stated (Chen 2026) |
 | The agent "games" the reviewer | The reviewer is a fresh session. Hard gates are code, not LLM opinions. Teammates are the final reviewers |
-| Subscription usage runs out mid-run | `PAUSED`, resume from the checkpoint on the next scheduled run |
+| Subscription usage runs out mid-run | `PAUSED`, resume from the checkpoint on the next run |
 
 ## 15. Open questions
 
