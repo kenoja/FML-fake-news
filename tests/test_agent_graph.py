@@ -83,3 +83,37 @@ def test_low_review_scores_send_the_work_back_to_planning(sandbox, monkeypatch):
     assert agent.run(cycle=1, minutes=60, use_git=False) == "DONE"
     assert history(1).count("review") == 2
     assert history(1).count("plan") == 2
+
+
+def test_a_step_that_runs_out_of_time_is_retried_not_failed(sandbox, monkeypatch):
+    # A slow task must not end the cycle: its partial work is kept and the same step runs again.
+    calls = {"n": 0}
+    real = tools.run_claude
+
+    def slow_once(*a, **k):
+        calls["n"] += 1
+        if calls["n"] == 2:  # the first implement call times out
+            raise TimeoutError("Claude Code call exceeded 1080s")
+        return real(*a, **k)
+
+    monkeypatch.setattr(tools, "run_claude", slow_once)
+    assert agent.run(cycle=1, minutes=60, use_git=False) == "CONTINUE"
+    assert history(1)[-1] == "plan"
+    assert agent.run(cycle=1, minutes=60, use_git=False) == "DONE"
+    assert history(1).count("implement") == 1          # retried, not skipped or duplicated
+
+
+def test_the_same_step_timing_out_three_times_fails_loudly(sandbox, monkeypatch):
+    # Endless retries would burn usage for nothing; after three in a row a human has to look.
+    real = tools.run_claude
+    calls = {"n": 0}
+
+    def plan_ok_then_always_slow(*a, **k):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return real(*a, **k)
+        raise TimeoutError("too slow")
+
+    monkeypatch.setattr(tools, "run_claude", plan_ok_then_always_slow)
+    statuses = [agent.run(cycle=1, minutes=60, use_git=False) for _ in range(3)]
+    assert statuses == ["CONTINUE", "CONTINUE", "FAILED"]
