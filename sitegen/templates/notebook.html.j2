@@ -1,0 +1,85 @@
+{% extends "base.html.j2" %}
+{% block body %}
+<div class="layout">
+  <nav class="toc" aria-label="Sections">
+    <ol>
+      {% for s in sections %}<li><a href="#{{ s.slug }}">{{ s.title }}</a></li>{% endfor %}
+    </ol>
+    <div class="links">
+      <a href="guide.html">How to join in</a>
+      {% if report_available %}<a href="report.docx">Report draft (Word)</a>{% endif %}
+      {% if repo_url %}<a href="{{ repo_url }}">Code on GitHub</a>{% endif %}
+    </div>
+  </nav>
+  <main>
+    <header class="masthead">
+      <h1>Conspiracy or mainstream? Two ways to read 9/11 articles</h1>
+      <p>A logistic regression we built ourselves against an LLM that was never trained on our data, both reading the same full articles. This page walks through every step with the code that ran, what we expected and what came out.</p>
+      <p>Cycle {{ cycle }}. Built {{ built }}. After each section, tell the team what was unclear or what you would change.</p>
+    </header>
+
+    {% for s in sections %}
+    <section class="section" id="{{ s.slug }}" aria-labelledby="{{ s.slug }}-title">
+      <h2 class="section-title" id="{{ s.slug }}-title">{{ s.title }}</h2>
+      {% if s.part %}<p class="part">Assignment part: {{ s.part }}</p>{% endif %}
+      {% if s.hypothesis %}<p class="hypothesis">{{ s.hypothesis }}</p>{% endif %}
+      {{ s.html | safe }}
+      <div class="feedback" id="{{ s.slug }}-feedback">
+        <h3>Your feedback on “{{ s.title }}”</h3>
+        <p>Write one comment per point, starting with one of these:</p>
+        <ul>
+          <li><strong>Unclear:</strong> what you did not understand</li>
+          <li><strong>Change:</strong> what you want changed, and why</li>
+          <li><strong>Other:</strong> anything else</li>
+        </ul>
+        <p>When you understand this section and agree with it, react with 👍 on the discussion.</p>
+        <button type="button" class="open-discussion" data-term="{{ s.discussion_term }}">Open the discussion</button>
+      </div>
+    </section>
+    {% endfor %}
+  </main>
+</div>
+<script>
+(function () {
+  // Long code cells: show all lines on request.
+  document.querySelectorAll(".code.is-long .expand").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var cell = btn.closest(".code"); var open = cell.classList.toggle("open");
+      btn.dataset.label = btn.dataset.label || btn.textContent;
+      btn.setAttribute("aria-expanded", open); btn.textContent = open ? "Show fewer lines" : btn.dataset.label;
+    });
+  });
+  // Table of contents: mark the section in view.
+  var links = Array.prototype.slice.call(document.querySelectorAll(".toc li a"));
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) links.forEach(function (a) { a.setAttribute("aria-current", a.getAttribute("href") === "#" + e.target.id); });
+      });
+    }, { rootMargin: "-20% 0px -70% 0px" });
+    document.querySelectorAll(".section").forEach(function (s) { io.observe(s); });
+  }
+  // One giscus widget at a time, mapped to the section's own discussion (cycle-NN/section-slug).
+  var g = {{ settings.get("giscus", {}) | tojson }};
+  document.querySelectorAll(".open-discussion").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var box = btn.parentElement;
+      if (!g.repo_id || !g.category_id) {
+        box.insertAdjacentHTML("beforeend", "<p>Comments are not connected yet. Ask the repo owner to finish the giscus step in docs/SETUP.md.</p>");
+        return;
+      }
+      document.querySelectorAll(".giscus, script[src*='giscus.app']").forEach(function (n) { n.remove(); });
+      var s = document.createElement("script");
+      var attrs = { src: "https://giscus.app/client.js", "data-repo": g.repo, "data-repo-id": g.repo_id,
+        "data-category": g.category, "data-category-id": g.category_id, "data-mapping": "specific",
+        "data-term": btn.dataset.term, "data-strict": "1", "data-reactions-enabled": "1",
+        "data-emit-metadata": "0", "data-input-position": "top", "data-theme": "preferred_color_scheme",
+        "data-lang": "en", "data-loading": "lazy", crossorigin: "anonymous", async: "" };
+      Object.keys(attrs).forEach(function (k) { s.setAttribute(k, attrs[k]); });
+      var holder = document.createElement("div"); holder.className = "giscus";
+      box.appendChild(holder); box.appendChild(s);
+    });
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,48 @@
+# The "10/10" definition. The reviewer scores every criterion 0-10 and must cite evidence
+# (file path, section slug or number). Done = every criterion at target_score AND all hard gates pass.
+# Sources: the assignment brief (what the project must make clear; report 3,000-5,000 words;
+# document AI use) and the course feedback in requirements/cycle-01.md.
+
+criteria:
+  - id: question
+    name: Question and hypotheses
+    check: The research questions are clear and feasible; every section states the hypothesis or goal it tests.
+  - id: resources
+    name: Data, models and tools described
+    check: LOCO, the label definition (website-based), the 9/11 subset, the off-topic filter, the LLM, the libraries and the licence status are described accurately.
+  - id: approach
+    name: Approach, including what we did not do
+    check: The pipeline is explained step by step, including choices made and alternatives rejected (e.g. no fine-tuning, no multi-model benchmark, no emotion features) with reasons.
+  - id: evaluation
+    name: Sound evaluation
+    check: One website-grouped split used everywhere; TF-IDF/vocabulary fitted on training data only; test set used once per model; baselines; confidence intervals; McNemar test.
+  - id: results
+    name: Results shown correctly
+    check: Figures and tables exist, are readable, and every number in text, site and report matches results/*.json exactly.
+  - id: interpretation
+    name: Interpretation and limitations
+    check: Label-vs-content issue, label noise, number of websites, off-topic documents, LLM prior knowledge, lexicon weaknesses are discussed honestly.
+  - id: features
+    name: Feature engineering answered
+    check: The ablation answers "do the extra features help?" per group, with literature-based reasons for each group and an honest verdict.
+  - id: errors
+    name: Error analysis
+    check: Real disagreement examples (short excerpts only), stance coding with human verification of a sample, and a clear split between model errors and label problems.
+  - id: ai_use
+    name: AI-use documentation
+    check: docs/ai-log.md and the report state what the AI produced, what was checked or changed (by gates, reviewer and team), and what was learned.
+  - id: teaching
+    name: Teaching quality of the site
+    check: Every section has goal/hypothesis, real code cells, outputs, plain-language explanation, "what could go wrong" and technical infrastructure; every open team question in the requirements is answered where it belongs.
+  - id: reproducibility
+    name: Reproducibility
+    check: "`fml run-all` reproduces every number from the data repo; dependencies pinned in pyproject; seeds fixed; README explains how."
+  - id: report
+    name: Report
+    check: reports/report.md is 3,000-5,000 words and follows the assignment's six points (goal, resources, approach, evaluation, findings, interpretation/limitations) plus AI use.
+  - id: privacy
+    name: Privacy and data protection
+    check: No personal data, institution, course or team identifiers; no full article texts; excerpts within limits.
+  - id: feedback_compliance
+    name: Course feedback and team requirements met
+    check: Every numbered requirement in the current requirements file is visibly addressed, or explicitly marked as declined with a reason.

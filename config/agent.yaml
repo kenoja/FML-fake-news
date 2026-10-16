@@ -1,0 +1,17 @@
+# Stop boundaries and models for the agent loop. Edit freely; the next run picks them up.
+
+models:
+  agent: claude-sonnet-5-5      # plans, implements, writes explanations
+  reviewer: claude-sonnet-5-5   # scores the work in a fresh session that has not seen it being made
+
+limits:
+  run_minutes: 20               # one `python -m agent run` call starts no new step after this
+  task_timeout_minutes: 15      # hard timeout for a single Claude Code call
+  max_turns_per_task: 60
+  max_tasks_per_plan: 12
+  max_gate_fix_attempts: 3      # rounds of fixing failed hard gates before moving on to review
+  max_review_rounds: 4          # after this many reviews the cycle ends, even below 10/10 (reported loudly)
+  max_runs_per_cycle: 60        # safety net against endless loops
+
+target_score: 10                # every rubric criterion must reach this
+branch_prefix: claude/cycle-    # work for cycle N goes to claude/cycle-0N; a PR to main is opened at the end
