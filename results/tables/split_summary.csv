@@ -1,0 +1,7 @@
+split,class,websites,documents,share_of_documents
+train,conspiracy,25,658,0.20915448188175462
+train,mainstream,54,1546,0.49141767323585506
+validation,conspiracy,7,140,0.04450095359186268
+validation,mainstream,13,331,0.10521296884933248
+test,conspiracy,7,141,0.044818817546090274
+test,mainstream,12,330,0.1048951048951049

@@ -1,0 +1,506 @@
+{
+  "data": {
+    "documents": 3146,
+    "conspiracy": 939,
+    "mainstream": 2207,
+    "websites_conspiracy": 39,
+    "websites_mainstream": 79,
+    "on_topic_documents": 2608,
+    "on_topic_conspiracy": 777,
+    "on_topic_mainstream": 1831,
+    "near_duplicate_pairs_across_splits": 36,
+    "near_duplicate_pairs": 63,
+    "near_duplicate_pairs_same_website": 10,
+    "documents_after_exact_dedup": 3144,
+    "length": {
+      "shortest_words": 101,
+      "median_words": 637.5,
+      "minimum_length_needed": false,
+      "threshold_words": 50,
+      "documents_under_150_words": 131,
+      "documents_under_250_words": 398,
+      "statement": "The shortest article has 101 words, above the 50-word level below which a text is a snippet rather than an article, so no minimum length is applied. 398 of 3146 documents are under 250 words; the model results by length bucket are checked in the first evaluation run (results/tables)."
+    }
+  },
+  "split": {
+    "file": "data/splits/split_v1.csv",
+    "seed": 20261016,
+    "documents": 3146,
+    "websites_in_more_than_one_split": 0,
+    "per_split": {
+      "train": {
+        "conspiracy": {
+          "websites": 25,
+          "documents": 658
+        },
+        "mainstream": {
+          "websites": 54,
+          "documents": 1546
+        }
+      },
+      "validation": {
+        "conspiracy": {
+          "websites": 7,
+          "documents": 140
+        },
+        "mainstream": {
+          "websites": 13,
+          "documents": 331
+        }
+      },
+      "test": {
+        "conspiracy": {
+          "websites": 7,
+          "documents": 141
+        },
+        "mainstream": {
+          "websites": 12,
+          "documents": 330
+        }
+      }
+    },
+    "few_conspiracy_websites_flag": false,
+    "splits_with_few_conspiracy_websites": [],
+    "min_positive_groups_per_split": 3
+  },
+  "baseline_all_docs": {
+    "model_id": "m1_words_all_docs",
+    "split_evaluated": "validation",
+    "features": {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "sublinear_tf": true,
+      "numeric_columns": []
+    },
+    "selected": {
+      "C": 100.0,
+      "class_weight": "none",
+      "selection_metric": "f1 (validation)"
+    },
+    "grid_values_tried": 18,
+    "documents": {
+      "all": 3146,
+      "train": 2204,
+      "validation": 471,
+      "validation_conspiracy": 140,
+      "validation_websites": 20
+    },
+    "confusion": {
+      "tp": 126,
+      "fn": 14,
+      "fp": 6,
+      "tn": 325
+    },
+    "validation": {
+      "precision": {
+        "estimate": 0.955,
+        "ci_low": 0.919,
+        "ci_high": 0.986
+      },
+      "recall": {
+        "estimate": 0.9,
+        "ci_low": 0.848,
+        "ci_high": 0.946
+      },
+      "f1": {
+        "estimate": 0.926,
+        "ci_low": 0.894,
+        "ci_high": 0.957
+      },
+      "macro_f1": {
+        "estimate": 0.948,
+        "ci_low": 0.927,
+        "ci_high": 0.97
+      },
+      "balanced_accuracy": {
+        "estimate": 0.941,
+        "ci_low": 0.915,
+        "ci_high": 0.965
+      }
+    },
+    "validation_website_bootstrap": {
+      "precision": {
+        "estimate": 0.955,
+        "ci_low": 0.806,
+        "ci_high": 0.988
+      },
+      "recall": {
+        "estimate": 0.9,
+        "ci_low": 0.75,
+        "ci_high": 0.946
+      },
+      "f1": {
+        "estimate": 0.926,
+        "ci_low": 0.784,
+        "ci_high": 0.958
+      },
+      "macro_f1": {
+        "estimate": 0.948,
+        "ci_low": 0.879,
+        "ci_high": 0.966
+      },
+      "balanced_accuracy": {
+        "estimate": 0.941,
+        "ci_low": 0.867,
+        "ci_high": 0.964
+      }
+    },
+    "bootstrap": {
+      "resamples": 2000,
+      "seed": 20261016,
+      "level": 0.95
+    },
+    "average_precision": 0.97,
+    "baselines": {
+      "majority_class": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "macro_f1": 0.413,
+        "balanced_accuracy": 0.5
+      },
+      "stratified_random": {
+        "precision": 0.297,
+        "recall": 0.298,
+        "f1": 0.297,
+        "macro_f1": 0.5,
+        "balanced_accuracy": 0.5
+      }
+    },
+    "website_name_tokens_in_top_coefficients": [],
+    "top_coefficient_note": "No website-name token among the top 25 words per class."
+  },
+  "topic_filter": {
+    "pattern_source": "config/project.yaml: data.topic_filter_pattern",
+    "documents_before": 3146,
+    "documents_after": 2608,
+    "removed": 538,
+    "after_by_class": {
+      "conspiracy": 777,
+      "mainstream": 1831
+    },
+    "expected_after": {
+      "documents": 2608,
+      "conspiracy": 777,
+      "mainstream": 1831
+    },
+    "matches_expected": true,
+    "removed_by_class": {
+      "conspiracy": 162,
+      "mainstream": 376
+    },
+    "removal_rate_by_class": {
+      "conspiracy": 0.1725,
+      "mainstream": 0.1704
+    },
+    "class_share_before": {
+      "conspiracy": 0.2985,
+      "mainstream": 0.7015
+    },
+    "class_share_after": {
+      "conspiracy": 0.2979,
+      "mainstream": 0.7021
+    },
+    "removal_rate_difference_test": {
+      "test": "Fisher exact on documents (ignores that documents of one website are alike)",
+      "odds_ratio_removed_conspiracy_vs_mainstream": 1.0153,
+      "p_value": 0.8768
+    },
+    "removal_rate_by_split": {
+      "train": 0.1892,
+      "validation": 0.155,
+      "test": 0.1019
+    },
+    "share_of_removed_by_split": {
+      "train": 0.7751,
+      "validation": 0.1357,
+      "test": 0.0892
+    },
+    "websites": {
+      "before": 118,
+      "after": 116,
+      "conspiracy_before": 39,
+      "conspiracy_after": 37,
+      "mainstream_before": 79,
+      "mainstream_after": 79,
+      "with_no_document_left": 2
+    },
+    "websites_with_most_removed": [
+      {
+        "website": "nationalgeographic.co.uk",
+        "label": "mainstream",
+        "removed": 48,
+        "documents": 50
+      },
+      {
+        "website": "healthline.com",
+        "label": "mainstream",
+        "removed": 45,
+        "documents": 55
+      },
+      {
+        "website": "fiercepharma.com",
+        "label": "mainstream",
+        "removed": 42,
+        "documents": 49
+      },
+      {
+        "website": "medicalnewstoday.com",
+        "label": "mainstream",
+        "removed": 36,
+        "documents": 40
+      },
+      {
+        "website": "escapeallthesethings.com",
+        "label": "conspiracy",
+        "removed": 30,
+        "documents": 36
+      }
+    ],
+    "terms": {
+      "9/11": {
+        "matching": 2020,
+        "only_this_term": 204
+      },
+      "september 11": {
+        "matching": 1514,
+        "only_this_term": 156
+      },
+      "world trade center": {
+        "matching": 1163,
+        "only_this_term": 2
+      },
+      "pentagon": {
+        "matching": 829,
+        "only_this_term": 10
+      },
+      "al[- ]qa'?e?da": {
+        "matching": 707,
+        "only_this_term": 8
+      },
+      "sept.? 11": {
+        "matching": 638,
+        "only_this_term": 25
+      },
+      "twin towers": {
+        "matching": 611,
+        "only_this_term": 0
+      },
+      "bin laden": {
+        "matching": 581,
+        "only_this_term": 2
+      },
+      "ground zero": {
+        "matching": 406,
+        "only_this_term": 1
+      },
+      "wtc": {
+        "matching": 290,
+        "only_this_term": 0
+      },
+      "9-11": {
+        "matching": 194,
+        "only_this_term": 17
+      },
+      "11 september": {
+        "matching": 146,
+        "only_this_term": 21
+      },
+      "nine[- ]eleven": {
+        "matching": 2,
+        "only_this_term": 0
+      }
+    },
+    "pentagon_only": {
+      "documents": 10,
+      "conspiracy": 7,
+      "share_of_kept": 0.0038,
+      "single_mention": 4,
+      "median_mentions": 2.0,
+      "with_attack_words": 10,
+      "attack_words_pattern": "attack|terror|hijack|plane"
+    },
+    "split_file_sha256": "800843b0d022354453f369dfa10ea18695b9e5564f63f142f905f2bd9cdd0aed"
+  },
+  "baseline": {
+    "model_id": "m1_words_filtered",
+    "split_evaluated": "validation",
+    "features": {
+      "ngram_range": [
+        1,
+        1
+      ],
+      "min_df": 2,
+      "sublinear_tf": true,
+      "numeric_columns": []
+    },
+    "data": "filtered (documents matching data.topic_filter_pattern), same split_v1",
+    "selected": {
+      "C": 100.0,
+      "class_weight": "none",
+      "selection_metric": "f1 (validation)"
+    },
+    "grid_values_tried": 18,
+    "documents": {
+      "filtered": 2608,
+      "train": 1787,
+      "validation": 398,
+      "validation_conspiracy": 128,
+      "validation_websites": 19
+    },
+    "confusion": {
+      "tp": 114,
+      "fn": 14,
+      "fp": 4,
+      "tn": 266
+    },
+    "validation": {
+      "precision": {
+        "estimate": 0.966,
+        "ci_low": 0.931,
+        "ci_high": 0.992
+      },
+      "recall": {
+        "estimate": 0.891,
+        "ci_low": 0.836,
+        "ci_high": 0.939
+      },
+      "f1": {
+        "estimate": 0.927,
+        "ci_low": 0.891,
+        "ci_high": 0.959
+      },
+      "macro_f1": {
+        "estimate": 0.947,
+        "ci_low": 0.922,
+        "ci_high": 0.97
+      },
+      "balanced_accuracy": {
+        "estimate": 0.938,
+        "ci_low": 0.909,
+        "ci_high": 0.964
+      }
+    },
+    "validation_website_bootstrap": {
+      "precision": {
+        "estimate": 0.966,
+        "ci_low": 0.848,
+        "ci_high": 0.995
+      },
+      "recall": {
+        "estimate": 0.891,
+        "ci_low": 0.734,
+        "ci_high": 0.95
+      },
+      "f1": {
+        "estimate": 0.927,
+        "ci_low": 0.796,
+        "ci_high": 0.963
+      },
+      "macro_f1": {
+        "estimate": 0.947,
+        "ci_low": 0.881,
+        "ci_high": 0.969
+      },
+      "balanced_accuracy": {
+        "estimate": 0.938,
+        "ci_low": 0.858,
+        "ci_high": 0.968
+      }
+    },
+    "bootstrap": {
+      "resamples": 2000,
+      "seed": 20261016,
+      "level": 0.95
+    },
+    "average_precision": 0.971,
+    "baselines": {
+      "majority_class": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "macro_f1": 0.404,
+        "balanced_accuracy": 0.5
+      },
+      "stratified_random": {
+        "precision": 0.324,
+        "recall": 0.311,
+        "f1": 0.317,
+        "macro_f1": 0.501,
+        "balanced_accuracy": 0.502
+      }
+    },
+    "website_name_tokens_in_top_coefficients": [],
+    "comparison_with_all_docs": {
+      "note": "The validation sets differ (all validation documents vs only the on-topic ones), so the F1 values of rows A and C are NOT directly comparable. Row B scores the all-documents model on exactly the documents of row C. Differences are descriptive; no significance test is claimed.",
+      "rows": [
+        {
+          "setting": "A: all-docs model, all validation docs (first run)",
+          "trained_on": "all",
+          "evaluated_on": "all validation",
+          "documents": 471,
+          "conspiracy": 140,
+          "websites": 20,
+          "precision": 0.955,
+          "recall": 0.9,
+          "f1": 0.926,
+          "macro_f1": 0.948,
+          "balanced_accuracy": 0.941,
+          "f1_ci_doc_low": 0.894,
+          "f1_ci_doc_high": 0.957,
+          "f1_ci_site_low": 0.784,
+          "f1_ci_site_high": 0.958
+        },
+        {
+          "setting": "B: all-docs model, filtered validation docs (like-for-like)",
+          "trained_on": "all",
+          "evaluated_on": "filtered validation",
+          "documents": 398,
+          "conspiracy": 128,
+          "websites": 19,
+          "precision": 0.959,
+          "recall": 0.922,
+          "f1": 0.94,
+          "macro_f1": 0.956,
+          "balanced_accuracy": 0.952,
+          "f1_ci_doc_low": 0.908,
+          "f1_ci_doc_high": 0.968,
+          "f1_ci_site_low": 0.815,
+          "f1_ci_site_high": 0.97
+        },
+        {
+          "setting": "C: filtered model, filtered validation docs",
+          "trained_on": "filtered",
+          "evaluated_on": "filtered validation",
+          "documents": 398,
+          "conspiracy": 128,
+          "websites": 19,
+          "precision": 0.966,
+          "recall": 0.891,
+          "f1": 0.927,
+          "macro_f1": 0.947,
+          "balanced_accuracy": 0.938,
+          "f1_ci_doc_low": 0.891,
+          "f1_ci_doc_high": 0.959,
+          "f1_ci_site_low": 0.796,
+          "f1_ci_site_high": 0.963
+        }
+      ],
+      "f1_change_c_minus_b": -0.013,
+      "f1_change_c_minus_a": 0.0,
+      "all_docs_model_on_removed_validation_docs": {
+        "documents": 73,
+        "conspiracy": 12,
+        "accuracy": 0.932,
+        "predicted_conspiracy": 9
+      }
+    }
+  },
+  "ablation": {},
+  "llm": {},
+  "comparison": {},
+  "errors": {}
+}

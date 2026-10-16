@@ -14,7 +14,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="fml")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("data-summary", help="print document and website counts")
-    sub.add_parser("run-all", help="reproduce every result in results/ from the data repo")
+    sub.add_parser("prepare-data", help="clean, describe lengths, create/read the frozen split, write results")
+    sub.add_parser("run-all",help="reproduce every result in results/ from the data repo")
     final = sub.add_parser("evaluate-final", help="score one model on the TEST split (logged; see AGENTS.md)")
     final.add_argument("model_id")
     args = parser.parse_args(argv)
@@ -23,6 +24,12 @@ def main(argv: list[str] | None = None) -> int:
         from .data import load_corpus, summary
 
         print(json.dumps(summary(load_corpus()), indent=2))
+        return 0
+
+    if args.command == "prepare-data":
+        from .data_report import run_data_stage
+
+        run_data_stage()
         return 0
 
     try:
