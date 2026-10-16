@@ -8,6 +8,9 @@ Still queued after this one (do NOT do these now; just avoid conflicting with th
 $remaining
 
 How to work:
+0. An earlier attempt at this task may have been interrupted (time limit). Files can already contain
+   part of the work: check what exists, keep what is correct, and finish the rest. Work in small,
+   complete increments and run the tests as you go, so an interruption never leaves broken code.
 1. Read before you write: the files you will change, their callers and tests, and the relevant
    part of `docs/PROJECT_PLAN.md`.
 2. Make the smallest change that fully meets `acceptance`. Match the existing code style.

@@ -125,12 +125,29 @@ def checkout_cycle_branch(branch: str) -> None:
     if git("rev-parse", "--abbrev-ref", "HEAD") == branch:
         if remote:
             git("pull", "--ff-only", "origin", branch, check=False)
+        sync_with_main()
         return
     if remote:
         git("fetch", "origin", f"{branch}:{branch}", check=False)
         git("checkout", branch)
     else:
         git("checkout", "-b", branch)
+    sync_with_main()
+
+
+def sync_with_main() -> None:
+    """Bring changes the owner merged into main (limits, fixes, prompts) into the running cycle."""
+    git("fetch", "origin", "main:refs/remotes/origin/main", "--quiet", check=False)
+    if not git("rev-parse", "--verify", "--quiet", "origin/main", check=False):
+        return
+    if not git("config", "user.email", check=False):
+        git("config", "user.name", "FML agent")
+        git("config", "user.email", "noreply@anthropic.com")
+    merged = subprocess.run(["git", "merge", "--no-edit", "-q", "origin/main"], cwd=REPO, capture_output=True, text=True)
+    if merged.returncode != 0:
+        git("merge", "--abort", check=False)
+        print(f"warning: could not merge main into the cycle branch, continuing without it: {merged.stdout[-300:]}",
+              flush=True)
 
 
 def commit_and_push(branch: str, message: str) -> bool:

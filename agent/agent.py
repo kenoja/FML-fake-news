@@ -36,6 +36,9 @@ def build_graph() -> StateGraph:
     return g
 
 
+# Nodes that may take up to limits.task_timeout_minutes (Claude calls, tests + full pipeline).
+LONG_NODES = {"plan", "implement", "review", "run_pipeline"}
+
 # For `langgraph dev` / LangGraph Studio (see langgraph.json). The runner below compiles its own
 # copy with the SQLite checkpointer.
 graph = build_graph().compile()
@@ -64,20 +67,34 @@ def run(cycle: int | None = None, minutes: float | None = None, use_git: bool = 
         return _finish(cycle, branch, "DONE", "cycle already finished; nothing to do", use_git, push=False)
 
     start = time.monotonic()
+    step_s = 60 * lim["task_timeout_minutes"]
     status, detail = "CONTINUE", ""
     try:
         inputs = None if snapshot.values else {}
         for update in app.stream(inputs, cfg, stream_mode="updates"):
             node = next(iter(update))
             print(f"[{memory.now()}] finished {node}", flush=True)
+            memory.reset_timeouts()
             if node == "finalize":
                 status, detail = "DONE", update[node].get("stop_reason", "")
                 break
-            if time.monotonic() - start > budget_s:
-                detail = f"time budget of {budget_s / 60:.0f} min used; next node: {app.get_state(cfg).next}"
+            elapsed = time.monotonic() - start
+            upcoming = app.get_state(cfg).next
+            # Never start a long step that could not finish inside this run's time budget.
+            if elapsed > budget_s or (set(upcoming) & LONG_NODES and elapsed + step_s > budget_s):
+                detail = f"stopped after {elapsed / 60:.0f} min to stay within the run budget; next node: {upcoming}"
                 break
     except tools.UsageLimitReached as exc:
         status, detail = "PAUSED", f"usage limit reached - resume later. {exc}"
+    except TimeoutError as exc:
+        # The step ran out of time. Its partial work is kept (committed below) and the same step is
+        # retried on the next run, because the checkpoint did not advance past it.
+        n = memory.count_timeout()
+        if n >= 3:
+            status, detail = "FAILED", (f"the same step timed out {n} times in a row ({exc}). Make the task smaller "
+                                        "or raise limits.task_timeout_minutes in config/agent.yaml.")
+        else:
+            detail = f"a step ran out of time ({exc}); its partial work is saved and it will be retried (attempt {n + 1} of 3)"
     except Exception as exc:  # fail loud, keep the checkpoint, let a human look
         status, detail = "FAILED", f"{type(exc).__name__}: {exc}\n\n```\n{traceback.format_exc()[-3000:]}\n```"
     finally:

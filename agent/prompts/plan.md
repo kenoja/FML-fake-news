@@ -29,7 +29,9 @@ criterion reach 10 and every hard gate pass. Rules for the tasks:
   and its explanation -> feature groups -> ablation -> LLM pipeline (validation, then one test run) ->
   comparison and statistics -> error analysis -> site sections -> report -> AI-use log.
   Skip what already exists and is correct; say so in `notes`.
-- A task touches one coherent piece (one module + its tests, or one section, or one report chapter).
+- A task touches one coherent piece (one module + its tests, or one section, or one report chapter)
+  and must be doable in about 10 minutes of focused work. Split anything bigger (e.g. one feature
+  group per task, not all three).
 - Every analysis task also names the notebook section (`section`, e.g. `04-split`) it feeds.
 - If you find two requirements that contradict each other, do not blend them: pick the one from the
   newer requirements file (or the one that is better tested), and add a task to record the conflict
