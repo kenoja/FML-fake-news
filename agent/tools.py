@@ -36,6 +36,50 @@ class UsageLimitReached(RuntimeError):
     """The subscription (or credit) limit was hit. The runner pauses and a later run resumes."""
 
 
+class BudgetReached(UsageLimitReached):
+    """This cycle's spending cap (config/agent.yaml: billing.max_cost_usd_per_cycle) is used up."""
+
+
+# ---- spending ledger (per cycle, committed with the agent state) ---------------------
+
+def _ledger_path() -> Path:
+    from . import memory  # local import: memory owns the .agent_state folder
+    return memory.STATE_DIR / "spend.json"
+
+
+def spent_usd(cycle: int) -> float:
+    p = _ledger_path()
+    return float(json.loads(p.read_text()).get(f"{cycle:02d}", 0.0)) if p.is_file() else 0.0
+
+
+def add_spend(cycle: int, usd: float) -> None:
+    p = _ledger_path()
+    data = json.loads(p.read_text()) if p.is_file() else {}
+    data[f"{cycle:02d}"] = round(float(data.get(f"{cycle:02d}", 0.0)) + usd, 4)
+    p.parent.mkdir(exist_ok=True)
+    p.write_text(json.dumps(data, indent=2))
+
+
+def child_env(billing: dict) -> dict:
+    """Environment for a nested Claude Code call.
+
+    api mode: bill the call to an API key (Console credit). Every CLAUDE*/ANTHROPIC* variable of the
+    surrounding cloud session is removed, otherwise the child would route through the session and
+    count against the Claude plan's usage limits. Tested on 2026-10-16: with this environment an
+    invalid key is rejected (401), so the key really is what pays.
+    subscription mode: use the Claude plan; ANTHROPIC_API_KEY is removed so it cannot take over.
+    """
+    if billing.get("mode", "subscription") == "api":
+        key = os.environ.get(billing.get("api_key_env", "AGENT_API_KEY"), "")
+        if not key:
+            raise RuntimeError(f"billing.mode is 'api' but {billing.get('api_key_env', 'AGENT_API_KEY')} is not set "
+                               "in the cloud environment (see docs/SETUP.md)")
+        env = {k: v for k, v in os.environ.items() if not k.upper().startswith(("CLAUDE", "ANTHROPIC"))}
+        env["ANTHROPIC_API_KEY"] = key
+        return env
+    return {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+
+
 @dataclass
 class ClaudeResult:
     text: str
@@ -54,13 +98,20 @@ def run_claude(task_prompt: str, *, model: str, tools: list[str], json_schema: d
                max_turns: int = 40, timeout_s: int = 900, extra_dirs: list[Path] = ()) -> ClaudeResult:
     """Run one headless Claude Code session in the repo and return its final answer.
 
-    Auth: inside an Anthropic cloud session/routine the CLI uses the account's subscription.
-    ANTHROPIC_API_KEY is removed from the child environment on purpose: if it were set, the CLI
-    would bill the API key instead of the subscription.
+    Who pays is set in config/agent.yaml (billing.mode, see child_env). Before every call the
+    cycle's spending is compared with billing.max_cost_usd_per_cycle; at the cap the run pauses.
     """
+    billing = load_config("agent").get("billing", {})
+    cycle = int(os.environ.get("FML_CYCLE", "0"))
+    cap = float(billing.get("max_cost_usd_per_cycle") or 0)
+    if cap and spent_usd(cycle) >= cap:
+        raise BudgetReached(f"spending cap of ${cap:.2f} for cycle {cycle} reached (${spent_usd(cycle):.2f} spent). "
+                            "To continue, raise billing.max_cost_usd_per_cycle in config/agent.yaml on main.")
     if os.environ.get("FML_AGENT_FAKE_LLM"):
         from . import fake_llm
-        return fake_llm.respond(task_prompt, json_schema)
+        res = fake_llm.respond(task_prompt, json_schema)
+        add_spend(cycle, res.cost_usd)
+        return res
 
     cmd = ["claude", "-p", task_prompt, "--model", model, "--output-format", "json",
            "--max-turns", str(max_turns), "--permission-mode", "acceptEdits",
@@ -69,7 +120,7 @@ def run_claude(task_prompt: str, *, model: str, tools: list[str], json_schema: d
         cmd += ["--add-dir", str(d)]
     if json_schema:
         cmd += ["--json-schema", json.dumps(json_schema)]
-    env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+    env = child_env(billing)
     try:
         proc = subprocess.run(cmd, cwd=REPO, env=env, capture_output=True, text=True, timeout=timeout_s)
     except subprocess.TimeoutExpired as exc:
@@ -81,6 +132,9 @@ def run_claude(task_prompt: str, *, model: str, tools: list[str], json_schema: d
     except json.JSONDecodeError:
         data = {}
     text = str(data.get("result", "")) or out or proc.stderr
+    add_spend(cycle, float(data.get("total_cost_usd") or 0.0))  # client-side estimate; the Console limit is the hard stop
+    if (proc.returncode != 0 or data.get("is_error")) and re.search(r"credit balance|billing", text, re.I):
+        raise UsageLimitReached(f"API credit problem: {text[-300:]}")
     if (proc.returncode != 0 or data.get("is_error")) and USAGE_LIMIT_RE.search(text + proc.stderr):
         raise UsageLimitReached(text[-500:])
     if proc.returncode != 0 or data.get("is_error"):
@@ -125,12 +179,29 @@ def checkout_cycle_branch(branch: str) -> None:
     if git("rev-parse", "--abbrev-ref", "HEAD") == branch:
         if remote:
             git("pull", "--ff-only", "origin", branch, check=False)
+        sync_with_main()
         return
     if remote:
         git("fetch", "origin", f"{branch}:{branch}", check=False)
         git("checkout", branch)
     else:
         git("checkout", "-b", branch)
+    sync_with_main()
+
+
+def sync_with_main() -> None:
+    """Bring changes the owner merged into main (limits, budget, fixes) into the running cycle."""
+    git("fetch", "origin", "main:refs/remotes/origin/main", "--quiet", check=False)
+    if not git("config", "user.email", check=False):
+        git("config", "user.name", "FML agent")
+        git("config", "user.email", "noreply@anthropic.com")
+    if not git("rev-parse", "--verify", "--quiet", "origin/main", check=False):
+        return
+    merged = subprocess.run(["git", "merge", "--no-edit", "-q", "origin/main"], cwd=REPO, capture_output=True, text=True)
+    if merged.returncode != 0:
+        git("merge", "--abort", check=False)
+        print(f"warning: could not merge main into the cycle branch, continuing without it: {merged.stdout[-300:]}",
+              flush=True)
 
 
 def commit_and_push(branch: str, message: str) -> bool:

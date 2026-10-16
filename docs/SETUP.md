@@ -25,7 +25,19 @@ The agent compares its work against `main`, so it must contain this setup before
 6. After the first push to `main`, the **Publish walkthrough** workflow runs. The site address is
    shown under Settings → Pages. Share it and `guide.html` with the team.
 
-## 3. Cloud environment (claude.ai)
+## 3. API credit and a hard spending limit (platform.claude.com)
+
+The agent's work is paid from API credit, not from your Claude plan (`config/agent.yaml: billing`).
+
+1. https://platform.claude.com/settings/workspaces → **Add Workspace**, name `FML` → **Create**.
+2. Open the `FML` workspace → **Limits** tab → **Change Limit** under the spend limit → about 35 EUR.
+   Also select **Add notification** for an e-mail at, say, 20 EUR.
+3. In the same workspace: **API Keys** tab → create a key named `fml-agent` (keys made here belong to
+   this workspace and its limit). Copy it. One key can serve both uses below.
+4. **Billing:** make sure the organisation has enough credit (about 35 EUR for one cycle plus the
+   article classification).
+
+## 4. Cloud environment (claude.ai)
 
 Go to https://claude.ai/code, open the environment picker (cloud icon) → **Add environment**
 (or edit one), name it `fml`:
@@ -36,23 +48,26 @@ Go to https://claude.ai/code, open the environment picker (cloud icon) → **Add
 - **Environment variables** (only your sessions in this environment can read them):
 
   ```
-  LLM_CLASSIFIER_API_KEY=<your key from platform.claude.com>
+  AGENT_API_KEY=<the key from step 3>
+  LLM_CLASSIFIER_API_KEY=<the same key>
   FML_PRIVACY_TERMS=<comma-separated real names, institution, course name/code, team number>
   BASH_DEFAULT_TIMEOUT_MS=1800000
   BASH_MAX_TIMEOUT_MS=1800000
   ```
-  The key is an environment variable, not a "network secret", because network secrets are never
-  attached to requests to `api.anthropic.com`. Do **not** call it `ANTHROPIC_API_KEY`.
+  The keys are environment variables, not "network secrets", because network secrets are never
+  attached to requests to `api.anthropic.com`. Do **not** call either of them `ANTHROPIC_API_KEY`.
 - **Setup script:** leave empty. `python -m agent run` installs what it needs on first start.
 
-## 4. The agent routine (started by hand)
+## 5. The agent routine (started by hand)
 
 The agent never runs on its own. You start it whenever you want it to work.
 
 https://claude.ai/code/routines → **New routine**:
 
 - **Name:** `FML agent`
-- **Model:** Sonnet 5.5
+- **Model:** Haiku 5.5. This session only starts `python -m agent run` and reads the result, so the
+  cheapest model is enough and it uses very little of your plan. The real work runs on Sonnet 5.5
+  through the API key.
 - **Repositories:** `kenoja/FML-fake-news` and `kenoja/FML-data`
 - **Environment:** `fml`
 - **Connectors:** remove all (the agent does not need any)
@@ -74,7 +89,7 @@ You run the agent for this project. Do not edit any files yourself.
 **To start work:** open the routine → **Run now**. Each run continues where the last one stopped, so
 start it as often as you like. When a cycle is already finished, a run ends right away with `DONE`.
 
-## 5. Each cycle
+## 6. Each cycle
 
 1. The agent finishes a cycle by opening a pull request `claude/cycle-NN → main` with its
    scores and open issues. Read the summary, look at the changes, merge.
@@ -86,7 +101,10 @@ start it as often as you like. When a cycle is already finished, a run ends righ
 
 ## Useful controls
 
-- **Limits** (time per run, review rounds, ...): `config/agent.yaml`.
+- **Limits** (time per run, review rounds, spending cap per cycle, ...): `config/agent.yaml`. Change
+  them on `main`; a running cycle picks the change up at its next run.
+- **Money spent:** the last line of `.agent_state/last_run.md` (an estimate); the exact figure is in
+  the Console under Usage for workspace `FML`.
 - **Status of the last run:** `.agent_state/last_run.md` on the `claude/cycle-NN` branch.
 - **Start a cycle over:** delete `.agent_state/cycle-NN.sqlite` on its branch (or run
   `python -m agent reset-cycle NN` in a cloud session) and run again.

@@ -83,3 +83,41 @@ def test_low_review_scores_send_the_work_back_to_planning(sandbox, monkeypatch):
     assert agent.run(cycle=1, minutes=60, use_git=False) == "DONE"
     assert history(1).count("review") == 2
     assert history(1).count("plan") == 2
+
+
+def test_api_billing_strips_the_cloud_session_so_the_key_pays(monkeypatch):
+    # If any session variable survived, the child call would count against the Claude plan instead.
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "x")
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "http://session-proxy")
+    monkeypatch.setenv("AGENT_API_KEY", "sk-test")
+    env = tools.child_env({"mode": "api", "api_key_env": "AGENT_API_KEY"})
+    assert env["ANTHROPIC_API_KEY"] == "sk-test"
+    assert not [k for k in env if k.startswith("CLAUDE") or (k.startswith("ANTHROPIC") and k != "ANTHROPIC_API_KEY")]
+    monkeypatch.delenv("AGENT_API_KEY")
+    with pytest.raises(RuntimeError):                     # no silent fallback to the plan
+        tools.child_env({"mode": "api", "api_key_env": "AGENT_API_KEY"})
+
+
+def test_spending_cap_pauses_the_cycle_and_raising_it_continues(sandbox, monkeypatch):
+    # The owner sets a budget; the agent must stop there instead of spending more.
+    from agent import fake_llm
+    real_respond, real_config = fake_llm.respond, tools.load_config
+    cap = {"usd": 8.0}
+
+    def costly(task_prompt, schema):
+        res = real_respond(task_prompt, schema)
+        res.cost_usd = 5.0
+        return res
+
+    def config(name):
+        cfg = real_config(name)
+        if name == "agent":
+            cfg["billing"]["max_cost_usd_per_cycle"] = cap["usd"]
+        return cfg
+
+    monkeypatch.setattr(fake_llm, "respond", costly)
+    monkeypatch.setattr(tools, "load_config", config)
+    assert agent.run(cycle=1, minutes=60, use_git=False) == "PAUSED"   # plan $5, implement $5 -> $10 >= $8
+    assert "spending cap" in (sandbox / ".agent_state" / "last_run.md").read_text()
+    cap["usd"] = 100.0
+    assert agent.run(cycle=1, minutes=60, use_git=False) == "DONE"

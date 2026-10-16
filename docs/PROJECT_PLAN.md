@@ -177,7 +177,7 @@ The **presentation** (40% of the grade) and the **individual statements** are no
 
 **Runtime and payment (verified in the Claude Code docs, and tested in a cloud session on 16 Oct):**
 - **Where it runs:** as a **routine** in Anthropic's cloud (claude.ai/code/routines), started by hand with **Run now** (no schedule). Each run is a cloud session with both repos cloned; nothing runs on a laptop. A nested `claude -p` call from a script inside a cloud session was tested and works, which is what the LangGraph nodes need.
-- **Who pays:** cloud sessions draw on the Claude plan (and the cloud-session credit); Sonnet 5.5 does the agent work. Only the Haiku article classification uses an API key, stored as the cloud-environment variable `LLM_CLASSIFIER_API_KEY` (deliberately not `ANTHROPIC_API_KEY`, which Claude Code would pick up for its own billing). The cloud's network secrets cannot be used for this key: they are never attached to `api.anthropic.com`.
+- **Who pays (updated 17 Oct):** the agent's Claude Code calls (Sonnet 5.5) are billed to an **API key** (`AGENT_API_KEY`, Console credit) instead of the Claude plan, so the owner's plan limits stay free. Tested in a cloud session: a nested call with the session variables removed and an API key set really uses that key. A per-cycle cap (`billing.max_cost_usd_per_cycle`, default 33 USD ≈ 30 EUR) pauses the run, and a Console workspace spend limit is the hard stop. The outer routine session runs on Haiku and uses little of the plan. The Haiku article classification uses `LLM_CLASSIFIER_API_KEY` (may be the same key). Neither may be named `ANTHROPIC_API_KEY`, and network secrets cannot be used because they are never attached to `api.anthropic.com`.
 - **Short resumable steps:** a single command in a cloud session may run about 10 minutes, plus up to 30 more in the background. So `python -m agent run` works for at most `run_minutes` (default 20), checkpoints after every node, commits and pushes to `claude/cycle-NN`, and prints `STATUS: CONTINUE | DONE | PAUSED | FAILED`. The routine's prompt repeats the command while the status is `CONTINUE`.
 - **Stop boundaries** (in `config/agent.yaml`): `run_minutes`, `task_timeout_minutes`, `max_turns_per_task`, `max_tasks_per_plan`, `max_gate_fix_attempts`, `max_review_rounds`, `max_runs_per_cycle`.
 - **Resuming:** the LangGraph checkpoint (`.agent_state/cycle-NN.sqlite`) is committed to the cycle branch. A usage limit sets `PAUSED`; the next run (started by hand) continues from the last finished node.
@@ -263,7 +263,7 @@ The reviewer scores each criterion 0–10 and must cite evidence (file, section 
 ## 13. Cost estimate
 
 - **Classification:** Haiku 5.5 costs $0.10 per million input tokens and $0.50 per million output tokens (prompts under 100k tokens). Validation + test are about 780 filtered articles; at ~1,200 tokens each plus the instruction, one pass is about 1.2M input tokens, roughly **$0.15**. Prompt variants plus the stability pass stay **under ~$3**, well within the 20 € of API credit. The agent records actual token counts.
-- **Agent work:** Sonnet 5.5 in cloud sessions, on the Pro plan and the cloud-session credit. A run may pause at a usage limit and resume on the next run.
+- **Agent work:** Sonnet 5.5 via API credit, capped at about 30 EUR per cycle. A first cycle builds everything and may reach the cap before 10/10; the cap can be raised in `config/agent.yaml`.
 - **GitHub Actions:** free for public repos (site publishing and feedback collection only).
 
 ## 14. Risks

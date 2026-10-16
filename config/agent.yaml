@@ -4,6 +4,16 @@ models:
   agent: claude-sonnet-5-5      # plans, implements, writes explanations
   reviewer: claude-sonnet-5-5   # scores the work in a fresh session that has not seen it being made
 
+billing:
+  # api:          the agent's Claude calls are paid from the API key in AGENT_API_KEY (Console credit).
+  #               Your Claude plan's usage limits are not touched (only the small outer routine session is).
+  # subscription: the agent's calls use your Claude plan and count against its usage limits.
+  mode: api
+  api_key_env: AGENT_API_KEY
+  # Spending cap per cycle in US dollars (CLI estimate). At the cap the run stops with STATUS: PAUSED.
+  # 33 USD is roughly 30 EUR. Also set a spend limit in the Console as the hard stop (docs/SETUP.md).
+  max_cost_usd_per_cycle: 33
+
 limits:
   run_minutes: 20               # one `python -m agent run` call starts no new step after this
   task_timeout_minutes: 15      # hard timeout for a single Claude Code call

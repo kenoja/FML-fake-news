@@ -11,6 +11,7 @@ exactly where this one stopped. Output always ends with one line `STATUS: <word>
 """
 from __future__ import annotations
 
+import os
 import time
 import traceback
 
@@ -51,6 +52,7 @@ def run(cycle: int | None = None, minutes: float | None = None, use_git: bool = 
     if use_git:
         tools.checkout_cycle_branch(branch)
 
+    os.environ["FML_CYCLE"] = str(cycle)  # the spending ledger and cap are per cycle
     runs = memory.count_run(cycle)
     if runs > lim["max_runs_per_cycle"]:
         return _finish(cycle, branch, "FAILED", f"max_runs_per_cycle ({lim['max_runs_per_cycle']}) exceeded", use_git)
@@ -76,6 +78,8 @@ def run(cycle: int | None = None, minutes: float | None = None, use_git: bool = 
             if time.monotonic() - start > budget_s:
                 detail = f"time budget of {budget_s / 60:.0f} min used; next node: {app.get_state(cfg).next}"
                 break
+    except tools.BudgetReached as exc:
+        status, detail = "PAUSED", f"budget: {exc}"
     except tools.UsageLimitReached as exc:
         status, detail = "PAUSED", f"usage limit reached - resume later. {exc}"
     except Exception as exc:  # fail loud, keep the checkpoint, let a human look
@@ -100,6 +104,7 @@ def _final_state(cycle: int) -> dict:
 
 
 def _finish(cycle: int, branch: str, status: str, detail: str, use_git: bool, push: bool = True) -> str:
+    detail = f"{detail}\n\nSpent on Claude calls in cycle {cycle} so far (estimate): ${tools.spent_usd(cycle):.2f}"
     memory.write_status(cycle, status, detail)
     if use_git and push:
         tools.commit_and_push(branch, f"agent: cycle {cycle} run -> {status}\n\n{detail[:600]}")
