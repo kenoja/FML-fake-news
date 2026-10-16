@@ -1,0 +1,59 @@
+name: Publish walkthrough
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  discussions: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install jinja2 markdown pygments pyyaml
+
+      - name: Look up the giscus ids (repository and "Feedback" category)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ids=$(gh api graphql \
+            -f query='query($o:String!,$n:String!){repository(owner:$o,name:$n){id discussionCategories(first:25){nodes{id name}}}}' \
+            -f o="${GITHUB_REPOSITORY%/*}" -f n="${GITHUB_REPOSITORY#*/}") || ids='{}'
+          echo "GISCUS_REPO_ID=$(echo "$ids" | jq -r '.data.repository.id // empty')" >> "$GITHUB_ENV"
+          echo "GISCUS_CATEGORY_ID=$(echo "$ids" | jq -r '.data.repository.discussionCategories.nodes[]? | select(.name=="Feedback") | .id')" >> "$GITHUB_ENV"
+
+      - name: Build the walkthrough
+        run: python -m sitegen build --strict
+
+      - name: Add the report draft as a Word file
+        if: hashFiles('reports/report.md') != ''
+        run: |
+          sudo apt-get install -y -q pandoc
+          pandoc reports/report.md --resource-path=.:reports -o site/report.docx
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

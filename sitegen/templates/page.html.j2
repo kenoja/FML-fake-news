@@ -1,0 +1,8 @@
+{% extends "base.html.j2" %}
+{% block title %}{{ title }}{% endblock %}
+{% block body %}
+<div class="layout">
+  <nav class="toc" aria-label="Back"><div class="links"><a href="index.html">Back to the walkthrough</a></div></nav>
+  <main><article class="section">{{ body | safe }}</article></main>
+</div>
+{% endblock %}

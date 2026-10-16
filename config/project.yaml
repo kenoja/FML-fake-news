@@ -1,0 +1,44 @@
+# Analysis settings, read by src/fml and by the agent. Change them here, not in code.
+
+data:
+  # The private data repo, cloned next to this one. Override with the FML_DATA_DIR environment variable.
+  repo_dir_candidates: ["../fml-data", "../FML-data", "~/fml-data", "/home/user/fml-data"]
+  subset_file: loco_911/loco_911.jsonl.gz
+  website_metadata_file: loco_911/website_metadata_911.json
+  label_field: subcorpus            # "conspiracy" | "mainstream" — describes the WEBSITE, not the text
+  positive_label: conspiracy
+  group_field: website
+
+  # Off-topic filter (team decision, cycle 1): the first words-only run uses ALL documents;
+  # every later experiment uses only documents matching this pattern (title or text, case-insensitive).
+  # Measured on 2026-10-16: 2,608 of 3,146 documents match (777 conspiracy, 1,831 mainstream).
+  topic_filter_pattern: "9/11|9-11|nine[- ]eleven|september 11|sept\\.? 11|11 september|twin towers|world trade center|\\bwtc\\b|pentagon|al[- ]qa'?e?da|bin laden|ground zero"
+
+split:
+  file: data/splits/split_v1.csv    # doc_id -> train/validation/test. Created once, then never changed.
+  ratios: {train: 0.70, validation: 0.15, test: 0.15}
+  group_by: website
+  stratify_by: subcorpus
+  seed: 20261016
+  min_positive_groups_per_split: 3  # fewer conspiracy websites in a split must be reported loudly
+
+llm_classifier:
+  model: claude-haiku-5-5
+  api_key_env: LLM_CLASSIFIER_API_KEY   # never ANTHROPIC_API_KEY (that would move agent work to API billing)
+  temperature: 0
+  max_prompt_variants: 3                # all tried on validation only
+  question: source                      # team decision: ask "conspiracy-oriented or mainstream WEBSITE?"
+  cache_file: results/llm_cache.jsonl   # doc_id + prompt hash + answer only; never article text
+
+features:
+  groups: [ngrams, epistemic, style]    # G4 emotion dropped by team decision
+  per_n_words: 1000
+
+excerpts:
+  max_words: 50                         # longest article excerpt allowed in any public output
+  max_per_section: 6
+
+report:
+  path: reports/report.md
+  min_words: 3000
+  max_words: 5000
