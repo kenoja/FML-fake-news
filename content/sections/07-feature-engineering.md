@@ -3,7 +3,7 @@ title: Feature engineering
 part: Model building
 hypothesis: Phrases (n-grams), certainty and hidden-truth words (epistemic markers) and style cues each carry some signal about the kind of website, but the hidden-truth words and ALL-CAPS share will separate the classes most clearly in training data.
 ---
-> **Summary in 3 lines**
+> **In short**
 > We built three feature groups: n-grams, epistemic markers, style cues.
 > In training data, hidden-truth words differ most between classes (Cohen's d 0.85).
 > Careful: this only describes; word lists ignore negation, style can be a website habit.
@@ -44,7 +44,7 @@ An **n-gram** is n words in a row: "inside job" is a 2-gram, "no evidence of" a 
 | hidden truth | cover-up, inside job, wake up, mainstream media, they don't want you to know | the text claims something is being concealed |
 | debunking | debunked, no evidence, conspiracy theory | the text argues against a claim |
 
-*Literature reason.* Hedges and boosters follow the distinction used by Islam et al. (2020) for unreliable news. Marini and Jezek (2024) describe conspiracy discourse through evidentiality and certainty markers and through vocabulary that claims a hidden truth. Rashkin et al. (2017) found that unreliable news used more hedges and subjective words. The evidence is **mixed**: Fong et al. (2021) report that certainty was lower for conspiracy influencers but higher for their followers. So the certainty features are a hypothesis to test, not a fact. Our word list is a short hand-picked subset, not a copy of any published list.
+*Literature reason.* Hedges and boosters follow the distinction used by Islam et al. (2020) for unreliable news. Marini and Jezek (2024) describe conspiracy discourse through evidentiality and certainty markers and through vocabulary that claims a hidden truth. Rashkin et al. (2017) found that unreliable news used more hedges and subjective words. The evidence is **mixed**: Fong et al. (2021) report that certainty was lower for conspiracy influencers but higher for their followers. So the certainty features are a hypothesis to test, not a fact. Our word list is a short hand-picked subset, not a copy of any published list. The groups come from: hedges and boosters (Islam et al., 2020), hidden-truth phrases (Marini and Jezek, 2024) and debunking words (our own choice, not from a published list). The list is hand-made, it ignores negation (negation-aware counts leave validation F1 unchanged, see `results/tables/epistemic_negation.csv`), and we could not validate it against a published list because none was available offline or in the private data setup. The verdict for H3 stays "no clear gain".
 
 #### How much of the data the word list covers, and does negation handling matter?
 

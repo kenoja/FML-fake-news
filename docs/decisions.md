@@ -39,6 +39,12 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   `git log --format='%h %ad %s' --date=short -S'H1' -- docs/PROJECT_PLAN.md` and
   `git log --diff-filter=A --format='%h %ad' -- results/metrics.json`, then write both hashes, dates and the
   verdict here. Until then, do not claim the hypotheses were pre-registered.
+  Retried in cycle 1 task T7 on 2026-10-17: the `git log` calls were denied a third time (no approval
+  surface). `.git/logs/HEAD` only lists branch-level commits, not which commit touched which file, so it
+  cannot answer the question. Still **no commit hashes and verdict "unknown"**; nothing was invented.
+  **H5 gap (resolved by explanation):** there is no H5 because the emotion-score idea was dropped; the
+  numbering keeps the gap on purpose. This is stated in report §1 and section 01; H6 keeps its number
+  because section 11, the report §5.6, the ai-log and tests refer to it.
 - **2026-10-16 · Conflict: final-scoring command.** AGENTS.md says `fml evaluate-final <model_id>`;
   `docs/PROJECT_PLAN.md` says `fml evaluate --final`. AGENTS.md ranks higher, so `evaluate-final` is
   used everywhere (the CLI already implements it).
@@ -53,6 +59,11 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 - **2026-10-16 · Dependencies.** Analysis packages are pinned with upper bounds in `pyproject.toml`
   (next major version). Exact tested versions could not be recorded in T1 because shell access was
   denied; to be pinned exactly when the environment can be inspected. No new heavy dependencies.
+  **Pin policy (T5, 2026-10-17):** `pyproject.toml` deliberately keeps ranges (so CI and newer machines can
+  install). `requirements-lock.txt` is the authoritative exact pin. Its seven analysis packages and the
+  Python version match those recorded in `results/run_info.json` (checked by reading both files). The
+  remaining lock entries (jinja2, langgraph, markdown, pygments, pytest, ...) were NOT compared with the
+  installed environment, because shell commands such as `pip list` were denied in this task.
 
 - **2026-10-16 · T2 split created.** `data/splits/split_v1.csv` made by `fml prepare-data` (seed
   20261016, greedy whole-website assignment per class): 3,146 rows, no website in two splits, every
@@ -117,6 +128,8 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   because temperature 0 is rejected; the cache makes `fml run-all` deterministic; run-to-run stability is
   reported (agreement, kappa)." Confirmed on (date): ___ ; by: Member _ . Closes when: a member writes the
   date and name here, or the team asks for a different model/setting (which means a new model id on test).
+  **Confirmation: pending (Member __, date __).** Conservative reading used meanwhile: default sampling,
+  temperature 0 only recorded in config and cache key, instability measured and reported, not hidden.
 
 - **Licence of the LOCO texts.** Unconfirmed (see above). Default: texts not redistributable; private
   data repo only; excerpt limits apply. Measured effect: not run: the OSF page was unreachable, so no
@@ -140,6 +153,8 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   Cheap fix not applied: it needs new API calls (a valid 400-token validation run, ideally storing raw replies)
   and, for test, a new documented run under a new model id. Future work: fix `token_limit_sensitivity` so it
   builds its own client with the larger limit, rerun on validation, and decide with the team.
+  **Confirmation: pending (Member __, date __).** Conservative reading used meanwhile: keep 150 tokens, do not
+  change any setting after test results were seen, count unparsed answers as errors, report the truncation.
 - **Parallel LLM runs left duplicate lines (T8).** Two interrupted-attempt processes ran the stage at the
   same time, which duplicated cache lines (1,059 dropped; first answer per `doc_id`+`prompt_hash` kept,
   `read_cache` now does the same) and wrote the `llm_haiku` test-access entry twice (the second,
@@ -230,7 +245,11 @@ Status after task T8; "partly" items name the reason. Numbers live in `results/`
 | 6 | Keep `docs/ai-log.md` and `docs/decisions.md` up to date | partly | Decisions are current; the final AI-log pass and the human-check records are queued as a later task. |
 | 7 | Re-check the LOCO licence on the OSF page | partly | Page unreachable on 2026-10-16 (fetch tool denied), result recorded; the recheck is queued as a later task. Excerpt rules stay in force. |
 
-No requirement is declined.
+No requirement is declined. Two items are **blocked on a person** (status 17 Oct 2026, task T11): requirement 2
+(`human_stance` for 40 rows, kappa null, H6 provisional) and requirement 7 (LOCO licence: OSF page unreachable
+for the agent, texts stay private). The temperature and 150-token decisions show `Confirmation: pending` under
+"Needs a team decision". The agent signed off no human check; the seven rows and ten spot-check numbers in
+`docs/ai-log.md` are all `pending` with owner "Member A–E".
 
 ## Cycle 1 review: licence, near-duplicates, formally open items (task T2, 2026-10-17)
 
@@ -304,3 +323,15 @@ No requirement is declined.
   and `metrics.json#comparison.lr_config_validation_sensitivity`. Validation F1 is equal for both.
 - The "without near-duplicates" rows now have document and website bootstrap intervals, computed from
   `predictions_lr.csv` and `predictions_llm.csv` (`comparison.no_duplicate_sensitivity(..., sites=...)`).
+
+## Blocked: licence recheck (requirement 7), task T6, 2026-10-17
+
+- **Status: blocked.** The agent tried to open https://osf.io/snpcg/ (and the OSF API) with the shell and with
+  web search on 2026-10-17. Every call was denied by the environment (no approval surface, outbound web
+  access not permitted), so nothing was fetched. No licence text was seen and none is guessed.
+- **Who must do it:** one team member (Member _ of A–E) with a normal browser.
+- **What to do:** open the page, copy the licence text word for word, then complete:
+  `Licence text: ___ ; date checked: ___ ; source URL: https://osf.io/snpcg/ ; by: Member _`
+  and replace "not confirmed" in report §2 and in section 02 with the quote.
+- **Until then:** conservative reading stays: texts private, no redistribution, excerpt limits (≤ 50 words,
+  ≤ 6 per section) in force.

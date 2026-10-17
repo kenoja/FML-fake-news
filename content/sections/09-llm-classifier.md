@@ -3,6 +3,11 @@ title: The LLM classifier
 part: Model building
 hypothesis: A cheap zero-shot LLM recognises the tone of conspiracy-oriented websites without any training, but it reacts to the 9/11 topic and to confident wording, so it will not clearly beat the logistic regression on websites it has never seen.
 ---
+> **In short**
+> We ask one cheap AI model, untrained, which kind of website an article comes from.
+> We tried three wordings on validation data and report all three.
+> Careful: answers can change between runs, and the model may know these sites.
+
 ## Goal and hypothesis
 
 We compare our own logistic regression with one cheap language model, **Claude Haiku 5.5**, used **zero-shot**: it gets no training examples, only an instruction and the article. It answers the **source question**, the same target the logistic regression is scored on: would this article come from a conspiracy-oriented website or from a mainstream website? (Whether the article itself *endorses* a conspiracy theory is a different question, examined in the error analysis.)

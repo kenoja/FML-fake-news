@@ -11,7 +11,7 @@ We use the 9/11 part of the LOCO corpus: 3,146 full articles, 939 from conspirac
 
 **The label describes the website, not the article.** LOCO collected pages from websites that were rated as conspiracy-oriented or mainstream by an external media-rating source, then kept pages related to a seed topic (here "september 11 attack"). Every article inherits its website's label. So "conspiracy" means "published on a conspiracy-oriented site". A calm news item on such a site is labelled conspiracy, and a mainstream article that debunks a theory is labelled mainstream (or the reverse, if it uses the theory's vocabulary and sits on a conspiracy site). This is **label noise** at article level. Mompelat and colleagues, who studied LOCO, point to this noise: the website-level label is a practical shortcut and not a judgement of each text. We treat it as a known limit and look at actual disagreements in the error analysis.
 
-**Licence status.** We found no licence in the corpus paper, and the OSF page could not be opened on 2026-10-16 (see `docs/decisions.md`). Until a licence is confirmed we keep the texts in a private repository, never copy them here, and show at most short excerpts.
+**Licence status.** We found no licence in the corpus paper, and the OSF page could not be opened on 2026-10-16 or 2026-10-17 (access blocked; the recheck is a blocked item that a team member must do, see `docs/decisions.md`). Until a licence is confirmed we keep the texts in a private repository, never copy them here, and show at most short excerpts.
 
 **Cleaning.** Models should read the article, not recognise where it came from. The steps, in order, with counts in the table below:
 

@@ -44,7 +44,7 @@ There is no H5: the emotion-score idea was dropped (section 3) and the numbering
 
 **Software.** Python 3.11.17, scikit-learn 1.9.1, pandas 3.0.6, numpy 2.4.6, scipy 1.17.1, matplotlib 3.11.2 and the `anthropic` client 1.15.0, pinned in `requirements-lock.txt`. `fml run-all` writes versions and run time to `results/run_info.json`. The seed is 20261016 (`config/project.yaml`).
 
-**Licence status.** The LOCO paper states no licence for the texts, and the project page at the Open Science Framework was not reachable on 2026-10-16 or 2026-10-17, so the licence is **not confirmed**. We keep the texts in a private data repository, publish no article text, and this report contains no excerpts.
+**Licence status.** The LOCO paper states no licence for the texts, and the project page at the Open Science Framework was not reachable for the agent on 2026-10-16 or 2026-10-17 (access was blocked in its environment), so the licence is **not confirmed**. The recheck (requirement 7) is blocked and a team member must do it; see `docs/decisions.md`. We keep the texts in a private data repository, publish no article text, and this report contains no excerpts.
 
 ## 3. Approach
 
@@ -82,13 +82,13 @@ Every split has at least 3 conspiracy websites, so no split triggers the warning
 **Read this first (four cautions about the test numbers).**
 
 1. **Wide intervals, website level first.** The test set has 423 documents (98 conspiracy) from 18 websites, but only **6 conspiracy websites**. Documents from one website resemble each other, so the website (cluster) bootstrap interval is the honest one; the document interval is shown second and is too narrow.
-2. **The words-only logistic regression was scored on test twice.** `results/test_access_log.jsonl` has `lr_words` and later `lr_words_v2` (a different configuration hash), after `lr_extended` and `llm_haiku` had been scored (timestamps in section 4 below). The first configuration was stale and the lock forbids re-scoring one id with a new configuration, so the corrected model got a new id. **`lr_words_v2` is the reported words-only model; the `lr_words` result is not used for any number.**
+2. **The words-only logistic regression was scored on test twice.** `results/test_access_log.jsonl` has `lr_words` and later `lr_words_v2` (a different configuration hash), after `lr_extended` and `llm_haiku` had been scored. The first configuration was stale and the lock forbids re-scoring one id with a new configuration, so the corrected model got a new id. **`lr_words_v2` is the reported words-only model; the `lr_words` result is not used for any number.**
 3. **Six conspiracy websites.** One of them supplies 44 of the 98 conspiracy test documents, so the test set mostly measures how well each model recognises that site.
 4. **36 near-duplicate pairs across splits** (`data.near_duplicate_pairs_across_splits`). Nine test documents have a partner in train or validation. The F1 changes by -0.005 (logistic regression) and -0.004 (LLM) without them, so they do not explain the result.
 
-**Plain statement on the second test look and what the conclusion rests on.** `lr_words` was scored on test first (2026-10-17T01:19:52, hash 4c7ae4b64bb07dc1). `lr_words_v2` was scored later (10:35:02, hash 686c1de15756e287), after `lr_extended` and `llm_haiku` had already been scored, so the words-only model got a second test look when other test results were known. The log has not changed (no new line was added for this check). The conclusion "the LLM beats the logistic regression" rests **only on the document-level test**: the McNemar test (p = 0.0004, 32 vs 9 documents that only one model gets right) and the document-bootstrap interval for delta-F1 (+0.0235 to +0.1795). At **website level the interval for the LLM-minus-LR F1 difference includes 0** (+0.0994, interval -0.0166 to +0.3891), so with 6 conspiracy websites the data cannot separate the two models. The without-near-duplicates rows in the table now carry bootstrap intervals computed from the saved predictions only (`results/tables/comparison_test_no_dups.csv`); no new scoring on test was done.
+**What the conclusion rests on.** `lr_words` was scored on test first (2026-10-17T01:19:52, hash 4c7ae4b64bb07dc1); `lr_words_v2` later (10:35:02, new config hash in the log), after `lr_extended` and `llm_haiku` had been scored, so the words-only model got a second look when other test results were known. The conclusion "the LLM beats the logistic regression" rests **only on the document-level test**: the McNemar test (p = 0.0004, 32 vs 9 documents that only one model gets right) and the document-bootstrap interval for delta-F1 (+0.0235 to +0.1795). At **website level the interval for the LLM-minus-LR F1 difference includes 0** (+0.0994, interval -0.0166 to +0.3891), so with 6 conspiracy websites the data cannot separate the two models. The without-near-duplicates rows below use saved predictions only (`results/tables/comparison_test_no_dups.csv`); no new test scoring was done.
 
-**Sensitivity row for the first `lr_words` configuration.** Its test numbers are not stored anywhere in `results/` (the log keeps only the model id and a hash), and we do not score on test again. We therefore give the **validation** comparison, copied from `results/tables/comparison_lr_config_validation.csv` (`results/metrics.json#comparison.lr_config_validation_sensitivity`):
+**Sensitivity row for the first `lr_words` configuration.** Its test numbers are not stored (the log keeps only id and hash) and we do not score on test again, so we give the **validation** comparison from `results/tables/comparison_lr_config_validation.csv` (`results/metrics.json#comparison.lr_config_validation_sensitivity`):
 
 | Model (validation split) | Setting | Precision | Recall | F1 |
 |---|---|---|---|---|
@@ -96,7 +96,7 @@ Every split has at least 3 conspiracy websites, so no split triggers the warning
 | `lr_words_v2` (reported) | C=10, balanced | 0.914 | 0.914 | 0.914 |
 | `llm_haiku` (chosen prompt v2) | zero-shot | 1.0 | 0.906 | 0.951 |
 
-On validation the two logistic regression settings have the same F1 (difference 0.0), so revising the configuration did not move the quality of the words-only model; it only changed the balance of precision and recall.
+On validation both settings have the same F1, so revising the configuration only changed the balance of precision and recall.
 
 **Headline comparison on test** (website intervals first, then document intervals; copied from `results/tables/comparison_test.csv`, `results/tables/comparison_test_no_dups.csv` and `results/metrics.json#comparison`):
 
@@ -115,9 +115,9 @@ On validation the two logistic regression settings have the same F1 (difference 
 
 **McNemar test.** To ask whether two models differ on the same documents, we count documents only model A gets right and documents only model B gets right; McNemar's test asks whether these counts differ more than chance allows.
 
-**Test set used once per model.** The test split is locked. Only `fml evaluate-final <model_id>` may score a model on it. It appends the model id, a configuration hash and the document count to `results/test_access_log.jsonl`, and a gate fails if one id is scored with two configurations. Three models count: `lr_words_v2` (words only), `lr_extended` and `llm_haiku`. The log also holds an earlier `lr_words` entry from a stale configuration (C 100, no class weights) that validation tuning no longer picks. The lock forbids re-scoring that id with a new configuration, so the model was renamed `lr_words_v2`; the old line stays, unused. M2 is chosen over M1 only if its validation F1 gain has a website-bootstrap interval above 0.
+**Test set used once per model.** The test split is locked. Only `fml evaluate-final <model_id>` may score a model on it; it appends the model id, a configuration hash and the document count to `results/test_access_log.jsonl`, and a gate fails if one id is scored with two configurations. Three models count: `lr_words_v2`, `lr_extended` and `llm_haiku`. The stale `lr_words` entry (C 100, no class weights) stays in the log, unused. M2 is chosen over M1 only if its validation F1 gain has a website-bootstrap interval above 0.
 
-**Sequence of test looks.** The log (UTC) shows `lr_words` 2026-10-17T01:19:52, `lr_extended` 01:21:07, `llm_haiku` 09:26:03, and `lr_words_v2` 10:35:02. So `lr_words_v2` is a second test look at the words-only model, made after other test results were known. The M1/M2 rule was applied to validation rows only (`ablation.chosen_lr`), but the log cannot prove it was fixed before any look. Now `evaluate_final` refuses a model whose validation-chosen configuration is not in `results/frozen_models.json`; earlier looks are marked `retroactive` there.
+**Sequence of test looks.** The log (UTC) shows `lr_words` 01:19:52, `lr_extended` 01:21:07, `llm_haiku` 09:26:03, `lr_words_v2` 10:35:02 (all 2026-10-17). The M1/M2 rule was applied to validation rows only (`ablation.chosen_lr`), but the log cannot prove it was fixed before any look. Now `evaluate_final` refuses a model whose validation-chosen configuration is not in `results/frozen_models.json`; earlier looks are marked `retroactive` there.
 
 ## 5. Findings
 
@@ -237,6 +237,7 @@ Three short examples (Claude's scrubbed 25-word stance justifications; full arti
 
 **Status of the human stance check: blocked, pending human check.** The column `human_stance` in `results/tables/stance_check_sample.csv` is blank for all 40 rows, Cohen's kappa was not computed (`null`, not 0), and H6 has not been tested by humans. To close it, Members A and B fill `human_stance` independently, run `fml stance-agreement`, and copy the kappa into the H6 verdict here and in section 11.
 
+
 ## 6. Interpretation and limitations
 
 **What the results say.** Both approaches work well on validation and much less well on test, which asks for generalisation to unseen websites. The LLM is almost never wrong about mainstream articles, and its recall is limited by articles that do not look like conspiracy writing. The logistic regression is cheaper per document, but it learns blog style and misclassifies some mainstream sites. Hand-made features did not help beyond chance.
@@ -245,19 +246,19 @@ Three short examples (Claude's scrubbed 25-word stance justifications; full arti
 
 **Noise and sample size.** The test split has 7 conspiracy websites (6 after filtering), and 44 of its 98 conspiracy documents come from one site, so single sites move the result and the website bootstrap is wide. The filter removed far more conspiracy than mainstream test documents (section 5.2). The split is frozen and was not repaired.
 
-**The website name.** We removed site names, URLs and boilerplate, and no site name is among the top coefficients. The grouped split keeps a trained-on site out of test. Style, such as blog formatting, may still identify a **type** of website; that signal transfers to unseen sites of the same type and explains part of the success. Near-duplicates across splits (36 pairs) could leak some information; section 5.5 shows that dropping the 9 affected test documents changes F1 by -0.005 (logistic regression) and -0.004 (LLM).
+**The website name.** We removed site names, URLs and boilerplate, and no site name is among the top coefficients. Style, such as blog formatting, may still identify a **type** of website, and that signal transfers to unseen sites of the same type. Near-duplicates across splits (36 pairs) could leak some information; dropping the 9 affected test documents changes F1 by -0.005 (logistic regression) and -0.004 (LLM) (section 5.5).
 
 **LLM prior knowledge.** Haiku 5.5 may know some of these websites from its training. We ran a probe on validation only: Haiku was asked to name the website of a seeded sample of 40 validation articles (the prompt gives the cleaned article text, not only the title; only a yes/no match is stored). It named the true site for 5 of 40 articles (12.5%; `errors.prior_knowledge_probe` in `results/metrics.json`). The sample is small, so this does not rule out that the LLM's score partly reflects memorised site reputations.
 
-**LLM output limits.** Between 44 and 91 of 398 validation answers per prompt variant, and 61 of 423 test answers, could not be parsed, which lowers recall. A larger limit would be a new run with a new model id and needs a team decision. Every unparsed answer used the full 150 output tokens (`metrics.json#llm.parse_error_causes`), so truncation at the limit is the likely cause; the cache stores no raw replies, so this is inferred. Our earlier 400-token check never applied 400 tokens, so it is no evidence and a valid rerun is future work.
+**LLM output limits.** Between 44 and 91 of 398 validation answers per prompt variant, and 61 of 423 test answers, could not be parsed, which lowers recall. Every unparsed answer used the full 150 output tokens (`metrics.json#llm.parse_error_causes`), so truncation is the likely cause (inferred; no raw replies are cached). A larger limit would be a new run with a new model id and needs a team decision; the earlier 400-token check never applied 400 tokens, so it is no evidence.
 
-**Lexicon weakness.** The epistemic list is short, hand-made and ignores negation ("no evidence of cover-up" counts "cover-up"), so the negative result for H3 should not be generalised to better lexicons.
+**Lexicon weakness.** The epistemic list is short, hand-made and ignores negation ("no evidence of cover-up" counts "cover-up"), so the negative result for H3 should not be generalised. Making the counts negation-aware changed validation F1 by 0.000 (`results/tables/epistemic_negation.csv`); the verdict stays "no clear gain".
 
 ## 7. Use of AI tools
 
 **What the AI produced.** Claude (Opus 5.5) in a chat session with the repository owner produced the project plan with the literature research, the agent harness, the site generator, the checksummed data subset and the repository rules. In cycle 1 an AI coding agent (Claude Code, Sonnet 5.5) wrote the analysis code, tests, result tables, walkthrough sections and this report, one task at a time. Claude Haiku 5.5 is the classifier under study, and Claude Sonnet 5.5 coded article stance. The team (Members A to E) decided what to study: full articles, one cheap LLM, the feature groups, the off-topic filter, a public repository with private data, and the pull-request cycles.
 
-**What was checked, and what caught problems.** Automatic **gates** run after each task and fail if a rule breaks: section format, the frozen split, the test-access log, report length, privacy, copied article text and protected paths. **Tests** encode why a rule matters; for example, fitting on more than the training data makes the leakage test fail. The data subset was checked against the LOCO paper's counts (3,146 = 939 + 2,207). The feedback overruled the proposal, and the team removed emotion features. The checks found:
+**What was checked, and what caught problems.** Automatic **gates** run after each task and fail if a rule breaks: section format, the frozen split, the test-access log, report length, privacy, copied article text and protected paths. **Tests** encode why a rule matters; for example, fitting on more than the training data makes the leakage test fail. The data subset was checked against the LOCO paper's counts (3,146 = 939 + 2,207). The checks found:
 
 - The plan said no duplicates exist; there are two exact duplicates and 63 near-duplicate pairs.
 - About one in six documents never mention 9/11, which became the off-topic filter.
@@ -265,12 +266,16 @@ Three short examples (Claude's scrubbed 25-word stance justifications; full arti
 - Two interrupted parallel runs duplicated cache lines; the cache reader was repaired.
 - The output limit cut off many answers and was not raised after test results were seen.
 - The filter hit the test split unevenly; this was reported, not repaired.
+- The agent first claimed truncation was not the cause of unparsed LLM answers; the log shows the 400-token check had reused the 150-token client, and `docs/decisions.md` retracts the claim.
+- A stale `lr_words` configuration was scored on test first; the corrected model got a new id (`lr_words_v2`), and `evaluate_final` now requires a validation-frozen configuration.
+
+These corrections are documented in `docs/ai-log.md` and `docs/decisions.md`; they were found by checking the agent's output against the data. Further human corrections are pending: no person has signed off a check yet.
 
 **What was learned.** Rules in files and automatic gates work better than telling an agent to be careful. An agent reports conflicts between a rule and reality only if told to write them down. AI output sounds equally confident when right and wrong, so the checks that mattered were comparisons with outside facts and with the data.
 
-**Automated versus human checks.** `tests/test_report_numbers.py` and `tests/test_section_numbers.py` check that every number in the report and in sections 05, 08 and 10 appears in `results/` or the config. That is an automated check, not a human one, and it does not show that a number is the right metric. `docs/ai-log.md` lists seven human checks, each with a placeholder owner (Member A–E); the agent does not sign them off.
+**Automated versus human checks.** `tests/test_report_numbers.py` and `tests/test_section_numbers.py` check that every number in the report and in sections 05, 08 and 10 appears in `results/` or the config. That is an automated check, not a human one, and it does not show that a number is the right metric. `docs/ai-log.md` lists seven human checks, each with a placeholder owner (Member A–E); the agent does not sign them off. The log also lists ten specific numbers with their `results/metrics.json` paths for a quick spot-check.
 
-**What is skipped or still open.** The licence is unconfirmed, the stance codes are unchecked by people, and the temperature and output-limit decisions are open. `docs/ai-log.md` lists what a person must still check; its human-verification table is entirely pending.
+**What is skipped or still open (human checks outstanding).** All seven human checks are pending: the numbers spot-check, the stance codes, the licence, the temperature decision, the output-limit and near-duplicate decisions, the privacy read and the double test access. Two course-feedback items are blocked on a person, not declined: the human stance check (requirement 2; the agent cannot supply human labels, so kappa is null and the H6 verdict is provisional) and the licence recheck (requirement 7; the agent could not open the page, so the texts stay private). The temperature and output-limit decisions in `docs/decisions.md` show "Confirmation: pending" with the conservative reading used meanwhile (default sampling; 150 tokens kept, unparsed answers counted as errors).
 
 ## References
 

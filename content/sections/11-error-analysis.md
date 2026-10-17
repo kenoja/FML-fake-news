@@ -3,7 +3,7 @@ title: Error analysis
 part: Evaluation
 hypothesis: H6 - many false positives are mainstream articles that discuss or debunk conspiracy theories, and many false negatives are conspiracy-site articles that contain no conspiracy claim, so part of the "error" is the label, not the model.
 ---
-> **Summary in 3 lines**
+> **In short**
 > We had Claude code the stance of test articles where LR and LLM disagree.
 > 48 of 55 missed conspiracy-site articles contain no conspiracy claim.
 > Careful: no human has checked these codes yet; H6 is provisional.

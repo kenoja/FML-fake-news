@@ -60,15 +60,34 @@ after every cycle; team members add what they checked or changed by hand.
 Only checks recorded in this repository are entered. The agent does not fill in sign-offs: every row is
 `pending`, the owner is a placeholder, and a member replaces `pending` with the date and what they checked.
 
-| # | Check (what to do) | Owner | Status |
-|---|---|---|---|
-| 1 | **Report and section numbers.** After the last `fml run-all`, compare the numbers in `reports/report.md` and sections 05, 08 and 10 with `results/metrics.json` (spot-check at least 10, including every F1 in the head-to-head table). The automated check below does not replace this. | Member A–E | pending |
-| 2 | **Stance codes.** Fill `human_stance` for the 40 rows in `results/tables/stance_check_sample.csv`, then run `fml stance-agreement`; copy kappa into section 11 and the report only via `results/`. | Member A–E | pending |
-| 3 | **Licence.** Confirm the licence of the LOCO texts at https://osf.io/snpcg/ and record it in `docs/decisions.md`. | Member A–E | pending |
-| 4 | **Temperature decision.** Confirm or change the accepted default (the model rejects `temperature`, answers use default sampling; cache key keeps `temperature: 0`) in `docs/decisions.md`. | Member A–E | pending |
-| 5 | **Output limit and near-duplicates.** Decide on `max_output_tokens: 150` (parse errors, see below) and on near-duplicate removal; both are under "Needs a team decision". | Member A–E | pending |
-| 6 | **Privacy read.** Read the report and sections once for article text, excerpts over 50 words, names and identifiers. | Member A–E | pending |
-| 7 | **Double test access.** Read `results/test_access_log.jsonl` and the "Sequence of test looks" in section 10; agree that `lr_words_v2` is the reported words-only model. | Member A–E | pending |
+| # | Check (what to do) | How to check | Owner | Status |
+|---|---|---|---|---|
+| 1 | **Report and section numbers.** Spot-check the 10 numbers below (and every F1 in the head-to-head table) after the last `fml run-all`. The automated check does not replace this. | Protocol below: open `results/metrics.json`, follow the path, compare with the number in the report or section, tick the box. | Member A–E | pending |
+| 2 | **Stance codes.** Fill `human_stance` for the 40 rows of `results/tables/stance_check_sample.csv`. | Read each article in the private data repo before looking at `claude_stance`; run `fml stance-agreement` (prints `pending: 0/40 filled` until done); copy kappa into section 11 and the report only via `results/`. | Member A–E | pending |
+| 3 | **Licence.** Confirm the licence of the LOCO texts and record it. | Open https://osf.io/snpcg/ in a browser, copy the licence text word for word into the fill-in line in `docs/decisions.md`, replace "unconfirmed" in report §2 and section 02. | Member A–E | pending |
+| 4 | **Temperature decision.** Confirm or change the accepted default (default sampling; cache key keeps `temperature: 0`). | Read the entry "LLM temperature 0 cannot be set" in `docs/decisions.md`; fill its `Confirmation:` line with name and date. | Member A–E | pending |
+| 5 | **Output limit and near-duplicates.** Decide on `max_output_tokens: 150` and on near-duplicate removal. | Read both entries under "Needs a team decision" in `docs/decisions.md`; fill the `Confirmation:` line / confirm in the near-duplicate entry. | Member A–E | pending |
+| 6 | **Privacy read.** Read the report and sections once for article text, excerpts over 50 words, names and identifiers. | Read `reports/report.md` and `content/sections/*.md`; flag anything that is article text or identifies a person or institution. | Member A–E | pending |
+| 7 | **Double test access.** Agree that `lr_words_v2` is the reported words-only model. | Read `results/test_access_log.jsonl` (four entries) and "Sequence of test looks" in section 10. | Member A–E | pending |
+
+Outstanding human checks: all seven rows above (none done). This is what report §7 and section 13 refer to.
+
+#### 10-number spot-check protocol (row 1)
+
+Values on 17 Oct 2026 `results/`; if a later `fml run-all` changed them, compare against the new file. Tick when the number in the report/section equals the number at the path. Paths are keys in `results/metrics.json`; a number in a list is addressed by its index.
+
+| # | Number (current value) | Path in `metrics.json` | Likely place (search for the number) | Ticked by / date |
+|---|---|---|---|---|
+| 1 | Documents in the corpus (3,146) | `data.documents` | report §2, section 02 | pending (Member __, date __) |
+| 2 | Documents after the topic filter (2,608) | `topic_filter.documents_after` | report §3, section 06 | pending (Member __, date __) |
+| 3 | Test removal rate of the filter (0.1019) | `topic_filter.removal_rate_by_split.test` | section 06, report §3 | pending (Member __, date __) |
+| 4 | Words-only LR validation F1, all documents (0.926) | `baseline_all_docs.validation.f1.estimate` | section 05 | pending (Member __, date __) |
+| 5 | Words-only LR validation F1, filtered (0.914) | `baseline.validation.f1.estimate` | section 06, report §4 | pending (Member __, date __) |
+| 6 | Test F1 of `lr_words_v2` (0.5848) | `comparison.table.1.f1` | section 10, report §4 | pending (Member __, date __) |
+| 7 | Test F1 of `lr_extended` (0.5829) | `comparison.table.2.f1` | section 08, 10, report §4 | pending (Member __, date __) |
+| 8 | Test F1 of `llm_haiku` (0.6842) | `comparison.table.3.f1` | section 10, report §4 | pending (Member __, date __) |
+| 9 | McNemar p, best LR vs LLM (0.0004) | `comparison.mcnemar.lr_best_vs_llm.mcnemar_p` | section 10, report §4 | pending (Member __, date __) |
+| 10 | LLM unparsed replies (344 of 2,190) | `llm.parse_error_causes.parse_errors` (and `.replies`) | section 09, report §5 | pending (Member __, date __) |
 
 ### What we learned in cycle 1
 
@@ -121,3 +140,10 @@ Only checks recorded in this repository are entered. The agent does not fill in 
 - **Word count (body): 4,903** words of `reports/report.md` before the References heading (whitespace-separated, tables and markup included). It was 5,524 before trimming; the cuts were repeated detail, not results.
 - **Glossary:** added negation-aware count, Cohen's kappa, parse error and cluster bootstrap to `content/sections/99-glossary.md`.
 - **Not run here:** `fml run-all`, the full test suite and `python -m sitegen`. The task rules forbid running `run-all` and the whole suite inside a task; the harness runs them afterwards. Skips (`needs_data`) therefore cannot be reported by this task.
+
+### Cycle 1, round 3: human-check status (T11, 17 Oct 2026)
+
+- **Tool:** Claude Code (Sonnet 5.5).
+- **What changed:** the human-verification table now has a "How to check" column and the 10-number spot-check protocol above; `docs/decisions.md` got `Confirmation: pending` lines for the temperature and 150-token decisions; section 13, report §7 and the compliance statement mirror the status.
+- **Not done, on purpose:** no human check was performed or signed off. All seven rows and all ten spot-check ticks are `pending`; owners are the placeholder "Member A–E". The 10 current values were read from `results/metrics.json` by the agent only to fill in the list, which is not a check.
+- **Not run:** `fml run-all` and the full suite (left to the harness).

@@ -53,7 +53,8 @@ python -m agent run --no-git                     # one agent step locally (needs
 
 ### Exact versions
 
-`pyproject.toml` keeps version ranges so that CI and newer machines can install the project. The exact
+`pyproject.toml` keeps version ranges so that CI and newer machines can install the project;
+**`requirements-lock.txt` is the authoritative exact pin** (see `docs/decisions.md`, "Pin policy"). The exact
 versions the committed results were produced with (Python 3.11.17; numpy 2.4.6, pandas 3.0.6, scipy 1.17.1,
 scikit-learn 1.9.1, matplotlib 3.11.2, anthropic 1.15.0, pyyaml 6.0.1, as recorded in
 `results/run_info.json`) are pinned in `requirements-lock.txt`:
@@ -68,8 +69,8 @@ pip install -r requirements-lock.txt && pip install -e . --no-deps
 append to `results/test_access_log.jsonl`: `evaluate_final` writes a line only when the model id has no
 entry yet and refuses a different config hash (checked by reading `src/fml/pipeline.py`).
 
-Double-run diff: **not done yet.** The task that added this section was not allowed to run `fml run-all`
-(the harness runs it afterwards), so no two-run comparison of `metrics.json` exists. To do it: run
+Double-run diff: **still not done (2026-10-17).** The attempt in task T5 was blocked: the sandbox denied
+running `fml run-all` (no approval possible), so no two-run comparison of `metrics.json` exists. To do it: run
 `fml run-all`, copy `results/metrics.json` aside, run again, and compare the two files, ignoring
 timestamps and `run_info.json`. Record the outcome here.
 

@@ -3,6 +3,11 @@ title: Head-to-head on the test set
 part: Evaluation
 hypothesis: Both approaches beat the always-mainstream baseline on conspiracy F1 (H1); the zero-shot LLM is cautious (high precision, lower recall) while the logistic regression finds more conspiracy pages but also raises more false alarms, and with so few test websites the difference between them is not clearly separable.
 ---
+> **In short**
+> On the test set the AI model beats our logistic regression on precision and F1.
+> Both still miss about half of the conspiracy pages, and across websites the gap is unclear.
+> Careful: only 6 conspiracy websites, and the words-only model was scored twice.
+
 ## Goal and hypothesis
 
 **Read this first (four cautions about the test numbers).**
