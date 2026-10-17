@@ -335,3 +335,18 @@ for the agent, texts stay private). The temperature and 150-token decisions show
   and replace "not confirmed" in report §2 and in section 02 with the quote.
 - **Until then:** conservative reading stays: texts private, no redistribution, excerpt limits (≤ 50 words,
   ≤ 6 per section) in force.
+
+## Outstanding human items at the end of cycle 1 (task T12, 2026-10-17)
+
+| Task | What is blocked | Who | Where it is described |
+|---|---|---|---|
+| T2 | Near-duplicate and licence decisions the agent cannot make; team must confirm or change the conservative readings | Team | "Cycle 1 review: licence, near-duplicates, formally open items" |
+| T6 | Licence text of the corpus page not seen (web access denied); "not confirmed" stays in report §2 and section 02 | One member (A–E) | "Blocked: licence recheck" |
+| T11 | Human stance labels: 0/40 filled, kappa `null`, H6 provisional | Two members (A–E), independently | "Blocked: human stance verification" |
+
+Also open: the GitHub account name inside the repo link (T10, needs a team decision) and the human checks in `docs/ai-log.md`.
+
+Checks done by T12 (not a full run):
+- `results/test_access_log.jsonl` has 4 entries, unchanged in git; sha256 `c0cdf6eb…2ee5`.
+- `tests/test_report_numbers.py`, `test_privacy.py`, `test_sections.py`, `test_section_numbers.py`, `test_test_lock.py`: 56 passed, 0 skipped.
+- **Not run by this task:** the full test suite, `fml run-all` and the sitegen build. The task rules say the harness runs them right after the task, so there are no timings or skip lists yet; those come from the harness output.
