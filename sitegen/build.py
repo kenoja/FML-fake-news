@@ -253,10 +253,12 @@ def _report_output(spec: str) -> str:
         table += ["| " + " | ".join(r) + " |" for r in rows[1:]]
         return "\n".join(table) + (f"\n\n*{caption}*" if caption else "")
     value = _json_pick(json.loads(src.read_text(encoding="utf-8")), key)
+    if not isinstance(value, (dict, list)):  # a single number or word
+        return f"**{caption}:** {_fmt(value)}" if caption else _fmt(value)
     if isinstance(value, dict) and all(not isinstance(v, (dict, list)) for v in value.values()):
         rows = [f"| {k} | {_fmt(v)} |" for k, v in value.items()]
         return "\n".join(["| | |", "|---|---|"] + rows) + (f"\n\n*{caption}*" if caption else "")
-    raise ValueError(f"{ref}: only flat key/value JSON can go into the report text")
+    raise ValueError(f"{ref}: only a single value or flat key/value JSON can go into the report text")
 
 
 def _report_markdown(md: str, name: str, warnings: list[str]) -> str:

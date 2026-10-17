@@ -172,3 +172,12 @@ def test_explained_simply_limit_is_exactly_450_words(tmp_path, monkeypatch):
     assert tools.gate_sections() == []
     (sec / "03-split-by-website.md").write_text(template.format("word " * 451))
     assert "451 words" in " | ".join(tools.gate_sections())
+
+
+def test_a_broken_site_cell_is_a_gate_failure(tmp_path, monkeypatch):
+    # Why: the published site is built with --strict; the agent must see a broken cell before CI does.
+    monkeypatch.setattr(tools, "REPO", tmp_path)
+    sec = tmp_path / "content" / "sections"
+    sec.mkdir(parents=True)
+    (sec / "01-a.md").write_text("## The code\n<!-- cell: src/fml/missing.py#nothing -->\n")
+    assert any("could not be built" in f for f in tools.gate_site_builds())

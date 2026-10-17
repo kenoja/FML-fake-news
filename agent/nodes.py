@@ -146,7 +146,7 @@ def verify(state: AgentState) -> dict:
 
 
 def build_site(state: AgentState) -> dict:
-    code, out = tools.run_cmd(["python", "-m", "sitegen", "build", "--cycle", str(state["cycle"])], timeout_s=600)
+    code, out = tools.run_cmd(["python", "-m", "sitegen", "build", "--strict", "--cycle", str(state["cycle"])], timeout_s=600)
     fails = list(state.get("gate_failures") or [])
     if code != 0:
         fails.append(f"site build failed: {out[-800:]}")

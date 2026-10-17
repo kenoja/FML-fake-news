@@ -94,3 +94,18 @@ def test_check_yourself_answers_are_hidden_until_clicked(tmp_path):
     page = (tmp_path / "site" / "index.html").read_text()
     assert re.search(r'<details class="check"><summary>What does <a [^>]+>precision</a> measure\?</summary>'
                      r'<p>The share of correct alarms.</p></details>', page)
+
+
+def test_a_single_number_can_be_quoted_in_the_report_text(tmp_path):
+    # Why: report prose often cites one value (e.g. an agreement share); it must build, or CI fails.
+    results = sitegen.REPO / "results"
+    probe = results / "_sitegen_scalar.json"
+    results.mkdir(exist_ok=True)
+    probe.write_text(json.dumps({"llm": {"agreement": 0.96123}}))
+    try:
+        content = tmp_path / "content"
+        write_section(content, "## Report\n<!-- output: results/_sitegen_scalar.json#llm.agreement | Agreement -->\n")
+        res = sitegen.build(cycle=2, strict=True, out=tmp_path / "site", content=content, report_out=tmp_path / "r.md")
+        assert res.warnings == [] and "**Agreement:** 0.961" in (tmp_path / "r.md").read_text()
+    finally:
+        probe.unlink()

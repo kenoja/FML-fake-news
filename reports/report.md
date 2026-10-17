@@ -214,6 +214,10 @@ Second, the number of websites is small: the validation and test sets each conta
 
 
 
+**Share of identical answers in a repeated validation run:** 0.992
+
+
+
 Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites. This cannot be excluded, so part of its performance may rest on prior knowledge that the trained models do not have. Moreover, the LLM saw only the first 3,000 words of each article, and 30 validation articles were longer and were cut, so it may have missed later passages that the logistic regressions, which read the full text, could use.
 
 Fourth, the certainty and doubt features are counts of words from a hand-made list and ignore negation: "no evidence of a cover-up" counts like "a cover-up". Fifth, although names, addresses and repeated lines of the websites were removed, the typical style of a website can remain and can serve as a shortcut for the models. The licence of the corpus has not been confirmed, so the texts are used for study only and are not redistributed. Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer. The test set was used during development; every final model was chosen on validation and scored on test once.
