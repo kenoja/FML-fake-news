@@ -547,7 +547,7 @@ def comparison_stage() -> dict:
 
 # ---------------------------------------------------------------- stage: errors
 
-EXCERPT_WORDS = 40                      # article excerpts stay below the 50-word limit
+EXCERPT_WORDS = 25                      # article excerpts stay below the 30-word gate window
 
 def _example_candidates(coded: pd.DataFrame) -> pd.DataFrame:
     """Four example documents, chosen by rule (first match by set order, doc_id) so a rerun picks the same ones."""
