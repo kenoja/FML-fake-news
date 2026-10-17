@@ -212,7 +212,7 @@ By stance, 62 articles make no claim, 9 report neutrally, 3 endorse a conspiracy
 
 **LLM prior knowledge.** Haiku 5.5 may know some of these websites from its training. A probe (asking Haiku to name the website of up to 40 validation articles; only a yes/no match is stored) has **not been run yet**: there is no cached probe answer, so `errors.prior_knowledge_probe` says "not run" and the risk is unmeasured. `fml run-all` with the key set fills it in.
 
-**LLM output limits.** Between 44 and 91 of 398 validation answers per prompt variant, and 61 of 423 test answers, could not be parsed, which lowers recall. A larger limit would be a new run with a new model id and needs a team decision. On a 150-document validation subset, 400 output tokens lowered the parse-error rate from 0.133 to 0.12 and moved F1 by 0.012 (`metrics.json#llm.token_limit_sensitivity`), so the limit is not the main cause.
+**LLM output limits.** Between 44 and 91 of 398 validation answers per prompt variant, and 61 of 423 test answers, could not be parsed, which lowers recall. A larger limit would be a new run with a new model id and needs a team decision. Every unparsed answer used the full 150 output tokens (`metrics.json#llm.parse_error_causes`), so truncation at the limit is the likely cause; the cache stores no raw replies, so this is inferred. Our earlier 400-token check on a validation subset never applied 400 tokens (the cache shows 150 for those answers), so it is not evidence either way and a valid rerun is future work.
 
 **Lexicon weakness.** The epistemic list is short, hand-made and ignores negation ("no evidence of cover-up" counts "cover-up"), so the negative result for H3 should not be generalised to better lexicons.
 

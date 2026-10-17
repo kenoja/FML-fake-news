@@ -31,6 +31,12 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   and `5964544` (2026-10-17). The `git log -S` check of which one introduced the hypothesis table was
   denied, so it is unknown. Report §1 and section 01 now give a decision rule and an expected effect size
   for H2–H4, and H6 is called an expectation instead of a claim that predates results.
+  Retried in cycle 1 task T1 on 2026-10-17: every `git log` call was denied again (no approval surface), so
+  the verdict "hypotheses pre-date results: yes/no" is still **unknown** and no commit hash for
+  `results/metrics.json` is recorded. A person with shell access should run
+  `git log --format='%h %ad %s' --date=short -S'H1' -- docs/PROJECT_PLAN.md` and
+  `git log --diff-filter=A --format='%h %ad' -- results/metrics.json`, then write both hashes, dates and the
+  verdict here. Until then, do not claim the hypotheses were pre-registered.
 - **2026-10-16 · Conflict: final-scoring command.** AGENTS.md says `fml evaluate-final <model_id>`;
   `docs/PROJECT_PLAN.md` says `fml evaluate --final`. AGENTS.md ranks higher, so `evaluate-final` is
   used everywhere (the CLI already implements it).
@@ -103,6 +109,12 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   followed, and sending nothing is the only call the API accepts. Measured effect (second test pass, 423
   documents, `metrics.json#llm.stability`): agreement 0.9504, 21 flipped documents, Cohen's kappa 0.8871;
   the official pass-1 and pass-2 confusion matrices give the same F1. Quoted in section 09 and report §5.4.
+  Conservative reading (stated explicitly): the API rejects temperature 0 for this model, default sampling
+  is used, and results are cached so reruns are deterministic. Section 09 and the report mirror this.
+  Proposed decision wording for the team to confirm: "We accept default sampling for `claude-haiku-5-5`
+  because temperature 0 is rejected; the cache makes `fml run-all` deterministic; run-to-run stability is
+  reported (agreement, kappa)." Confirmed on (date): ___ ; by: Member _ . Closes when: a member writes the
+  date and name here, or the team asks for a different model/setting (which means a new model id on test).
 
 - **Licence of the LOCO texts.** Unconfirmed (see above). Default: texts not redistributable; private
   data repo only; excerpt limits apply. Measured effect: not run: the OSF page was unreachable, so no
@@ -112,15 +124,20 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   produced (numbers: `metrics.json` key `llm`). The committed cache `results/llm_cache.jsonl` is
   complete for those runs, so `fml run-all` needs no key; without key and cache the stage still fails
   loudly with exact missing counts, and never falls back to `ANTHROPIC_API_KEY`.
-- **LLM parse errors and the 150-token output limit (T8). Status: accepted default, awaiting team
-  confirmation.** Default: keep `max_output_tokens: 150` for the official runs (changing it now would
-  mean a new test run after seeing test results). Why: the measured effect of a larger limit is small.
-  Validation only, chosen prompt v2, a seeded subset of 150 documents re-asked with 400 tokens (cache
-  pass 3, no test document touched; `metrics.json#llm.token_limit_sensitivity`): parse errors 20 → 18
-  (rate 0.1333 → 0.12), F1 0.9425 → 0.9545 (difference +0.012), 4 documents changed label. So most
-  parse errors are NOT caused by the 150-token cut-off, and the earlier wording "mostly cut off" was
-  wrong; cause not yet investigated (the cache stores no raw replies). The team may still approve a new
-  documented run with a larger limit (new model id on test).
+- **LLM parse errors and the 150-token output limit (T8, revised in T3). Status: accepted default, awaiting team
+  confirmation.** Default: keep `max_output_tokens: 150` for the official runs (changing it now would mean a
+  new test run after seeing test results). Investigation without new API calls (`llm.parse_error_report`,
+  `results/tables/llm_parse_errors.csv`, counts in `metrics.json#llm.parse_error_causes`): every unparsed cache
+  record used exactly 150 output tokens, i.e. the whole budget, and no parsed reply used more. The dominant
+  (only visible) cause is therefore truncation at the output limit; refusal, hedging and wrong format cannot be
+  distinguished because the cache stores no raw replies (inferred, not read). The earlier T8 conclusion "most
+  parse errors are NOT caused by the cut-off" is **retracted**: the 400-token sensitivity run (pass 3) reused
+  the 150-token client, so its records also show 150 tokens, and `llm.token_limit_sensitivity` compares 150
+  with 150. Shares: see `metrics.json` (`llm.variants.v2.parse_errors` / `n_docs` on validation,
+  `llm.test.parse_errors` / `n_docs` on test, `llm.token_limit_sensitivity.large` for the 12% subset figure).
+  Cheap fix not applied: it needs new API calls (a valid 400-token validation run, ideally storing raw replies)
+  and, for test, a new documented run under a new model id. Future work: fix `token_limit_sensitivity` so it
+  builds its own client with the larger limit, rerun on validation, and decide with the team.
 - **Parallel LLM runs left duplicate lines (T8).** Two interrupted-attempt processes ran the stage at the
   same time, which duplicated cache lines (1,059 dropped; first answer per `doc_id`+`prompt_hash` kept,
   `read_cache` now does the same) and wrote the `llm_haiku` test-access entry twice (the second,
@@ -210,3 +227,32 @@ Status after task T8; "partly" items name the reason. Numbers live in `results/`
 | 7 | Re-check the LOCO licence on the OSF page | partly | Page unreachable on 2026-10-16 (fetch tool denied), result recorded; the recheck is queued as a later task. Excerpt rules stay in force. |
 
 No requirement is declined.
+
+## Cycle 1 review: licence, near-duplicates, formally open items (task T2, 2026-10-17)
+
+### Licence of the LOCO texts (requirement 7)
+
+- The OSF page https://osf.io/snpcg/ must be read by a person. In this task the agent again had no
+  working web access (shell and fetch calls were denied; nothing was fetched), so no licence text was seen.
+- Fill-in line: `Licence text: ___ ; date checked: ___ ; by: Member _`
+- Fallback, formally declined by the agent: no web access to confirm; conservative reading = data stays
+  private, no redistribution. Excerpt limits (≤ 50 words, ≤ 6 per section) stay in force.
+- Closes when: the fill-in line above is completed and report §2 / section 01 replace "unconfirmed" with
+  the quoted licence (or the team keeps the private-data stance if the licence forbids redistribution).
+
+### Near-duplicates
+
+- **Decided by agent, pending team confirmation.** Keep `split_v1.csv` frozen; keep the "no duplicates"
+  sensitivity row in the main comparison table (`comparison.no_duplicate_sensitivity`); do not remove
+  any near-duplicate pairs from the corpus. Experiments keep using the 2,608 filtered documents.
+- Closes when: a member confirms or overrides this here with date and name. An override means a new split
+  or new model ids, so it needs an explicit team decision, not an agent edit.
+
+### Formally open (requirements 2 and 7)
+
+| Req | Open item | Reason | Owner | What closes it |
+|---|---|---|---|---|
+| 2 | Human stance labels (`human_stance`, 40 rows) and kappa | The agent cannot produce human labels; kappa is null, H6 provisional | Member _ (A–E) | Member labels the 40 rows in `stance_check_sample.csv`, runs `fml stance-agreement`, records kappa here |
+| 2 | Website prior-knowledge probe | Not run; needs the API key and execution not available to the agent | Member _ (A–E) | `fml run-all` with `LLM_CLASSIFIER_API_KEY` set; `errors.prior_knowledge_probe` is no longer "not run" |
+| 7 | LOCO licence check | OSF page not reachable by the agent (see above) | Member _ (A–E) | Fill-in line completed above |
+| 7 | Temperature/licence wording confirmation | Team decision needed | Member _ (A–E) | Dates and names written in the entries above |

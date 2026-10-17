@@ -836,6 +836,9 @@ def llm_stage() -> dict:
                   model=cfg["model"], temperature=cfg["temperature"], max_input_words=cfg["max_input_words"],
                   bootstrap={"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95})
     values["token_limit_sensitivity"] = llm.token_limit_sensitivity(f["validation"], values["chosen"], client)
+    report = llm.parse_error_report()
+    write_table("llm_parse_errors", report)
+    values["parse_error_causes"] = llm.parse_error_causes(report)
     write_metrics("llm", round_floats(values, 4))      # the rule and the choice are on disk before test is touched
 
     holder: dict = {}

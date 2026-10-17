@@ -433,3 +433,63 @@ def usage_table(cache_file: Path | None = None, out_dir: Path | None = None) -> 
                    .reset_index())
     write_table("llm_usage", table, out_dir)
     return table
+
+
+# ---------------------------------------------------------------- parse-error report
+
+CAUSES = ("empty", "truncated_at_max_tokens", "refusal_or_hedging", "wrong_format", "other")
+
+
+def classify_parse_error(rec: dict, max_tokens: int) -> str:
+    """Cause of one unparsed cache record, from what the cache keeps (no raw reply is stored).
+
+    Why: the cache holds `output_tokens`, so a reply that used the whole output budget was cut off by the
+    limit, and a reply with zero tokens was empty. Refusal/hedging and wrong format need the raw text, which
+    the cache deliberately does not keep, so they can only be told apart from a stored reply ("reply" key).
+    """
+    reply = rec.get("reply")
+    if reply is not None:
+        text = reply.strip().lower()
+        if not text:
+            return "empty"
+        if re.search(r"\b(i can't|i cannot|i'm unable|unable to|i won't|not able to)\b", text):
+            return "refusal_or_hedging"
+        if rec.get("output_tokens", 0) >= max_tokens:
+            return "truncated_at_max_tokens"
+        return "wrong_format"
+    tokens = rec.get("output_tokens")
+    if tokens == 0:
+        return "empty"
+    if tokens is not None and tokens >= max_tokens:
+        return "truncated_at_max_tokens"
+    return "other"
+
+
+def parse_error_report(cache_file: Path | None = None, max_tokens: int | None = None) -> pd.DataFrame:
+    """One row per unparsed cache record with its cause -> results/tables/llm_parse_errors.csv (via pipeline).
+
+    No article text is written. The cache never stored raw replies, so `reply_start` holds only what a
+    record carries (a stored reply's first 200 characters, cut to 50 words); otherwise it is empty.
+    Pass 3 (the token-limit check) is included and labelled by its pass.
+    """
+    cfg = llm_config()
+    limit = max_tokens if max_tokens is not None else cfg["max_output_tokens"]
+    rows = []
+    for rec in read_cache(cache_file or cache_path(cfg)).values():
+        if rec.get("label") != PARSE_ERROR:
+            continue
+        start = " ".join(str(rec.get("reply") or "").split()[:50])[:200]
+        rows.append({"doc_id": rec["doc_id"], "variant": rec.get("variant"), "pass": rec.get("pass"),
+                     "cause": classify_parse_error(rec, limit), "output_tokens": rec.get("output_tokens"),
+                     "reply_start": start})
+    cols = ["doc_id", "variant", "pass", "cause", "output_tokens", "reply_start"]
+    return pd.DataFrame(rows, columns=cols).sort_values(["variant", "pass", "doc_id"]).reset_index(drop=True)
+
+
+def parse_error_causes(report: pd.DataFrame, cache_file: Path | None = None) -> dict:
+    """Counts per cause plus the share of all cached replies, for metrics.json (llm.parse_error_causes)."""
+    total = sum(1 for r in read_cache(cache_file or cache_path()).values() if "label" in r)
+    counts = {c: int((report["cause"] == c).sum()) for c in CAUSES}
+    return {"counts": counts, "parse_errors": int(len(report)), "replies": total,
+            "share_of_replies": len(report) / total if total else None,
+            "max_output_tokens": llm_config()["max_output_tokens"], "raw_replies_stored": False}

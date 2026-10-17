@@ -81,7 +81,17 @@ How to read it: the stability keys give the agreement, the number of flipped doc
 
 ### Parse errors, tokens and cost
 
-A reply that is not the requested JSON is a **parse error**. We first suspected replies cut off at the output limit of 150 tokens. We tested this on validation only: the chosen prompt was re-asked on a seeded subset of 150 validation documents with a limit of 400 tokens (cache pass 3, no test document). The result is in `llm.token_limit_sensitivity` below: the parse-error rate hardly changes, so the limit is not the main cause. A parse error is never turned into a label by hand; for scoring it counts as "not conspiracy", so it lowers recall, and the count is reported next to every score. The test recall is therefore partly a formatting problem, not only a judgement problem.
+A reply that is not the requested JSON is a **parse error**. For scoring it counts as "not conspiracy", so it lowers recall; the count is reported next to every score and a parse error is never turned into a label by hand. The test recall is therefore partly a formatting problem, not only a judgement problem.
+
+**What causes them.** The cache stores no raw replies (only `doc_id`, hashes, label and token counts), so no reply text can be read without new API calls. What the cache does keep is `output_tokens`. We sorted every unparsed record into causes (`parse_error_report`): empty (0 tokens), cut off at the output limit (tokens equal the limit of 150), refusal or hedging, wrong format, other. The counts are in `llm.parse_error_causes` below and the per-document rows in `llm_parse_errors.csv` (no text). Every one of the unparsed records used the full 150 tokens, and no parsed reply used more than 150, so the dominant cause, in fact the only one visible in the cache, is **truncation at `max_output_tokens`**. Refusal, hedging and wrong format cannot be told apart from truncation without the raw text, so their counts are zero here only because that information is missing; this is inferred, not read.
+
+**An earlier check was wrong.** We had re-asked 150 validation documents with a limit of 400 tokens and concluded the limit was not the cause. The pass-3 records in the cache also show exactly 150 output tokens for every parse error: the stage passed the 150-token client into the check, so the 400-token limit was never applied. The result in `llm.token_limit_sensitivity` therefore compares 150 tokens with 150 tokens (the small F1 difference is sampling noise) and must not be used as evidence. A valid check needs a new validation run with a client that really sends 400 tokens; that needs the API key and is recorded as future work in `docs/decisions.md`. We did not change `max_output_tokens` for the official runs, because that would mean a new test run after seeing test results.
+
+<!-- output: results/metrics.json#llm.parse_error_causes -->
+
+<!-- output: results/tables/llm_parse_errors.csv -->
+
+<!-- cell: src/fml/llm.py#parse_error_report -->
 
 <!-- output: results/metrics.json#llm.token_limit_sensitivity -->
 
@@ -99,7 +109,7 @@ Cost is computed from the token counts and the list prices in `config/project.ya
 - **Unstable answers.** Temperature could not be set to 0, so the same input can give different answers; the second pass quantifies this.
 - **The model may know the sites.** Haiku may have seen these websites or these exact articles in training, so a correct answer can be memory rather than reading. We cannot test this; a good score on 9/11 does not show it would work on unseen topics.
 - **The source question is hard from text alone.** The model sees one article, not the website, its design or its other pages. Mainstream sites sometimes publish conspiracy-friendly pieces and conspiracy sites publish plain news; those articles are close to unanswerable from the text.
-- **Parse errors lower recall.** Replies cut off at 150 output tokens count as "not conspiracy" (see above). The 400-token check on validation changed the parse-error rate and F1 only slightly (`llm.token_limit_sensitivity`); the official runs keep 150 tokens, and a larger limit for test would be a new run that needs a team decision.
+- **Parse errors lower recall.** Replies cut off at 150 output tokens count as "not conspiracy" (see above and `llm.parse_error_causes`). The earlier 400-token check never applied 400 tokens, so it shows nothing; the official runs keep 150 tokens, and a larger limit for test would be a new run that needs a team decision.
 - **Test-set size.** The test split has few websites; the website-level intervals are wide, so small differences to the logistic regression must not be over-read.
 - **Truncation.** Cutting at the word limit removes the end of long articles for the LLM but not for the logistic regression's counts if limits differ; we report how many documents are cut.
 - **Cost and privacy.** Article text is sent to an external API; it is never written to this repository or to the cache.

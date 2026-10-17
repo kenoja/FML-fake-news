@@ -153,3 +153,21 @@ def test_sensitivity_has_own_cache_key_and_only_asks_the_subset(tmp_path):
     assert out["status"] == "run" and out["n_docs"] == 4 and client.calls == 4
     keys = {llm.cache_key("v2", p, SENS_CFG) for p in (1, 2, llm.SENSITIVITY_PASS)}
     assert len(keys) == 3
+
+
+def test_parse_error_causes_from_tiny_fake_cache(tmp_path):
+    """Why: a parse error that used the whole output budget was cut off by the limit; zero tokens is empty."""
+    path = tmp_path / "cache.jsonl"
+    base = {"prompt_hash": "h", "label": "parse_error", "confidence": None, "reason": "", "pass": 1, "variant": "v1"}
+    recs = [{**base, "doc_id": "a", "output_tokens": 150}, {**base, "doc_id": "b", "output_tokens": 0},
+            {**base, "doc_id": "c", "output_tokens": 40},
+            {**base, "doc_id": "d", "output_tokens": 20, "reply": "I cannot help"},
+            {**base, "doc_id": "e", "output_tokens": 20, "reply": "conspiracy " + "w " * 80},
+            {**base, "doc_id": "f", "label": "mainstream", "confidence": 0.9, "output_tokens": 30}]
+    for r in recs:
+        llm.append_cache(path, r)
+    rep = llm.parse_error_report(path, max_tokens=150)
+    assert dict(zip(rep["doc_id"], rep["cause"])) == {
+        "a": "truncated_at_max_tokens", "b": "empty", "c": "other", "d": "refusal_or_hedging", "e": "wrong_format"}
+    assert rep["reply_start"].map(lambda t: len(t.split())).max() <= 50
+    assert llm.parse_error_causes(rep, path)["counts"]["empty"] == 1

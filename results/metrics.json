@@ -1782,6 +1782,20 @@
       "cohen_kappa": 0.8871,
       "parse_errors_pass1": 61,
       "parse_errors_pass2": 66
+    },
+    "parse_error_causes": {
+      "counts": {
+        "empty": 0,
+        "truncated_at_max_tokens": 344,
+        "refusal_or_hedging": 0,
+        "wrong_format": 0,
+        "other": 0
+      },
+      "parse_errors": 344,
+      "replies": 2190,
+      "share_of_replies": 0.15707762557077626,
+      "max_output_tokens": 150,
+      "raw_replies_stored": false
     }
   },
   "comparison": {
