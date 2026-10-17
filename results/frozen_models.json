@@ -19,5 +19,33 @@
     "selection_source": "validation",
     "at": "2026-10-17T11:37:40+00:00",
     "retroactive": true
+  },
+  "final_word_counts": {
+    "model_id": "final_word_counts",
+    "config_hash": "f251ec5c418934ec",
+    "selection_source": "validation",
+    "at": "2026-10-17T17:31:33+00:00",
+    "retroactive": false
+  },
+  "final_tfidf": {
+    "model_id": "final_tfidf",
+    "config_hash": "a5e080d22f963c78",
+    "selection_source": "validation",
+    "at": "2026-10-17T17:31:58+00:00",
+    "retroactive": false
+  },
+  "final_tfidf_features": {
+    "model_id": "final_tfidf_features",
+    "config_hash": "a497169f47356df1",
+    "selection_source": "validation",
+    "at": "2026-10-17T17:32:00+00:00",
+    "retroactive": false
+  },
+  "final_llm": {
+    "model_id": "final_llm",
+    "config_hash": "646ddbb90d77579c",
+    "selection_source": "validation",
+    "at": "2026-10-17T17:32:06+00:00",
+    "retroactive": false
   }
 }

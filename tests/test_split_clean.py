@@ -108,3 +108,21 @@ def test_frozen_split_on_real_data(tmp_path):
     assert (df.merge(sp, on="doc_id").groupby("website")["split"].nunique() == 1).all()
     t = split_summary(df, sp)
     assert (t[t["class"] == "conspiracy"]["websites"] >= 3).all()
+
+
+def pair_table(*pairs):
+    return pd.DataFrame(pairs, columns=["doc_id_a", "doc_id_b"]).assign(cosine=1.0, same_website=False)
+
+
+def test_near_duplicate_across_splits_drops_the_validation_or_test_copy():
+    """A copy in train must stay: dropping it would remove training data, while a validation/test copy
+    that also sits in train would flatter the model that memorised it."""
+    split = pd.Series({"a": "train", "b": "validation", "c": "test", "d": "validation", "e": "test"})
+    drops = clean.near_duplicate_drops(pair_table(("a", "b"), ("c", "a"), ("d", "e")), split)
+    assert set(drops) == {"b", "c", "e"}                        # validation vs test: the test copy goes
+
+
+def test_near_duplicate_inside_one_split_keeps_the_lower_doc_id():
+    split = pd.Series({"d1": "train", "d2": "train", "d3": "test", "d4": "test"})
+    drops = clean.near_duplicate_drops(pair_table(("d2", "d1"), ("d3", "d4")), split)
+    assert set(drops) == {"d2", "d4"}                           # the choice must not depend on pair order

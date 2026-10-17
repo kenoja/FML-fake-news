@@ -359,6 +359,15 @@ def gate_protected_paths() -> list[str]:
     return [f"protected path changed by the agent: {p} (revert it; see AGENTS.md)" for p in paths if p]
 
 
+def gate_site_builds() -> list[str]:
+    """Every code and output cell must build: CI publishes the site with --strict and fails otherwise."""
+    import tempfile
+    from sitegen import build as sitegen
+    with tempfile.TemporaryDirectory() as tmp:
+        res = sitegen.build(cycle=0, out=Path(tmp) / "site", content=REPO / "content", report_out=None)
+    return [f"site cell could not be built: {w}" for w in res.warnings]
+
+
 def run_gates(tests_passed: bool, pipeline_ok: bool) -> list[str]:
     fails: list[str] = []
     if not tests_passed:
@@ -366,6 +375,7 @@ def run_gates(tests_passed: bool, pipeline_ok: bool) -> list[str]:
     if not pipeline_ok:
         fails.append("`fml run-all` failed (see pipeline_log)")
     for gate in (gate_required_outputs, gate_sections, gate_split_frozen, gate_test_access,
-                 gate_report_length, gate_privacy, gate_no_article_text, gate_protected_paths):
+                 gate_report_length, gate_privacy, gate_no_article_text, gate_protected_paths,
+                 gate_site_builds):
         fails += gate()
     return fails

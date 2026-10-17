@@ -20,6 +20,24 @@ def test_write_metrics_merges_and_keeps_required_keys(tmp_path):
     assert got["data"] == {"n": 1} and got["split"] == {"train": 2}
 
 
+def test_metrics_top_level_keys_are_exactly_the_agreed_ones():
+    assert results.METRIC_KEYS == ("data", "cleaning", "split", "word_counts", "tfidf", "tfidf_features",
+                                   "llm", "comparison", "errors")
+
+
+def test_top_words_break_ties_by_word():
+    """Why: equal weights in a different order would change a table between two identical runs."""
+    import numpy as np
+    from sklearn.linear_model import LogisticRegression
+    from fml.models import top_words
+
+    model = LogisticRegression()
+    model.coef_ = np.ones((1, 4))                                     # make every weight equal
+    table = top_words(["dd", "bb", "cc", "aa"], model, k=4)
+    assert table[table["direction"] == "conspiracy"]["word"].tolist() == ["aa", "bb", "cc", "dd"]
+    assert table[table["direction"] == "mainstream"]["word"].tolist() == ["aa", "bb", "cc", "dd"]
+
+
 def test_write_metrics_rejects_unknown_key(tmp_path):
     with pytest.raises(KeyError):
         results.write_metrics("typo", {}, path=tmp_path / "m.json")
@@ -51,17 +69,6 @@ def test_write_table(tmp_path):
     assert p.name == "t.csv" and p.read_text().startswith("a")
 
 
-def test_title_word_counts_ties_are_broken_by_word_not_input_order():
-    import pandas as pd
-
-    from fml.pipeline import title_word_counts
-
-    titles = ["zebra apple", "mango kiwi", "apple zebra", "banana"]
-    a = title_word_counts(pd.Series(titles))
-    b = title_word_counts(pd.Series(titles[::-1]))
-    assert list(a.index) == list(b.index) == ["apple", "zebra", "banana", "kiwi", "mango"]
-
-
 @pytest.mark.needs_data
 def test_table_writing_is_byte_identical_across_runs(tmp_path, monkeypatch):
     """Tables are diffed in git; a rerun that reorders ties would show up as a change nobody made."""
@@ -71,7 +78,7 @@ def test_table_writing_is_byte_identical_across_runs(tmp_path, monkeypatch):
     for i in range(2):
         out = tmp_path / f"run{i}"
         monkeypatch.setattr(results, "results_dir", lambda out=out: out)
-        pipeline.topic_filter()
+        pipeline.cleaning_stage()
         dirs.append(out / "tables")
     files = sorted(p.name for p in dirs[0].glob("*.csv"))
     assert files and files == sorted(p.name for p in dirs[1].glob("*.csv"))

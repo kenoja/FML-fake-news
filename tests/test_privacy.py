@@ -93,12 +93,11 @@ def scan_files(files: list[Path]) -> list[str]:
 
 
 def _owner_re() -> re.Pattern:
-    """Owner and private names are read at run time (owner from config/site.yaml, names from the
-    FML_PRIVACY_TERMS env var), so this public file never has to contain them itself."""
-    owner = yaml.safe_load((REPO / "config" / "site.yaml").read_text())["repo_url"].rstrip("/").split("/")[-2]
-    terms = [owner] + [t.strip() for t in os.environ.get("FML_PRIVACY_TERMS", "").split(",") if t.strip()]
-    names = "|".join(rf"\b{re.escape(t)}\b" for t in terms)
-    return re.compile(names + r"|github\.com/[\w.-]+/FML-|\b(?!<owner>)[\w.-]+/FML-(?:fake-news|data)\b", re.I)
+    """Private names (e.g. the account name) are read at run time from the comma-separated
+    FML_PRIVACY_TERMS env var, so this public file never has to contain them itself."""
+    terms = [t.strip() for t in os.environ.get("FML_PRIVACY_TERMS", "").split(",") if t.strip()]
+    names = "".join(rf"\b{re.escape(t)}\b|" for t in terms)
+    return re.compile(names + r"github\.com/(?!<owner>)[\w.-]+/FML-|(?<![/\w.-])(?!<owner>|\.)[\w.-]+/FML-(?:fake-news|data)\b", re.I)
 
 
 def owner_hits(text: str) -> list[str]:
@@ -116,6 +115,17 @@ def _doc_files() -> list[Path]:
 def test_docs_have_no_github_owner_names():
     hits = {f.name: owner_hits(f.read_text(encoding="utf-8", errors="ignore")) for f in _doc_files()}
     assert {k: v for k, v in hits.items() if v} == {}
+
+
+def test_config_and_built_site_have_no_github_owner_names():
+    files = sorted((REPO / "config").glob("*.yaml")) + sorted((REPO / "site").rglob("*.html"))
+    hits = {str(f.relative_to(REPO)): owner_hits(f.read_text(encoding="utf-8", errors="ignore")) for f in files}
+    assert {k: v for k, v in hits.items() if v} == {}
+
+
+def test_site_config_repo_values_are_neutral():
+    cfg = yaml.safe_load((REPO / "config" / "site.yaml").read_text())
+    assert owner_hits(f"{cfg.get('repo_url', '')} {cfg.get('giscus', {}).get('repo', '')}") == []
 
 
 def test_owner_scanner_catches_injected_username(monkeypatch):

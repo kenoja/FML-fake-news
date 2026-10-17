@@ -26,55 +26,16 @@ def test_doubling_a_document_leaves_rates_unchanged():
         assert np.allclose(one[keep], two[keep], rtol=0, atol=1e-9)
 
 
-def test_not_proven_is_negated_not_a_hit():
-    """A negated marker must not count as certainty/doubt vocabulary, or "not proven" would look like a booster."""
-    from fml.features.epistemic import count_markers_negation
-    lex = {"boosters": ("proven",)}
-    assert count_markers_negation("It is not proven.", lex)["boosters"] == {"hits": 0, "negated": 1}
-    assert count_markers_negation("It is proven.", lex)["boosters"] == {"hits": 1, "negated": 0}
-
-
-def test_negation_window_is_three_tokens_and_covers_nt():
-    """The scope rule is deliberately crude: 3 tokens back, never, no, and any n't word; 4 tokens is too far."""
-    from fml.features.epistemic import count_markers_negation
-    hits = lambda s: count_markers_negation(s)["boosters"]   # noqa: E731
-    assert hits("He never was clearly so") =={"hits": 0, "negated": 1}
-    assert hits("It isn't clearly true") == {"hits": 0, "negated": 1}
-    assert hits("There is no way it was clearly so") == {"hits": 1, "negated": 0}   # "no" is 4 tokens back
-    assert hits("Of course") == {"hits": 1, "negated": 0}
-
-
-def test_negation_aware_transformer_drops_negated_hits():
-    """The negation-aware variant lowers the count for "no cover-up" but equals the plain one without negators."""
-    text = "There was no cover-up here and nothing else to say."
-    col = EPI_COLUMNS.index("epistemic_hidden_truth")
-    assert EpistemicMarkers().transform([text])[0][col] > 0
-    assert EpistemicMarkers(negation_aware=True).transform([text])[0][col] == 0
-    plain, aware = EpistemicMarkers(), EpistemicMarkers(negation_aware=True)
-    assert np.allclose(plain.transform([TEXT.replace("No comment", "Comment")]),
-                       aware.transform([TEXT.replace("No comment", "Comment")]))
-
-
 def test_lexicon_coverage_counts_list_size_and_train_shares():
-    """Coverage reports the exact list size and per-class share of documents with a hit, from the rows it is given."""
+    """Coverage reports the exact list size and the per-class share of documents with a hit."""
     from fml.features.epistemic import lexicon_coverage
     df = pd.DataFrame({"txt": ["The inside job and a cover-up.", "No evidence at all, never a cover-up.", "Plain weather report.",
                                "Plain sports report."], "label": [1, 0, 0, 1]})
-    cov = lexicon_coverage(df).set_index(["category", "class"])
-    for cat, terms in LEXICON.items():
-        assert cov.loc[(cat, "conspiracy"), "list_size"] == len(terms)
-    assert cov.loc[("hidden_truth", "conspiracy"), "share_plain"] == 0.5
-    assert cov.loc[("hidden_truth", "mainstream"), "share_plain"] == 0.5
-    assert cov.loc[("hidden_truth", "mainstream"), "share_negation_aware"] == 0.0   # the only hit is negated
-    assert cov.loc[("hidden_truth", "mainstream"), "share_any_negated"] == 0.5
-
-
-def test_negation_variant_group_is_scaled_but_not_in_summary_groups():
-    """The variant is usable in a pipeline but must not appear in NUMERIC_GROUPS (summary would list columns twice)."""
-    from fml.features import NUMERIC_GROUPS
-    assert "epistemic_negation" not in NUMERIC_GROUPS
-    out = scaled("epistemic_negation").fit_transform([TEXT, "Plain text only."])
-    assert out.shape == (2, len(EPI_COLUMNS))
+    coverage = lexicon_coverage(df).set_index(["category", "class"])
+    for category, terms in LEXICON.items():
+        assert coverage.loc[(category, "conspiracy"), "list_size"] == len(terms)
+    assert coverage.loc[("hidden_truth", "conspiracy"), "share_with_hit"] == 0.5
+    assert coverage.loc[("hidden_truth", "mainstream"), "share_with_hit"] == 0.5
 
 
 def test_rates_read_per_n_words_from_config():
@@ -127,7 +88,7 @@ def test_lexicon_documented_and_four_categories():
 
 def test_negation_caveat_known_weakness():
     """KNOWN WEAKNESS (Chen 2026): word lists ignore negation, so a text that DENIES a cover-up still
-    scores as 'hidden truth' vocabulary. This test documents it; if it ever fails, update section 07."""
+    scores as 'hidden truth' vocabulary. This test documents it; if it ever fails, update section 06."""
     assert count_markers("There is no evidence of cover-up.")["hidden_truth"] == 1
     assert count_markers("There is no evidence of cover-up.")["debunking"] == 1
 

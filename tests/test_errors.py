@@ -1,7 +1,7 @@
-"""Error analysis: disagreement sets, the label-vs-model rule, honest human-check reporting, excerpt limits.
+"""Error analysis: disagreement sets, the label-vs-model rule, the human-check file, excerpt limits.
 
 Why it matters: H6 ("many errors are label noise") is only credible if the sets are counted correctly, the rule
-is explicit, kappa is never invented, and no public file quotes more than the allowed excerpt.
+is explicit, the human-check file is never overwritten, and no public file quotes more than the allowed excerpt.
 """
 from __future__ import annotations
 
@@ -40,9 +40,14 @@ def test_mismatched_documents_fail_loudly():
     (True, "reports_neutrally", errors.LABEL_PROBLEM), (True, "no_claim", errors.LABEL_PROBLEM),
     (False, "endorses", errors.LABEL_PROBLEM), (False, "rejects_or_debunks", errors.MODEL_WRONG),
     (False, "reports_neutrally", errors.MODEL_WRONG), (False, "no_claim", errors.MODEL_WRONG),
-    (True, "parse_error", errors.UNCODED)])
+    ])
 def test_error_rule(true_label, stance, verdict):
     assert errors.classify_error(true_label, stance) == verdict
+
+
+def test_unreadable_stance_is_not_judged():
+    with pytest.raises(ValueError):
+        errors.classify_error(True, errors.UNREADABLE)
 
 
 def test_both_wrong_always_coded_and_others_capped_with_seed():
@@ -64,8 +69,8 @@ def test_stratified_sample_size_and_every_set_present():
 
 def test_parse_stance_never_guesses():
     assert errors.parse_stance('{"stance": "Endorses", "justification": "x"}')["stance"] == "endorses"
-    assert errors.parse_stance("probably endorses")["stance"] == errors.PARSE_ERROR
-    assert errors.parse_stance('{"stance": "maybe"}')["stance"] == errors.PARSE_ERROR
+    assert errors.parse_stance("probably endorses")["stance"] == errors.UNREADABLE
+    assert errors.parse_stance('{"stance": "maybe"}')["stance"] == errors.UNREADABLE
     long = errors.parse_stance(json.dumps({"stance": "no_claim", "justification": " ".join(["w"] * 60)}))
     assert len(long["justification"].split()) == errors.JUSTIFICATION_MAX_WORDS
 
@@ -84,7 +89,7 @@ def test_cache_holds_only_id_hash_answer_and_is_reused(tmp_path):
         def complete(self, prompt, article):
             Fake.calls += 1
             from fml.llm import Completion
-            return Completion('{"stance": "no_claim", "justification": "plain news"}', 1, 1)
+            return Completion('{"stance": "no_claim", "justification": "plain news"}', 1)
 
     df = pd.DataFrame({"doc_id": ["x"], "txt": ["secret article words"]})
     path = tmp_path / "stance.jsonl"
@@ -100,39 +105,22 @@ def test_classification_table_rows_sum_to_errors():
     """Every error must appear in exactly one column, or a reader cannot reconcile the table with the error count."""
     sets = pd.DataFrame({"doc_id": list("abcdef"), "set": ["both_wrong"] * 4 + ["lr_only_wrong"] * 2,
                          "error_type": ["false negative"] * 3 + ["false positive"] * 3})
-    coded = sets.iloc[:5].copy()
-    coded["claude_stance"] = ["endorses", "no_claim", "parse_error", "endorses", "rejects_or_debunks"]
-    coded["true_label"] = [True, True, True, False, False]
+    coded = sets.iloc[[0, 1, 3, 4]].copy()          # the other errors have no usable stance
+    coded["claude_stance"] = ["endorses", "no_claim", "endorses", "rejects_or_debunks"]
+    coded["true_label"] = [True, True, False, False]
     coded["verdict"] = [errors.classify_error(t, s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
     table = errors.error_classification_table(coded, sets)
-    parts = [errors.MODEL_WRONG, errors.LABEL_PROBLEM, "unparsed", "not_sampled"]
+    assert "unparsed" not in table.columns
+    parts = [errors.MODEL_WRONG, errors.LABEL_PROBLEM, "not_sampled"]
     assert (table[parts].sum(axis=1) == table["errors_total"]).all()
-    assert table.loc[(table["set"] == "all") & (table["error_type"] == "all"), "unparsed"].item() == 1
-
-
-def test_label_problem_range_counts_three_readings():
-    """The headline share must not hide that it depends on the vague stance codes and on unparsed replies."""
-    coded = pd.DataFrame({"true_label": [True, True, True, False, False, True],
-                          "claude_stance": ["no_claim", "rejects_or_debunks", "endorses", "endorses", "no_claim", "parse_error"]})
-    coded["verdict"] = [errors.classify_error(t, s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
-    r = errors.label_problem_range(coded).set_index("variant")
-    # label problems: no_claim(C), rejects(C), endorses(M) = 3
-    assert r.loc["a_current_rule_all_coded", "share"] == pytest.approx(3 / 6)
-    assert r.loc["c_current_rule_excluding_unparsed", "share"] == pytest.approx(3 / 5)
-    # decisive codes only: rejects(C) yes, endorses(C) no, endorses(M) yes -> 2 of 3
-    assert r.loc["b_endorse_reject_only", "share"] == pytest.approx(2 / 3)
+    assert table.loc[(table["set"] == "all") & (table["error_type"] == "all"), "not_sampled"].item() == 2
 
 
 def _sample(tmp_path, human):
     p = tmp_path / "s.csv"
     pd.DataFrame({"doc_id": list("abcd"), "claude_stance": ["endorses", "no_claim", "endorses", "reports_neutrally"],
-                  "human_stance": human, "human_note": [""] * 4}).to_csv(p, index=False)
+                  "human_stance": human}).to_csv(p, index=False)
     return p
-
-
-def test_kappa_pending_when_empty(tmp_path):
-    r = errors.human_agreement(_sample(tmp_path, [""] * 4))
-    assert r["status"] == "pending: 0/4 filled" and r["kappa"] is None
 
 
 def test_justification_is_shortened_and_names_are_stripped():
@@ -142,20 +130,66 @@ def test_justification_is_shortened_and_names_are_stripped():
     assert "Jane" not in out and "Wolter" not in out and "[name]" in out and "WTC" in out
 
 
-def test_kappa_matches_hand_value_and_rejects_bad_labels(tmp_path):
-    # human: endorses, no_claim, no_claim, reports_neutrally vs claude above: 3/4 agree.
-    # chance agreement: claude (.5,.25,.25 over endorses/no_claim/neutral), human (.25,.5,.25) -> .125+.125+.0625=.3125
-    r = errors.human_agreement(_sample(tmp_path, ["endorses", "no_claim", "no_claim", "reports_neutrally"]))
-    assert r["kappa"] == pytest.approx((0.75 - 0.3125) / (1 - 0.3125))
-    with pytest.raises(ValueError):
-        errors.human_agreement(_sample(tmp_path, ["yes", "", "", ""]))
+def test_check_sheet_is_blind_and_claude_answers_are_separate(tmp_path):
+    """The team must not see Claude's stance while coding, or their check is not independent."""
+    p = tmp_path / "new.csv"
+    sample = pd.DataFrame({"doc_id": list("ab"), "website": ["x.com", "y.org"], "claude_stance": ["no_claim", "endorses"],
+                           "claude_justification": ["j1", "j2"], "set": ["x", "y"]})
+    assert errors.write_check_sample(sample, p) is True
+    out = pd.read_csv(p, dtype=str, keep_default_na=False)
+    assert list(out.columns) == ["doc_id", "website", "human_stance"]
+    assert (out["human_stance"] == "").all()
+    errors.write_claude_answers(sample, tmp_path / "answers.csv")
+    assert list(pd.read_csv(tmp_path / "answers.csv").columns) == ["doc_id", "claude_stance", "claude_justification"]
 
 
-def test_rerun_never_overwrites_human_work(tmp_path):
-    p = _sample(tmp_path, ["endorses", "", "", ""])
-    sample = pd.DataFrame({c: ["x"] for c in errors.CHECK_COLUMNS if c != "human_stance"})
-    assert errors.write_check_sample(sample.assign(true_label=True, lr_pred=True, llm_pred=False), p) is False
-    assert "endorses" in p.read_text()
+def test_check_sample_caps_rows_per_website_and_balances_classes():
+    """One prolific site must not fill the human check, or it would tell us about that site only."""
+    sites = ["big.com"] * 20 + [f"s{i}.org" for i in range(10)] + ["c1.net"] * 15 + [f"c{i}.net" for i in range(2, 8)]
+    df = pd.DataFrame({"doc_id": [f"d{i}" for i in range(len(sites))], "website": sites,
+                       "label": [False] * 30 + [True] * 21})
+    sample = errors.balanced_website_sample(df, 20, cap=4, seed=1)
+    assert len(sample) == 20 and sample["label"].sum() == 10
+    assert sample["website"].value_counts().max() <= 4
+
+
+def _example_sets():
+    sets = errors.disagreement_sets(LR, LLM)
+    sets["claude_stance"] = "no_claim"
+    return sets
+
+
+def test_examples_show_real_disagreement_and_both_error_types():
+    texts = pd.Series({d: "The news today in town was plain and quiet for most of the long week. The plan was delayed by the weather."
+                       for d in "abcde"})
+    ex = errors.pick_examples(_example_sets(), texts, seed=1)
+    assert set(ex["cell"]) == {"lr_only_wrong", "llm_only_wrong", "false_positive", "false_negative"}
+    assert ex["doc_id"].is_unique
+    one = ex.set_index("cell")
+    assert one.loc["lr_only_wrong", "lr_pred"] != one.loc["lr_only_wrong", "llm_pred"]   # models disagree
+
+
+def test_examples_are_seeded_not_first_article():
+    texts = pd.Series({d: "The news today in town was plain and quiet for most of the long week. The plan was delayed by the weather."
+                       for d in "abcde"})
+    runs = {tuple(errors.pick_examples(_example_sets(), texts, seed=s)["doc_id"]) for s in range(20)}
+    assert errors.pick_examples(_example_sets(), texts, seed=3).equals(errors.pick_examples(_example_sets(), texts, seed=3))
+    assert len(runs) > 1
+
+
+def test_excerpts_skip_boilerplate_and_named_people():
+    assert errors.find_excerpt("The page says click on headlines to see full articles here and read more.") is None
+    assert errors.find_excerpt("The speaker Barack Obama spoke to the crowd about the long plan for the country today.") is None
+    clean = errors.find_excerpt("The plan was delayed by weather in the region for most of the week.")
+    assert clean and len(clean.split()) <= errors.EXCERPT_WORDS + 1
+
+
+def test_stance_agreement_is_kappa(tmp_path):
+    pd.DataFrame({"doc_id": ["a", "b", "c", "d"], "website": "w", "human_stance": ["no_claim", "endorses", "no_claim", ""]}
+                 ).to_csv(tmp_path / "h.csv", index=False)
+    pd.DataFrame({"doc_id": ["a", "b", "c", "d"], "claude_stance": ["no_claim", "endorses", "no_claim", "endorses"]}
+                 ).to_csv(tmp_path / "c.csv", index=False)
+    assert errors.stance_agreement(tmp_path / "h.csv", tmp_path / "c.csv") == 1.0
 
 
 # ---------------------------------------------------------------- excerpt discipline (AGENTS.md hard rule)
@@ -192,26 +226,4 @@ def test_parse_stance_tolerates_reasoning_before_complete_json_only():
     ok = errors.parse_stance('It is a news item.\n\n{"stance":"no_claim","justification":"plain news"}')
     assert ok["stance"] == "no_claim"
     cut = errors.parse_stance('It is news.\n\n{"stance":"no_claim","justification":"cut off')
-    assert cut["stance"] == errors.PARSE_ERROR
-
-
-def test_cli_stance_agreement_empty_prints_clear_message(tmp_path, capsys):
-    """Blank human column must give a plain 'pending' message and kappa null, never a crash or a fake 0."""
-    from fml.cli import main
-    assert main(["stance-agreement", str(_sample(tmp_path, [""] * 4))]) == 0
-    out = capsys.readouterr().out
-    assert "pending human check" in out and "pending: 0/4 filled" in out and '"kappa": null' in out
-
-
-def test_cli_stance_agreement_filled_toy_input_computes_kappa(tmp_path, capsys):
-    from fml.cli import main
-    p = _sample(tmp_path, ["endorses", "no_claim", "no_claim", "reports_neutrally"])
-    assert main(["stance-agreement", str(p)]) == 0
-    out = capsys.readouterr().out
-    assert "pending" not in out and '"human_filled": 4' in out and '"kappa": 0.' in out
-
-
-def test_cli_stance_agreement_missing_file_is_clear_error(tmp_path, capsys):
-    from fml.cli import main
-    assert main(["stance-agreement", str(tmp_path / "nope.csv")]) == 2
-    assert "not found" in capsys.readouterr().err
+    assert cut["stance"] == errors.UNREADABLE

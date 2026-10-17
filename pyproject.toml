@@ -7,6 +7,7 @@ name = "fml"
 version = "0.1.0"
 description = "Logistic regression vs. an LLM for classifying 9/11 conspiracy articles (LOCO), plus the agent that builds and explains it"
 requires-python = ">=3.11"
+# Ranges only: requirements-lock.txt is the authoritative exact pin for reproducing results.
 dependencies = [
   # analysis
   "numpy>=1.26,<3",

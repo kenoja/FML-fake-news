@@ -22,9 +22,9 @@ from . import llm
 from .paths import REPO_ROOT, project_config
 
 STANCES = ("endorses", "rejects_or_debunks", "reports_neutrally", "no_claim")
-PARSE_ERROR = llm.PARSE_ERROR
+UNREADABLE = llm.UNREADABLE
 SETS = ("lr_only_wrong", "llm_only_wrong", "both_wrong")
-MODEL_WRONG, LABEL_PROBLEM, UNCODED = "model wrong", "label does not describe the text", "unparsed"
+MODEL_WRONG, LABEL_PROBLEM = "model wrong", "label does not describe the text"
 JUSTIFICATION_MAX_WORDS = 25
 NAME_ALLOWLIST = {
     "The", "This", "That", "These", "Those", "It", "Its", "A", "An", "Both", "Although", "While", "Written",
@@ -35,8 +35,8 @@ NAME_ALLOWLIST = {
     "Congress", "Senate", "Arabia", "Arab", "Middle", "East", "Taliban", "ISIS", "UK", "EU", "NATO",
 }
 _CAP_TOKEN = re.compile(r"[A-Z][\w'’-]*")
-CHECK_COLUMNS = ["doc_id", "website", "true_label", "lr_pred", "llm_pred", "claude_stance",
-                 "claude_justification", "human_stance", "human_note"]
+CHECK_COLUMNS = ["doc_id", "website", "human_stance"]     # no Claude stance: the team reads blind
+EXCERPT_WORDS = 25
 
 STANCE_PROMPT = (
     "You code how a web article treats CONSPIRACY CLAIMS about the 9/11 attacks (for example: the attacks "
@@ -77,7 +77,7 @@ def stance_cache_path(cfg: dict | None = None) -> Path:
 
 def stance_key(cfg: dict | None = None) -> str:
     cfg = cfg or stance_config()
-    return llm.prompt_hash(STANCE_PROMPT, cfg["model"], cfg["temperature"], cfg["max_input_words"], 1)
+    return llm.prompt_hash(STANCE_PROMPT, cfg["model"], cfg["max_input_words"], 1)
 
 
 # ---------------------------------------------------------------- disagreement sets
@@ -139,13 +139,33 @@ def stratified_sample(df: pd.DataFrame, n: int, seed: int, by: str = "set") -> p
     return df.loc[sorted(picks)].reset_index(drop=True)
 
 
+def balanced_website_sample(df: pd.DataFrame, n: int, cap: int, seed: int) -> pd.DataFrame:
+    """`n` rows, half per class, at most `cap` per website, taken one website at a time (seeded)."""
+    rng = np.random.default_rng(seed)
+    picks = []
+    for label in (False, True):
+        by_site = {}
+        for site, sub in df[df["label"] == label].groupby("website"):
+            by_site[site] = list(rng.permutation(sub.index.to_numpy())[:cap])
+        sites = list(rng.permutation(sorted(by_site)))
+        chosen = []
+        while len(chosen) < n // 2 and any(by_site.values()):
+            for site in sites:                    # one article per website per round
+                if by_site[site] and len(chosen) < n // 2:
+                    chosen.append(by_site[site].pop())
+        if len(chosen) < n // 2:
+            raise ValueError(f"only {len(chosen)} rows for label {label} with at most {cap} per website")
+        picks.extend(chosen)
+    return df.loc[sorted(picks)].reset_index(drop=True)
+
+
 # ---------------------------------------------------------------- stance coding
 
 def parse_stance(raw: str) -> dict:
-    """Strict JSON -> {stance, justification}. Anything else is stance 'parse_error', never guessed."""
+    """Strict JSON -> {stance, justification}. Anything else is stance 'unreadable', never guessed."""
     import re
 
-    bad = {"stance": PARSE_ERROR, "justification": ""}
+    bad = {"stance": UNREADABLE, "justification": ""}
     text = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
     if not text.startswith("{") and "{" in text:      # tolerate reasoning before the JSON, but only a full object
         text = text[text.index("{"):]
@@ -219,7 +239,7 @@ def classify_error(true_label: bool, stance: str) -> str:
       (it reacted to the topic), even though it explains the error.
     """
     if stance not in STANCES:
-        return UNCODED
+        raise ValueError(f"unknown stance {stance!r}: drop unreadable answers before applying the rule")
     if true_label:
         return MODEL_WRONG if stance == "endorses" else LABEL_PROBLEM
     return LABEL_PROBLEM if stance == "endorses" else MODEL_WRONG
@@ -228,9 +248,8 @@ def classify_error(true_label: bool, stance: str) -> str:
 def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
     """Counts by set x error type: all errors, coded, and the coded ones per verdict.
 
-    Columns `model wrong` + `label does not describe the text` + `unparsed` (stance reply could not be
-    parsed) + `not_sampled` (error not sent to coding) always add up to `errors_total`, so no error
-    silently disappears from the table.
+    `coded` holds only readable stances. Columns `model wrong` + `label does not describe the text` +
+    `not_sampled` (error without a usable stance) always add up to `errors_total`.
     """
     rows = []
     for s in (*SETS, "all"):
@@ -238,105 +257,108 @@ def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.
             sel = lambda d: d[((d["set"] == s) | (s == "all")) & ((d["error_type"] == et) | (et == "all"))]  # noqa: E731
             c = sel(coded)
             rows.append({"set": s, "error_type": et, "errors_total": len(sel(totals)), "coded": len(c),
-                         **{v: int((c["verdict"] == v).sum()) for v in (MODEL_WRONG, LABEL_PROBLEM, UNCODED)},
+                         **{v: int((c["verdict"] == v).sum()) for v in (MODEL_WRONG, LABEL_PROBLEM)},
                          "not_sampled": len(sel(totals)) - len(c),
                          **{f"stance_{st}": int((c["claude_stance"] == st).sum()) for st in STANCES}})
     return pd.DataFrame(rows)
 
 
-def label_problem_range(coded: pd.DataFrame) -> pd.DataFrame:
-    """Share of coded errors that are label problems under three readings of the stance codes.
-
-    Why: the headline share rests on Claude's stance codes, which no human has checked, and on a rule that
-    also counts the vague codes (`reports_neutrally`, `no_claim`) as "label does not describe the text".
-    One number would look more certain than it is, so we report the spread:
-    (a) current rule, every coded error in the denominator (unparsed replies count as not a label problem);
-    (b) only decisive stance codes (`endorses`, `rejects_or_debunks`) are counted;
-    (c) current rule, unparsed replies left out of the denominator.
-    """
-    decisive = coded[coded["claude_stance"].isin(["endorses", "rejects_or_debunks"])]
-    parsed = coded[coded["claude_stance"].isin(STANCES)]
-    variants = [("a_current_rule_all_coded", coded, coded["verdict"] == LABEL_PROBLEM),
-                ("b_endorse_reject_only", decisive, decisive["verdict"] == LABEL_PROBLEM),
-                ("c_current_rule_excluding_unparsed", parsed, parsed["verdict"] == LABEL_PROBLEM)]
-    return pd.DataFrame([{"variant": name, "n": len(d), "label_problems": int(hit.sum()),
-                          "share": float(hit.sum() / len(d)) if len(d) else None} for name, d, hit in variants])
-
-
-# ---------------------------------------------------------------- LR explanation
-
-def top_contributions(pipe, df: pd.DataFrame, k: int = 5) -> list[dict]:
-    """Per document: the k features pushing most towards conspiracy and towards mainstream (coef * tf-idf)."""
-    X = pipe.named_steps["features"].transform(df)
-    names = [str(n).split("__", 1)[-1] for n in pipe.named_steps["features"].get_feature_names_out()]
-    contrib = X.multiply(pipe.named_steps["clf"].coef_[0]).tocsr()
-    out = []
-    for i in range(contrib.shape[0]):
-        row = contrib.getrow(i)
-        order = np.argsort(row.data)
-        fmt = lambda j: f"{names[row.indices[j]]} ({row.data[j]:+.3f})"  # noqa: E731
-        out.append({"lr_top_conspiracy": "; ".join(fmt(j) for j in order[::-1][:k] if row.data[j] > 0),
-                    "lr_top_mainstream": "; ".join(fmt(j) for j in order[:k] if row.data[j] < 0)})
-    return out
-
-
 # ---------------------------------------------------------------- human check
 
-def human_agreement(path: Path) -> dict:
-    """Cohen's kappa between human_stance and claude_stance on the rows a human has filled in.
-
-    Never fakes a number: with no filled rows (or a single category on both sides, where kappa is undefined)
-    the status says so and kappa is None.
-    """
-    from sklearn.metrics import cohen_kappa_score
-
-    df = pd.read_csv(path, dtype=str, keep_default_na=False)
-    filled = df[df["human_stance"].str.strip() != ""].copy()
-    n_rows = len(df)
-    if filled.empty:
-        return {"status": f"pending: 0/{n_rows} filled", "rows": n_rows, "human_filled": 0, "kappa": None,
-                "agreement": None}
-    filled["human_stance"] = filled["human_stance"].str.strip().str.lower()
-    bad = sorted(set(filled["human_stance"]) - set(STANCES))
-    if bad:
-        raise ValueError(f"human_stance has values outside {STANCES}: {bad}")
-    h, c = filled["human_stance"], filled["claude_stance"]
-    kappa = float(cohen_kappa_score(h, c)) if len(set(h) | set(c)) > 1 else None
-    return {"status": "verified" if len(filled) == n_rows else "partly verified", "rows": n_rows,
-            "human_filled": int(len(filled)), "kappa": kappa, "agreement": float((h == c).mean())}
-
-
-def scrub_public_csv(path: Path, columns: list[str]) -> int:
-    """Rewrite free-text `columns` of an existing public CSV through `scrub_justification`; returns cells changed.
-
-    Human columns are never touched, so a half-filled check sample survives.
-    """
-    df = pd.read_csv(path, dtype=str, keep_default_na=False)
-    changed = 0
-    for c in columns:
-        new = df[c].map(scrub_justification)
-        changed += int((new != df[c]).sum())
-        df[c] = new
-    df.to_csv(path, index=False)
-    return changed
-
-
 def has_human_input(path: Path) -> bool:
+    """True if a teammate has already typed something into the check file."""
     if not path.is_file():
         return False
     df = pd.read_csv(path, dtype=str, keep_default_na=False)
-    return bool((df["human_stance"].str.strip() != "").any() or (df["human_note"].str.strip() != "").any())
+    return bool((df["human_stance"].str.strip() != "").any())
 
 
 def write_check_sample(sample: pd.DataFrame, path: Path) -> bool:
-    """Write the CSV for the team. Never overwrite one a human has started to fill: returns False then."""
+    """Write the blind CSV for the team (doc_id, website, empty human_stance). False if a human started it."""
     if has_human_input(path):
         return False
     out = sample.copy()
-    out["true_label"] = np.where(out["true_label"], "conspiracy", "mainstream")
-    for c in ("lr_pred", "llm_pred"):
-        out[c] = np.where(out[c], "conspiracy", "mainstream")
-    out["human_stance"], out["human_note"] = "", ""
+    out["human_stance"] = ""          # left empty on purpose: the team fills it in
     path.parent.mkdir(parents=True, exist_ok=True)
     out[CHECK_COLUMNS].to_csv(path, index=False)
     return True
+
+
+def write_claude_answers(sample: pd.DataFrame, path: Path) -> None:
+    """Claude's stance for the same documents, kept in a separate file so the team does not see it."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    sample[["doc_id", "claude_stance", "claude_justification"]].to_csv(path, index=False)
+
+
+def stance_agreement(check_file: Path, claude_file: Path) -> float:
+    """Cohen's kappa between the team's returned stances and Claude's, on the rows the team filled in."""
+    from sklearn.metrics import cohen_kappa_score
+
+    human = pd.read_csv(check_file, dtype=str, keep_default_na=False)
+    human = human[human["human_stance"].str.strip() != ""]
+    both = human.merge(pd.read_csv(claude_file, dtype=str), on="doc_id")
+    return float(cohen_kappa_score(both["human_stance"].str.strip(), both["claude_stance"]))
+
+
+# ---------------------------------------------------------------- examples
+
+BOILERPLATE = re.compile(r"click|cached|subscribe|cookie|posted by|copyright|share this|read more|sign up|"
+                         r"follow us|advertis|newsletter|all rights|menu|http|www\.|@|\d{4}", re.IGNORECASE)
+EXAMPLE_CASES = {"lr_only_wrong": "Only Claude was right", "llm_only_wrong": "Only the logistic regression was right",
+                 "false_positive": "Mainstream article called conspiracy",
+                 "false_negative": "Conspiracy-site article called mainstream"}
+STANCE_WORDS = {"endorses": "endorses a claim", "rejects_or_debunks": "debunks claims",
+                "reports_neutrally": "reports neutrally", "no_claim": "makes no claim"}
+
+
+def plain_examples(examples: pd.DataFrame) -> pd.DataFrame:
+    """The example table with plain column names, only the columns the report discusses."""
+    return pd.DataFrame({"Case": examples["cell"].map(EXAMPLE_CASES), "Website type": examples["true_label"],
+                         "Logistic regression said": examples["lr_prediction"],
+                         "Claude said": examples["llm_prediction"],
+                         "What the article does": examples["stance"].map(STANCE_WORDS),
+                         "Excerpt": examples["excerpt"]})
+
+
+def find_excerpt(text: str, words: int = EXCERPT_WORDS, scan: int = 400) -> str | None:
+    """First sentence-start window of up to `words` words that is no boilerplate and names nobody.
+
+    Tries `words`, then shorter windows, so an article with few clean passages still gets an excerpt.
+    """
+    tokens = str(text).split()[:scan]
+    for size in (words, 15, 10):
+        for start in range(0, max(len(tokens) - size, 0) + 1):
+            if start and not re.search(r"[.!?]$", tokens[start - 1]):
+                continue                              # start only at the beginning of a sentence
+            window = " ".join(tokens[start:start + size])
+            if len(window.split()) < size or BOILERPLATE.search(window):
+                continue
+            if scrub_justification(window, size) == window:
+                return window + " ..."
+    return None
+
+
+def pick_examples(sets: pd.DataFrame, texts: pd.Series, seed: int) -> pd.DataFrame:
+    """One example per case, drawn with a seeded shuffle from documents with a clean excerpt.
+
+    `sets` needs doc_id, set, error_type, true_label, lr_pred, llm_pred, claude_stance (coded documents only);
+    `texts` maps doc_id to the article text. Cases: LR right / LLM wrong, LLM right / LR wrong, a false
+    positive and a false negative. One document is used once.
+    """
+    rng = np.random.default_rng(seed)
+    pools = {"lr_only_wrong": sets[sets["set"] == "lr_only_wrong"], "llm_only_wrong": sets[sets["set"] == "llm_only_wrong"],
+             "false_positive": sets[sets["error_type"] == "false positive"],
+             "false_negative": sets[sets["error_type"] == "false negative"]}
+    rows, used = [], set()
+    for case, pool in pools.items():
+        pool = pool[~pool["doc_id"].isin(used)].sort_values("doc_id")
+        for k in rng.permutation(len(pool)):
+            row = pool.iloc[k]
+            excerpt = find_excerpt(texts[row["doc_id"]])
+            if excerpt:
+                used.add(row["doc_id"])
+                rows.append({"cell": case, "doc_id": row["doc_id"], "true_label": row["true_label"],
+                             "lr_pred": row["lr_pred"], "llm_pred": row["llm_pred"],
+                             "stance": row["claude_stance"], "excerpt": excerpt})
+                break
+    return pd.DataFrame(rows)

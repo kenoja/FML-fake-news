@@ -1,8 +1,4 @@
-"""Feature summary table and figure: what the numeric features look like per class, on TRAIN only.
-
-Looking at validation or test rows to describe features would be a quiet way of "peeking" at the
-data we later score on, so the stage is given the training rows only and records how many it used.
-"""
+"""Feature summary table and figure: what the numeric features look like per class (training rows only)."""
 from __future__ import annotations
 
 import numpy as np
@@ -13,7 +9,7 @@ from ..results import CONSPIRACY_COLOUR, MAINSTREAM_COLOUR, savefig, write_table
 
 
 def feature_matrix(texts) -> pd.DataFrame:
-    """All numeric feature columns (epistemic + style) for the given texts, unscaled."""
+    """All epistemic and style columns for the given texts, unscaled."""
     parts = []
     for cls in NUMERIC_GROUPS.values():
         t = cls()
@@ -22,12 +18,7 @@ def feature_matrix(texts) -> pd.DataFrame:
 
 
 def feature_summary(train: pd.DataFrame) -> pd.DataFrame:
-    """Per feature: mean per class and the standardised difference (Cohen's d, conspiracy minus mainstream).
-
-    Cohen's d divides the difference in means by the pooled standard deviation, so features measured
-    in different units (percent, per 1,000 words, words per sentence) can be compared. |d| about 0.2 is
-    small, 0.5 medium, 0.8 large. `train` must contain only training rows (columns `txt`, `label`).
-    """
+    """Per feature: mean per class and the standardised difference (Cohen's d), from training rows."""
     feats = feature_matrix(train["txt"].tolist())
     y = train["label"].to_numpy(dtype=bool)
     rows = []
@@ -41,7 +32,7 @@ def feature_summary(train: pd.DataFrame) -> pd.DataFrame:
 
 
 def plot_style_by_class(train: pd.DataFrame):
-    """Box plots of the six style features per class (train rows), one small panel per feature."""
+    """Box plots of the six style features per class."""
     import matplotlib.pyplot as plt
 
     from .style import COLUMNS
@@ -62,7 +53,7 @@ def plot_style_by_class(train: pd.DataFrame):
 
 
 EXAMPLE_SNIPPETS = {
-    # Invented sentences, NOT article text: they show what the columns react to, within the 50-word limit.
+    # invented sentences, not article text
     "invented_A": ("WAKE UP! The mainstream media will never tell you the hidden truth. Clearly it was an "
                    "inside job, and the cover-up goes on. Why do they hide it?"),
     "invented_B": ("Investigators reported that there is no evidence of a cover-up. The claim has been "
@@ -71,7 +62,7 @@ EXAMPLE_SNIPPETS = {
 
 
 def example_table() -> pd.DataFrame:
-    """Feature values for the invented snippets (word counts included), so prose can quote results/."""
+    """Feature values for the invented snippets."""
     feats = feature_matrix(list(EXAMPLE_SNIPPETS.values()))
     feats.insert(0, "n_words", [len(w.split()) for w in EXAMPLE_SNIPPETS.values()])
     feats.insert(0, "snippet", list(EXAMPLE_SNIPPETS))
@@ -79,7 +70,7 @@ def example_table() -> pd.DataFrame:
 
 
 def features_stage() -> dict:
-    """Write results/tables/feature_summary.csv and results/figures/style_features_by_class.png."""
+    """Write the feature summary table, the examples and the style figure."""
     from ..pipeline import analysis_frame
     from ..models import split_frames
 

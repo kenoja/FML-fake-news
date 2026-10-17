@@ -1,9 +1,4 @@
-"""The one frozen train/validation/test split, grouped by website.
-
-Why grouped: the label belongs to the website, and articles from one site share style, layout and
-topics. If one site were in both train and test, a model could score well by recognising the site.
-Whole websites therefore go to exactly one split. The split is created once and never edited.
-"""
+"""The one frozen train/validation/test split. Whole websites go to exactly one split."""
 from __future__ import annotations
 
 import warnings
@@ -21,55 +16,48 @@ class SplitExists(RuntimeError):
 
 
 def split_path():
+    """Where the frozen split file lives."""
     return REPO_ROOT / project_config()["split"]["file"]
 
 
 def assign_websites(sizes: pd.Series, ratios: dict[str, float], seed: int) -> dict[str, str]:
-    """Greedy assignment of whole websites to splits for ONE class.
-
-    Biggest websites first (ties broken by a seeded shuffle); each goes to the split whose share of
-    its target would be lowest after adding it, so documents end up close to the ratios.
-    """
+    """Give each website (biggest first) to the split that is furthest below its target size."""
     rng = np.random.default_rng(seed)
-    order = rng.permutation(len(sizes))
-    shuffled = sizes.iloc[order]
-    ranked = shuffled.sort_values(ascending=False, kind="stable")
+    shuffled = sizes.iloc[rng.permutation(len(sizes))]          # shuffle first, so equal sizes are mixed
+    biggest_first = shuffled.sort_values(ascending=False, kind="stable")
     total = float(sizes.sum())
-    target = {s: ratios[s] * total for s in SPLITS}
-    filled = {s: 0.0 for s in SPLITS}
-    out = {}
-    for site, n in ranked.items():
-        best = min(SPLITS, key=lambda s: (filled[s] + n) / target[s])
-        out[site] = best
-        filled[best] += n
-    return out
+    target = {name: ratios[name] * total for name in SPLITS}
+    filled = {name: 0.0 for name in SPLITS}
+    site_split = {}
+    for site, n_docs in biggest_first.items():
+        best = min(SPLITS, key=lambda name: (filled[name] + n_docs) / target[name])
+        site_split[site] = best
+        filled[best] += n_docs
+    return site_split
 
 
 def make_split(df: pd.DataFrame, path=None) -> pd.DataFrame:
-    """Create split_v1.csv (doc_id, split) for ALL documents, grouped by website, stratified by class.
-
-    Refuses to overwrite an existing file: re-splitting after seeing results would invalidate every
-    comparison. Websites are assigned separately inside each class, so the class mix of every split
-    stays close to the corpus mix.
-    """
+    """Create the split file once (grouped by website, per class); never overwrite it."""
     cfg = project_config()["split"]
     path = path or split_path()
     if path.exists():
         raise SplitExists(f"{path} already exists and is frozen; refusing to overwrite it.")
-    if (df.groupby(cfg["group_by"])[cfg["stratify_by"]].nunique() > 1).any():
+    classes_per_site = df.groupby(cfg["group_by"])[cfg["stratify_by"]].nunique()
+    if (classes_per_site > 1).any():
         raise ValueError("a website has more than one class; cannot group by website")
-    site_split: dict[str, str] = {}
-    for k, (_, part) in enumerate(df.groupby(cfg["stratify_by"], sort=True)):
-        sizes = part[cfg["group_by"]].value_counts().sort_index()
+    site_split = {}
+    for k, (_, one_class) in enumerate(df.groupby(cfg["stratify_by"], sort=True)):
+        sizes = one_class[cfg["group_by"]].value_counts().sort_index()
         site_split.update(assign_websites(sizes, cfg["ratios"], cfg["seed"] + k))
-    out = pd.DataFrame({"doc_id": df["doc_id"].to_numpy(), "split": df[cfg["group_by"]].map(site_split).to_numpy()})
+    split_of_doc = df[cfg["group_by"]].map(site_split)
+    out = pd.DataFrame({"doc_id": df["doc_id"].to_numpy(), "split": split_of_doc.to_numpy()})
     path.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(path, index=False)
     return out
 
 
 def load_split(path=None) -> pd.DataFrame:
-    """Read the frozen split (doc_id, split). Fails loudly if it was never created."""
+    """Read the frozen split; fail loudly if it was never created."""
     path = path or split_path()
     if not path.exists():
         raise FileNotFoundError(f"{path} does not exist; run make_split first")
@@ -77,29 +65,38 @@ def load_split(path=None) -> pd.DataFrame:
 
 
 def split_summary(df: pd.DataFrame, split: pd.DataFrame) -> pd.DataFrame:
-    """Websites and documents per split and class (one row per split x class)."""
+    """Websites and documents per split and class."""
     merged = df[["doc_id", "website", "subcorpus"]].merge(split, on="doc_id", how="left")
     if merged["split"].isna().any():
         raise ValueError("some documents have no split")
     rows = []
-    for s in SPLITS:
-        for c, g in merged[merged["split"] == s].groupby("subcorpus"):
-            rows.append({"split": s, "class": c, "websites": int(g["website"].nunique()), "documents": int(len(g))})
-    t = pd.DataFrame(rows)
-    t["share_of_documents"] = t["documents"] / t["documents"].sum()
-    return t
+    for name in SPLITS:
+        in_split = merged[merged["split"] == name]
+        for label, part in in_split.groupby("subcorpus"):
+            rows.append({"split": name, "class": label, "websites": int(part["website"].nunique()),
+                         "documents": int(len(part))})
+    table = pd.DataFrame(rows)
+    table["share_of_documents"] = table["documents"] / table["documents"].sum()
+    return table
+
+
+def websites_per_split(summary: pd.DataFrame) -> dict[str, dict[str, int]]:
+    """Websites per split and class, read from a split summary."""
+    return {name: {row["class"]: int(row["websites"]) for _, row in summary[summary["split"] == name].iterrows()}
+            for name in SPLITS}
 
 
 def check_conspiracy_websites(summary: pd.DataFrame) -> list[str]:
-    """Splits with fewer conspiracy websites than the configured minimum (loud warning if any)."""
+    """Warn about splits with too few conspiracy websites."""
     minimum = project_config()["split"]["min_positive_groups_per_split"]
-    pos = project_config()["data"]["positive_label"]
-    low = []
-    for s in SPLITS:
-        n = int(summary[(summary["split"] == s) & (summary["class"] == pos)]["websites"].sum())
-        if n < minimum:
-            low.append(f"{s} ({n} conspiracy websites)")
-    if low:
-        warnings.warn("FEW CONSPIRACY WEBSITES: " + ", ".join(low) + f" < {minimum}. Results are fragile; "
-                      "see results/tables/per_website_counts.csv", stacklevel=2)
-    return low
+    positive = project_config()["data"]["positive_label"]
+    too_few = []
+    for name in SPLITS:
+        rows = summary[(summary["split"] == name) & (summary["class"] == positive)]
+        n_websites = int(rows["websites"].sum())
+        if n_websites < minimum:
+            too_few.append(f"{name} ({n_websites} conspiracy websites)")
+    if too_few:
+        warnings.warn("FEW CONSPIRACY WEBSITES: " + ", ".join(too_few) + f" < {minimum}. Results are fragile.",
+                      stacklevel=2)
+    return too_few

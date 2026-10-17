@@ -8,10 +8,6 @@
     "on_topic_documents": 2608,
     "on_topic_conspiracy": 777,
     "on_topic_mainstream": 1831,
-    "near_duplicate_pairs_across_splits": 36,
-    "near_duplicate_pairs": 63,
-    "near_duplicate_pairs_same_website": 10,
-    "documents_after_exact_dedup": 3144,
     "length": {
       "shortest_words": 101,
       "median_words": 637.5,
@@ -19,7 +15,50 @@
       "threshold_words": 50,
       "documents_under_150_words": 131,
       "documents_under_250_words": 398,
-      "statement": "The shortest article has 101 words, above the 50-word level below which a text is a snippet rather than an article, so no minimum length is applied. 398 of 3146 documents are under 250 words; the model results by length bucket are checked in the first evaluation run (results/tables)."
+      "statement": "The shortest article has 101 words, above the 50-word level below which a text is a snippet rather than an article, so no minimum length is applied. 398 of 3146 documents are under 250 words."
+    }
+  },
+  "cleaning": {
+    "before": 3146,
+    "after_topic": 2608,
+    "after_duplicates": 2554,
+    "counts": {
+      "before": {
+        "documents": 3146,
+        "conspiracy": 939,
+        "mainstream": 2207
+      },
+      "after_topic": {
+        "documents": 2608,
+        "conspiracy": 777,
+        "mainstream": 1831
+      },
+      "after_duplicates": {
+        "documents": 2554,
+        "conspiracy": 755,
+        "mainstream": 1799
+      }
+    },
+    "near_duplicate_threshold": 0.9,
+    "near_duplicate_pairs": 64,
+    "near_duplicate_pairs_across_splits": 36,
+    "near_duplicate_pairs_same_website": 9,
+    "near_duplicates_dropped": 54,
+    "near_duplicates_dropped_by_split": {
+      "train": 19,
+      "validation": 22,
+      "test": 13
+    },
+    "short_texts": {
+      "threshold_words": 50,
+      "shortest_words": 102,
+      "documents_under_threshold": 0,
+      "median_words": 622.0
+    },
+    "split_after_cleaning": {
+      "train": 1768,
+      "validation": 376,
+      "test": 410
     }
   },
   "split": {
@@ -61,524 +100,108 @@
     },
     "few_conspiracy_websites_flag": false,
     "splits_with_few_conspiracy_websites": [],
-    "min_positive_groups_per_split": 3
-  },
-  "baseline_all_docs": {
-    "model_id": "m1_words_all_docs",
-    "split_evaluated": "validation",
-    "features": {
-      "ngram_range": [
-        1,
-        1
-      ],
-      "min_df": 2,
-      "sublinear_tf": true,
-      "numeric_columns": []
-    },
-    "selected": {
-      "C": 100.0,
-      "class_weight": "none",
-      "selection_metric": "f1 (validation)"
-    },
-    "grid_values_tried": 18,
-    "documents": {
-      "all": 3146,
-      "train": 2204,
-      "validation": 471,
-      "validation_conspiracy": 140,
-      "validation_websites": 20
-    },
-    "confusion": {
-      "tp": 125,
-      "fn": 15,
-      "fp": 5,
-      "tn": 326
-    },
-    "validation": {
-      "precision": {
-        "estimate": 0.962,
-        "ci_low": 0.927,
-        "ci_high": 0.992
+    "min_positive_groups_per_split": 3,
+    "websites_per_split_after_cleaning": {
+      "train": {
+        "conspiracy": 25,
+        "mainstream": 54
       },
-      "recall": {
-        "estimate": 0.893,
-        "ci_low": 0.838,
-        "ci_high": 0.941
+      "validation": {
+        "conspiracy": 6,
+        "mainstream": 13
       },
-      "f1": {
-        "estimate": 0.926,
-        "ci_low": 0.892,
-        "ci_high": 0.957
-      },
-      "macro_f1": {
-        "estimate": 0.948,
-        "ci_low": 0.925,
-        "ci_high": 0.969
-      },
-      "balanced_accuracy": {
-        "estimate": 0.939,
-        "ci_low": 0.912,
-        "ci_high": 0.964
+      "test": {
+        "conspiracy": 6,
+        "mainstream": 12
       }
-    },
-    "validation_website_bootstrap": {
-      "precision": {
-        "estimate": 0.962,
-        "ci_low": 0.83,
-        "ci_high": 0.991
-      },
-      "recall": {
-        "estimate": 0.893,
-        "ci_low": 0.75,
-        "ci_high": 0.942
-      },
-      "f1": {
-        "estimate": 0.926,
-        "ci_low": 0.791,
-        "ci_high": 0.957
-      },
-      "macro_f1": {
-        "estimate": 0.948,
-        "ci_low": 0.884,
-        "ci_high": 0.966
-      },
-      "balanced_accuracy": {
-        "estimate": 0.939,
-        "ci_low": 0.868,
-        "ci_high": 0.964
-      }
-    },
-    "bootstrap": {
-      "resamples": 2000,
-      "seed": 20261016,
-      "level": 0.95
-    },
-    "average_precision": 0.97,
-    "baselines": {
-      "majority_class": {
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "macro_f1": 0.413,
-        "balanced_accuracy": 0.5
-      },
-      "stratified_random": {
-        "precision": 0.297,
-        "recall": 0.298,
-        "f1": 0.297,
-        "macro_f1": 0.5,
-        "balanced_accuracy": 0.5
-      }
-    },
-    "website_name_tokens_in_top_coefficients": [],
-    "top_coefficient_note": "No website-name token among the top 25 words per class."
-  },
-  "topic_filter": {
-    "pattern_source": "config/project.yaml: data.topic_filter_pattern",
-    "documents_before": 3146,
-    "documents_after": 2608,
-    "removed": 538,
-    "after_by_class": {
-      "conspiracy": 777,
-      "mainstream": 1831
-    },
-    "expected_after": {
-      "documents": 2608,
-      "conspiracy": 777,
-      "mainstream": 1831
-    },
-    "matches_expected": true,
-    "removed_by_class": {
-      "conspiracy": 162,
-      "mainstream": 376
-    },
-    "removal_rate_by_class": {
-      "conspiracy": 0.1725,
-      "mainstream": 0.1704
-    },
-    "class_share_before": {
-      "conspiracy": 0.2985,
-      "mainstream": 0.7015
-    },
-    "class_share_after": {
-      "conspiracy": 0.2979,
-      "mainstream": 0.7021
-    },
-    "removal_rate_difference_test": {
-      "test": "Fisher exact on documents (ignores that documents of one website are alike)",
-      "odds_ratio_removed_conspiracy_vs_mainstream": 1.0153,
-      "p_value": 0.8768
-    },
-    "removal_rate_by_split": {
-      "train": 0.1892,
-      "validation": 0.155,
-      "test": 0.1019
-    },
-    "share_of_removed_by_split": {
-      "train": 0.7751,
-      "validation": 0.1357,
-      "test": 0.0892
-    },
-    "websites": {
-      "before": 118,
-      "after": 116,
-      "conspiracy_before": 39,
-      "conspiracy_after": 37,
-      "mainstream_before": 79,
-      "mainstream_after": 79,
-      "with_no_document_left": 2
-    },
-    "websites_with_most_removed": [
-      {
-        "website": "nationalgeographic.co.uk",
-        "label": "mainstream",
-        "removed": 48,
-        "documents": 50
-      },
-      {
-        "website": "healthline.com",
-        "label": "mainstream",
-        "removed": 45,
-        "documents": 55
-      },
-      {
-        "website": "fiercepharma.com",
-        "label": "mainstream",
-        "removed": 42,
-        "documents": 49
-      },
-      {
-        "website": "medicalnewstoday.com",
-        "label": "mainstream",
-        "removed": 36,
-        "documents": 40
-      },
-      {
-        "website": "escapeallthesethings.com",
-        "label": "conspiracy",
-        "removed": 30,
-        "documents": 36
-      }
-    ],
-    "terms": {
-      "9/11": {
-        "matching": 2020,
-        "only_this_term": 204
-      },
-      "september 11": {
-        "matching": 1514,
-        "only_this_term": 156
-      },
-      "world trade center": {
-        "matching": 1163,
-        "only_this_term": 2
-      },
-      "pentagon": {
-        "matching": 829,
-        "only_this_term": 10
-      },
-      "al[- ]qa'?e?da": {
-        "matching": 707,
-        "only_this_term": 8
-      },
-      "sept.? 11": {
-        "matching": 638,
-        "only_this_term": 25
-      },
-      "twin towers": {
-        "matching": 611,
-        "only_this_term": 0
-      },
-      "bin laden": {
-        "matching": 581,
-        "only_this_term": 2
-      },
-      "ground zero": {
-        "matching": 406,
-        "only_this_term": 1
-      },
-      "wtc": {
-        "matching": 290,
-        "only_this_term": 0
-      },
-      "9-11": {
-        "matching": 194,
-        "only_this_term": 17
-      },
-      "11 september": {
-        "matching": 146,
-        "only_this_term": 21
-      },
-      "nine[- ]eleven": {
-        "matching": 2,
-        "only_this_term": 0
-      }
-    },
-    "pentagon_only": {
-      "documents": 10,
-      "conspiracy": 7,
-      "share_of_kept": 0.0038,
-      "single_mention": 4,
-      "median_mentions": 2.0,
-      "with_attack_words": 10,
-      "attack_words_pattern": "attack|terror|hijack|plane"
-    },
-    "split_file_sha256": "800843b0d022354453f369dfa10ea18695b9e5564f63f142f905f2bd9cdd0aed"
-  },
-  "baseline": {
-    "model_id": "m1_words_filtered",
-    "split_evaluated": "validation",
-    "features": {
-      "ngram_range": [
-        1,
-        1
-      ],
-      "min_df": 2,
-      "sublinear_tf": true,
-      "numeric_columns": []
-    },
-    "data": "filtered (documents matching data.topic_filter_pattern), same split_v1",
-    "selected": {
-      "C": 10.0,
-      "class_weight": "balanced",
-      "selection_metric": "f1 (validation)"
-    },
-    "grid_values_tried": 18,
-    "documents": {
-      "filtered": 2608,
-      "train": 1787,
-      "validation": 398,
-      "validation_conspiracy": 128,
-      "validation_websites": 19
-    },
-    "confusion": {
-      "tp": 117,
-      "fn": 11,
-      "fp": 11,
-      "tn": 259
-    },
-    "validation": {
-      "precision": {
-        "estimate": 0.914,
-        "ci_low": 0.865,
-        "ci_high": 0.96
-      },
-      "recall": {
-        "estimate": 0.914,
-        "ci_low": 0.865,
-        "ci_high": 0.958
-      },
-      "f1": {
-        "estimate": 0.914,
-        "ci_low": 0.877,
-        "ci_high": 0.946
-      },
-      "macro_f1": {
-        "estimate": 0.937,
-        "ci_low": 0.911,
-        "ci_high": 0.96
-      },
-      "balanced_accuracy": {
-        "estimate": 0.937,
-        "ci_low": 0.909,
-        "ci_high": 0.961
-      }
-    },
-    "validation_website_bootstrap": {
-      "precision": {
-        "estimate": 0.914,
-        "ci_low": 0.702,
-        "ci_high": 0.981
-      },
-      "recall": {
-        "estimate": 0.914,
-        "ci_low": 0.783,
-        "ci_high": 0.955
-      },
-      "f1": {
-        "estimate": 0.914,
-        "ci_low": 0.742,
-        "ci_high": 0.957
-      },
-      "macro_f1": {
-        "estimate": 0.937,
-        "ci_low": 0.851,
-        "ci_high": 0.959
-      },
-      "balanced_accuracy": {
-        "estimate": 0.937,
-        "ci_low": 0.872,
-        "ci_high": 0.961
-      }
-    },
-    "bootstrap": {
-      "resamples": 2000,
-      "seed": 20261016,
-      "level": 0.95
-    },
-    "average_precision": 0.973,
-    "baselines": {
-      "majority_class": {
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "macro_f1": 0.404,
-        "balanced_accuracy": 0.5
-      },
-      "stratified_random": {
-        "precision": 0.324,
-        "recall": 0.311,
-        "f1": 0.317,
-        "macro_f1": 0.501,
-        "balanced_accuracy": 0.502
-      }
-    },
-    "website_name_tokens_in_top_coefficients": [],
-    "comparison_with_all_docs": {
-      "note": "The validation sets differ (all validation documents vs only the on-topic ones), so the F1 values of rows A and C are NOT directly comparable. Row B scores the all-documents model on exactly the documents of row C. Differences are descriptive; no significance test is claimed.",
-      "rows": [
-        {
-          "setting": "A: all-docs model, all validation docs (first run)",
-          "trained_on": "all",
-          "evaluated_on": "all validation",
-          "documents": 471,
-          "conspiracy": 140,
-          "websites": 20,
-          "precision": 0.962,
-          "recall": 0.893,
-          "f1": 0.926,
-          "macro_f1": 0.948,
-          "balanced_accuracy": 0.939,
-          "f1_ci_doc_low": 0.892,
-          "f1_ci_doc_high": 0.957,
-          "f1_ci_site_low": 0.791,
-          "f1_ci_site_high": 0.957
-        },
-        {
-          "setting": "B: all-docs model, filtered validation docs (like-for-like)",
-          "trained_on": "all",
-          "evaluated_on": "filtered validation",
-          "documents": 398,
-          "conspiracy": 128,
-          "websites": 19,
-          "precision": 0.959,
-          "recall": 0.914,
-          "f1": 0.936,
-          "macro_f1": 0.953,
-          "balanced_accuracy": 0.948,
-          "f1_ci_doc_low": 0.903,
-          "f1_ci_doc_high": 0.964,
-          "f1_ci_site_low": 0.815,
-          "f1_ci_site_high": 0.965
-        },
-        {
-          "setting": "C: filtered model, filtered validation docs",
-          "trained_on": "filtered",
-          "evaluated_on": "filtered validation",
-          "documents": 398,
-          "conspiracy": 128,
-          "websites": 19,
-          "precision": 0.914,
-          "recall": 0.914,
-          "f1": 0.914,
-          "macro_f1": 0.937,
-          "balanced_accuracy": 0.937,
-          "f1_ci_doc_low": 0.877,
-          "f1_ci_doc_high": 0.946,
-          "f1_ci_site_low": 0.742,
-          "f1_ci_site_high": 0.957
-        }
-      ],
-      "f1_change_c_minus_b": -0.022,
-      "f1_change_c_minus_a": -0.012,
-      "all_docs_model_on_removed_validation_docs": {
-        "documents": 73,
-        "conspiracy": 12,
-        "accuracy": 0.945,
-        "predicted_conspiracy": 8
-      }
-    },
-    "test": {
-      "model_id": "lr_words_v2",
-      "config_hash": "686c1de15756e287",
-      "n_docs": 423,
-      "confusion": {
-        "tp": 50,
-        "fn": 48,
-        "fp": 23,
-        "tn": 302
-      },
-      "metrics_documents": {
-        "precision": {
-          "estimate": 0.6849,
-          "ci_low": 0.5811,
-          "ci_high": 0.7903
-        },
-        "recall": {
-          "estimate": 0.5102,
-          "ci_low": 0.4062,
-          "ci_high": 0.6095
-        },
-        "f1": {
-          "estimate": 0.5848,
-          "ci_low": 0.491,
-          "ci_high": 0.6667
-        },
-        "macro_f1": {
-          "estimate": 0.7398,
-          "ci_low": 0.6863,
-          "ci_high": 0.7884
-        },
-        "balanced_accuracy": {
-          "estimate": 0.7197,
-          "ci_low": 0.6678,
-          "ci_high": 0.7694
-        }
-      },
-      "metrics_websites": {
-        "precision": {
-          "estimate": 0.6849,
-          "ci_low": 0.3,
-          "ci_high": 0.9063
-        },
-        "recall": {
-          "estimate": 0.5102,
-          "ci_low": 0.2755,
-          "ci_high": 0.8636
-        },
-        "f1": {
-          "estimate": 0.5848,
-          "ci_low": 0.3235,
-          "ci_high": 0.8036
-        },
-        "macro_f1": {
-          "estimate": 0.7398,
-          "ci_low": 0.5911,
-          "ci_high": 0.8746
-        },
-        "balanced_accuracy": {
-          "estimate": 0.7197,
-          "ci_low": 0.601,
-          "ci_high": 0.9031
-        }
-      },
-      "test_websites": 18,
-      "test_conspiracy": 98
     }
   },
-  "ablation": {
-    "data": "filtered documents, split_v1, validation rows only",
-    "protocol": "per model: C in C_GRID x class_weight in (none, balanced), best conspiracy-F1 on validation",
-    "bootstrap": {
-      "resamples": 2000,
-      "seed": 20261016,
-      "level": 0.95
+  "word_counts": {
+    "chosen_C": 0.1,
+    "class_weight": "balanced",
+    "validation": {
+      "precision": 0.832,
+      "recall": 0.846,
+      "f1": 0.839
     },
+    "confusion": {
+      "tp": 99,
+      "fn": 18,
+      "fp": 20,
+      "tn": 239
+    },
+    "vocabulary_size": 25140,
     "documents": {
-      "train": 1787,
-      "validation": 398,
-      "validation_conspiracy": 128,
-      "validation_websites": 19
+      "train": 1768,
+      "validation": 376
+    },
+    "grid": [
+      {
+        "C": 0.1,
+        "precision": 0.832,
+        "recall": 0.846,
+        "f1": 0.839
+      },
+      {
+        "C": 1.0,
+        "precision": 0.807,
+        "recall": 0.821,
+        "f1": 0.814
+      },
+      {
+        "C": 10.0,
+        "precision": 0.798,
+        "recall": 0.812,
+        "f1": 0.805
+      }
+    ]
+  },
+  "tfidf": {
+    "chosen_C": 10.0,
+    "class_weight": "balanced",
+    "validation": {
+      "precision": 0.922,
+      "recall": 0.906,
+      "f1": 0.914
+    },
+    "confusion": {
+      "tp": 106,
+      "fn": 11,
+      "fp": 9,
+      "tn": 250
+    },
+    "vocabulary_size": 25140,
+    "documents": {
+      "train": 1768,
+      "validation": 376
+    },
+    "grid": [
+      {
+        "C": 0.1,
+        "precision": 0.746,
+        "recall": 0.88,
+        "f1": 0.808
+      },
+      {
+        "C": 1.0,
+        "precision": 0.897,
+        "recall": 0.889,
+        "f1": 0.893
+      },
+      {
+        "C": 10.0,
+        "precision": 0.922,
+        "recall": 0.906,
+        "f1": 0.914
+      }
+    ]
+  },
+  "tfidf_features": {
+    "data": "filtered documents, split_v1, validation rows only",
+    "protocol": "per model: C and class weight from config lr (same grid as word counts and TF-IDF), best conspiracy-F1 on validation",
+    "documents": {
+      "train": 1768,
+      "validation": 376
     },
     "selected": {
       "lr_words_v2": {
@@ -604,8 +227,8 @@
           "min_df": 3,
           "sublinear_tf": true,
           "numeric_columns": [],
-          "max_features": 200000,
-          "dense_groups": []
+          "dense_groups": [],
+          "max_features": 200000
         },
         "C": 10.0,
         "class_weight": "balanced"
@@ -639,7 +262,7 @@
             "style"
           ]
         },
-        "C": 100.0,
+        "C": 10.0,
         "class_weight": "balanced"
       },
       "lr_extended": {
@@ -651,1699 +274,360 @@
           "min_df": 3,
           "sublinear_tf": true,
           "numeric_columns": [],
-          "max_features": 200000,
           "dense_groups": [
             "epistemic",
             "style"
-          ]
-        },
-        "C": 100.0,
-        "class_weight": "balanced"
-      },
-      "lr_extended_minus_ngrams": {
-        "features": {
-          "ngram_range": [
-            1,
-            1
           ],
-          "min_df": 2,
-          "sublinear_tf": true,
-          "numeric_columns": [],
-          "dense_groups": [
-            "epistemic",
-            "style"
-          ]
+          "max_features": 200000
         },
-        "C": 100.0,
-        "class_weight": "balanced"
-      },
-      "lr_extended_minus_epistemic": {
-        "features": {
-          "ngram_range": [
-            1,
-            3
-          ],
-          "min_df": 3,
-          "sublinear_tf": true,
-          "numeric_columns": [],
-          "max_features": 200000,
-          "dense_groups": [
-            "style"
-          ]
-        },
-        "C": 100.0,
-        "class_weight": "balanced"
-      },
-      "lr_extended_minus_style": {
-        "features": {
-          "ngram_range": [
-            1,
-            3
-          ],
-          "min_df": 3,
-          "sublinear_tf": true,
-          "numeric_columns": [],
-          "max_features": 200000,
-          "dense_groups": [
-            "epistemic"
-          ]
-        },
-        "C": 30.0,
+        "C": 10.0,
         "class_weight": "balanced"
       }
     },
     "models": {
       "lr_words_v2": {
         "model_id": "lr_words_v2",
-        "label": "M1: words",
-        "kind": "reference",
+        "label": "TF-IDF alone",
         "C": 10.0,
         "class_weight": "balanced",
-        "validation_documents": 398,
-        "validation_websites": 19,
-        "precision": 0.9141,
-        "precision_ci_doc_low": 0.8649,
-        "precision_ci_doc_high": 0.9597,
-        "precision_ci_site_low": 0.7017,
-        "precision_ci_site_high": 0.9808,
-        "recall": 0.9141,
-        "recall_ci_doc_low": 0.8649,
-        "recall_ci_doc_high": 0.958,
-        "recall_ci_site_low": 0.7826,
-        "recall_ci_site_high": 0.9547,
-        "f1": 0.9141,
-        "f1_ci_doc_low": 0.8769,
-        "f1_ci_doc_high": 0.9462,
-        "f1_ci_site_low": 0.7424,
-        "f1_ci_site_high": 0.9568,
-        "macro_f1": 0.9367,
-        "macro_f1_ci_doc_low": 0.9105,
-        "macro_f1_ci_doc_high": 0.9599,
-        "macro_f1_ci_site_low": 0.8511,
-        "macro_f1_ci_site_high": 0.9592,
-        "balanced_accuracy": 0.9367,
-        "balanced_accuracy_ci_doc_low": 0.9093,
-        "balanced_accuracy_ci_doc_high": 0.9613,
-        "balanced_accuracy_ci_site_low": 0.8719,
-        "balanced_accuracy_ci_site_high": 0.9607,
-        "delta_f1_vs_m1": null,
-        "delta_f1_vs_m1_ci_doc_low": null,
-        "delta_f1_vs_m1_ci_doc_high": null,
-        "delta_f1_vs_m1_ci_site_low": null,
-        "delta_f1_vs_m1_ci_site_high": null,
-        "delta_f1_vs_m1_verdict": null,
-        "mcnemar_p_m1": null,
-        "delta_f1_vs_m1_only_ref_correct": null,
-        "delta_f1_vs_m1_only_new_correct": null,
-        "contribution_f1_vs_m2": null,
-        "contribution_f1_vs_m2_ci_doc_low": null,
-        "contribution_f1_vs_m2_ci_doc_high": null,
-        "contribution_f1_vs_m2_ci_site_low": null,
-        "contribution_f1_vs_m2_ci_site_high": null,
-        "contribution_f1_vs_m2_verdict": null,
-        "mcnemar_p_m2": null,
-        "contribution_f1_vs_m2_only_ref_correct": null,
-        "contribution_f1_vs_m2_only_new_correct": null
+        "f1": 0.9138,
+        "delta_f1": 0.0,
+        "verdict": "reference"
       },
       "lr_plus_ngrams": {
         "model_id": "lr_plus_ngrams",
         "label": "+ n-grams (1-3)",
-        "kind": "add_one",
         "C": 10.0,
         "class_weight": "balanced",
-        "validation_documents": 398,
-        "validation_websites": 19,
-        "precision": 0.9426,
-        "precision_ci_doc_low": 0.9,
-        "precision_ci_doc_high": 0.981,
-        "precision_ci_site_low": 0.7741,
-        "precision_ci_site_high": 0.9865,
-        "recall": 0.8984,
-        "recall_ci_doc_low": 0.8455,
-        "recall_ci_doc_high": 0.9462,
-        "recall_ci_site_low": 0.7576,
-        "recall_ci_site_high": 0.9517,
-        "f1": 0.92,
-        "f1_ci_doc_low": 0.8833,
-        "f1_ci_doc_high": 0.952,
-        "f1_ci_site_low": 0.7705,
-        "f1_ci_site_high": 0.9582,
-        "macro_f1": 0.9417,
-        "macro_f1_ci_doc_low": 0.9161,
-        "macro_f1_ci_doc_high": 0.9649,
-        "macro_f1_ci_site_low": 0.8698,
-        "macro_f1_ci_site_high": 0.9632,
-        "balanced_accuracy": 0.9363,
-        "balanced_accuracy_ci_doc_low": 0.9084,
-        "balanced_accuracy_ci_doc_high": 0.9621,
-        "balanced_accuracy_ci_site_low": 0.8677,
-        "balanced_accuracy_ci_site_high": 0.9645,
-        "delta_f1_vs_m1": 0.0059,
-        "delta_f1_vs_m1_ci_doc_low": -0.0143,
-        "delta_f1_vs_m1_ci_doc_high": 0.0277,
-        "delta_f1_vs_m1_ci_site_low": -0.0166,
-        "delta_f1_vs_m1_ci_site_high": 0.0496,
-        "delta_f1_vs_m1_verdict": "no clear gain",
-        "mcnemar_p_m1": 0.7266,
-        "delta_f1_vs_m1_only_ref_correct": 3.0,
-        "delta_f1_vs_m1_only_new_correct": 5.0,
-        "contribution_f1_vs_m2": null,
-        "contribution_f1_vs_m2_ci_doc_low": null,
-        "contribution_f1_vs_m2_ci_doc_high": null,
-        "contribution_f1_vs_m2_ci_site_low": null,
-        "contribution_f1_vs_m2_ci_site_high": null,
-        "contribution_f1_vs_m2_verdict": null,
-        "mcnemar_p_m2": null,
-        "contribution_f1_vs_m2_only_ref_correct": null,
-        "contribution_f1_vs_m2_only_new_correct": null
+        "f1": 0.9163,
+        "delta_f1": 0.0025,
+        "verdict": "no clear gain"
       },
       "lr_plus_epistemic": {
         "model_id": "lr_plus_epistemic",
-        "label": "+ epistemic",
-        "kind": "add_one",
+        "label": "+ certainty words",
         "C": 10.0,
         "class_weight": "balanced",
-        "validation_documents": 398,
-        "validation_websites": 19,
-        "precision": 0.944,
-        "precision_ci_doc_low": 0.9007,
-        "precision_ci_doc_high": 0.9826,
-        "precision_ci_site_low": 0.7894,
-        "precision_ci_site_high": 0.9867,
-        "recall": 0.9219,
-        "recall_ci_doc_low": 0.875,
-        "recall_ci_doc_high": 0.9632,
-        "recall_ci_site_low": 0.8182,
-        "recall_ci_site_high": 0.9659,
-        "f1": 0.9328,
-        "f1_ci_doc_low": 0.8988,
-        "f1_ci_doc_high": 0.963,
-        "f1_ci_site_low": 0.8125,
-        "f1_ci_site_high": 0.9672,
-        "macro_f1": 0.9507,
-        "macro_f1_ci_doc_low": 0.9266,
-        "macro_f1_ci_doc_high": 0.9721,
-        "macro_f1_ci_site_low": 0.8929,
-        "macro_f1_ci_site_high": 0.9706,
-        "balanced_accuracy": 0.948,
-        "balanced_accuracy_ci_doc_low": 0.9223,
-        "balanced_accuracy_ci_doc_high": 0.9713,
-        "balanced_accuracy_ci_site_low": 0.8962,
-        "balanced_accuracy_ci_site_high": 0.9717,
-        "delta_f1_vs_m1": 0.0187,
-        "delta_f1_vs_m1_ci_doc_low": -0.0074,
-        "delta_f1_vs_m1_ci_doc_high": 0.0464,
-        "delta_f1_vs_m1_ci_site_low": -0.0099,
-        "delta_f1_vs_m1_ci_site_high": 0.0851,
-        "delta_f1_vs_m1_verdict": "no clear gain",
-        "mcnemar_p_m1": 0.2668,
-        "delta_f1_vs_m1_only_ref_correct": 4.0,
-        "delta_f1_vs_m1_only_new_correct": 9.0,
-        "contribution_f1_vs_m2": null,
-        "contribution_f1_vs_m2_ci_doc_low": null,
-        "contribution_f1_vs_m2_ci_doc_high": null,
-        "contribution_f1_vs_m2_ci_site_low": null,
-        "contribution_f1_vs_m2_ci_site_high": null,
-        "contribution_f1_vs_m2_verdict": null,
-        "mcnemar_p_m2": null,
-        "contribution_f1_vs_m2_only_ref_correct": null,
-        "contribution_f1_vs_m2_only_new_correct": null
+        "f1": 0.9304,
+        "delta_f1": 0.0166,
+        "verdict": "above threshold"
       },
       "lr_plus_style": {
         "model_id": "lr_plus_style",
         "label": "+ style",
-        "kind": "add_one",
-        "C": 100.0,
+        "C": 10.0,
         "class_weight": "balanced",
-        "validation_documents": 398,
-        "validation_websites": 19,
-        "precision": 0.9206,
-        "precision_ci_doc_low": 0.871,
-        "precision_ci_doc_high": 0.9655,
-        "precision_ci_site_low": 0.7069,
-        "precision_ci_site_high": 0.9833,
-        "recall": 0.9062,
-        "recall_ci_doc_low": 0.8525,
-        "recall_ci_doc_high": 0.9549,
-        "recall_ci_site_low": 0.7968,
-        "recall_ci_site_high": 0.95,
-        "f1": 0.9134,
-        "f1_ci_doc_low": 0.8745,
-        "f1_ci_doc_high": 0.9474,
-        "f1_ci_site_low": 0.7611,
-        "f1_ci_site_high": 0.9547,
-        "macro_f1": 0.9364,
-        "macro_f1_ci_doc_low": 0.9086,
-        "macro_f1_ci_doc_high": 0.9615,
-        "macro_f1_ci_site_low": 0.8621,
-        "macro_f1_ci_site_high": 0.96,
-        "balanced_accuracy": 0.9346,
-        "balanced_accuracy_ci_doc_low": 0.905,
-        "balanced_accuracy_ci_doc_high": 0.9604,
-        "balanced_accuracy_ci_site_low": 0.8776,
-        "balanced_accuracy_ci_site_high": 0.9596,
-        "delta_f1_vs_m1": -0.0007,
-        "delta_f1_vs_m1_ci_doc_low": -0.0292,
-        "delta_f1_vs_m1_ci_doc_high": 0.0284,
-        "delta_f1_vs_m1_ci_site_low": -0.043,
-        "delta_f1_vs_m1_ci_site_high": 0.0563,
-        "delta_f1_vs_m1_verdict": "no clear gain",
-        "mcnemar_p_m1": 1.0,
-        "delta_f1_vs_m1_only_ref_correct": 8.0,
-        "delta_f1_vs_m1_only_new_correct": 8.0,
-        "contribution_f1_vs_m2": null,
-        "contribution_f1_vs_m2_ci_doc_low": null,
-        "contribution_f1_vs_m2_ci_doc_high": null,
-        "contribution_f1_vs_m2_ci_site_low": null,
-        "contribution_f1_vs_m2_ci_site_high": null,
-        "contribution_f1_vs_m2_verdict": null,
-        "mcnemar_p_m2": null,
-        "contribution_f1_vs_m2_only_ref_correct": null,
-        "contribution_f1_vs_m2_only_new_correct": null
+        "f1": 0.8936,
+        "delta_f1": -0.0202,
+        "verdict": "hurts"
       },
       "lr_extended": {
         "model_id": "lr_extended",
-        "label": "M2: n-grams + epistemic + style",
-        "kind": "all",
-        "C": 100.0,
+        "label": "+ all three",
+        "C": 10.0,
         "class_weight": "balanced",
-        "validation_documents": 398,
-        "validation_websites": 19,
-        "precision": 0.9483,
-        "precision_ci_doc_low": 0.9076,
-        "precision_ci_doc_high": 0.9839,
-        "precision_ci_site_low": 0.8,
-        "precision_ci_site_high": 0.9872,
-        "recall": 0.8594,
-        "recall_ci_doc_low": 0.7953,
-        "recall_ci_doc_high": 0.9167,
-        "recall_ci_site_low": 0.7097,
-        "recall_ci_site_high": 0.9348,
-        "f1": 0.9016,
-        "f1_ci_doc_low": 0.8596,
-        "f1_ci_doc_high": 0.9386,
-        "f1_ci_site_low": 0.7736,
-        "f1_ci_site_high": 0.9462,
-        "macro_f1": 0.9291,
-        "macro_f1_ci_doc_low": 0.9,
-        "macro_f1_ci_doc_high": 0.9552,
-        "macro_f1_ci_site_low": 0.8604,
-        "macro_f1_ci_site_high": 0.9579,
-        "balanced_accuracy": 0.9186,
-        "balanced_accuracy_ci_doc_low": 0.8855,
-        "balanced_accuracy_ci_doc_high": 0.949,
-        "balanced_accuracy_ci_site_low": 0.8442,
-        "balanced_accuracy_ci_site_high": 0.9574,
-        "delta_f1_vs_m1": -0.0124,
-        "delta_f1_vs_m1_ci_doc_low": -0.053,
-        "delta_f1_vs_m1_ci_doc_high": 0.0269,
-        "delta_f1_vs_m1_ci_site_low": -0.0613,
-        "delta_f1_vs_m1_ci_site_high": 0.073,
-        "delta_f1_vs_m1_verdict": "no clear gain",
-        "mcnemar_p_m1": 0.845,
-        "delta_f1_vs_m1_only_ref_correct": 14.0,
-        "delta_f1_vs_m1_only_new_correct": 12.0,
-        "contribution_f1_vs_m2": null,
-        "contribution_f1_vs_m2_ci_doc_low": null,
-        "contribution_f1_vs_m2_ci_doc_high": null,
-        "contribution_f1_vs_m2_ci_site_low": null,
-        "contribution_f1_vs_m2_ci_site_high": null,
-        "contribution_f1_vs_m2_verdict": null,
-        "mcnemar_p_m2": null,
-        "contribution_f1_vs_m2_only_ref_correct": null,
-        "contribution_f1_vs_m2_only_new_correct": null
-      },
-      "lr_extended_minus_ngrams": {
-        "model_id": "lr_extended_minus_ngrams",
-        "label": "M2 without n-grams (words)",
-        "kind": "drop_one",
-        "C": 100.0,
-        "class_weight": "balanced",
-        "validation_documents": 398,
-        "validation_websites": 19,
-        "precision": 0.935,
-        "precision_ci_doc_low": 0.8879,
-        "precision_ci_doc_high": 0.9754,
-        "precision_ci_site_low": 0.75,
-        "precision_ci_site_high": 0.9844,
-        "recall": 0.8984,
-        "recall_ci_doc_low": 0.8433,
-        "recall_ci_doc_high": 0.946,
-        "recall_ci_site_low": 0.77,
-        "recall_ci_site_high": 0.9549,
-        "f1": 0.9163,
-        "f1_ci_doc_low": 0.8783,
-        "f1_ci_doc_high": 0.9485,
-        "f1_ci_site_low": 0.7692,
-        "f1_ci_site_high": 0.9567,
-        "macro_f1": 0.9389,
-        "macro_f1_ci_doc_low": 0.9129,
-        "macro_f1_ci_doc_high": 0.9625,
-        "macro_f1_ci_site_low": 0.8659,
-        "macro_f1_ci_site_high": 0.9628,
-        "balanced_accuracy": 0.9344,
-        "balanced_accuracy_ci_doc_low": 0.9053,
-        "balanced_accuracy_ci_doc_high": 0.9605,
-        "balanced_accuracy_ci_site_low": 0.8677,
-        "balanced_accuracy_ci_site_high": 0.9641,
-        "delta_f1_vs_m1": 0.0023,
-        "delta_f1_vs_m1_ci_doc_low": -0.0314,
-        "delta_f1_vs_m1_ci_doc_high": 0.0386,
-        "delta_f1_vs_m1_ci_site_low": -0.0423,
-        "delta_f1_vs_m1_ci_site_high": 0.0665,
-        "delta_f1_vs_m1_verdict": "no clear gain",
-        "mcnemar_p_m1": 1.0,
-        "delta_f1_vs_m1_only_ref_correct": 10.0,
-        "delta_f1_vs_m1_only_new_correct": 11.0,
-        "contribution_f1_vs_m2": -0.0147,
-        "contribution_f1_vs_m2_ci_doc_low": -0.0421,
-        "contribution_f1_vs_m2_ci_doc_high": 0.0092,
-        "contribution_f1_vs_m2_ci_site_low": -0.0407,
-        "contribution_f1_vs_m2_ci_site_high": 0.0305,
-        "contribution_f1_vs_m2_verdict": "no clear gain",
-        "mcnemar_p_m2": 0.5078,
-        "contribution_f1_vs_m2_only_ref_correct": 6.0,
-        "contribution_f1_vs_m2_only_new_correct": 3.0
-      },
-      "lr_extended_minus_epistemic": {
-        "model_id": "lr_extended_minus_epistemic",
-        "label": "M2 without epistemic",
-        "kind": "drop_one",
-        "C": 100.0,
-        "class_weight": "balanced",
-        "validation_documents": 398,
-        "validation_websites": 19,
-        "precision": 0.9492,
-        "precision_ci_doc_low": 0.9068,
-        "precision_ci_doc_high": 0.9837,
-        "precision_ci_site_low": 0.7777,
-        "precision_ci_site_high": 0.994,
-        "recall": 0.875,
-        "recall_ci_doc_low": 0.8145,
-        "recall_ci_doc_high": 0.9297,
-        "recall_ci_site_low": 0.7166,
-        "recall_ci_site_high": 0.9419,
-        "f1": 0.9106,
-        "f1_ci_doc_low": 0.8699,
-        "f1_ci_doc_high": 0.9455,
-        "f1_ci_site_low": 0.7705,
-        "f1_ci_site_high": 0.9538,
-        "macro_f1": 0.9353,
-        "macro_f1_ci_doc_low": 0.9063,
-        "macro_f1_ci_doc_high": 0.9604,
-        "macro_f1_ci_site_low": 0.8626,
-        "macro_f1_ci_site_high": 0.9642,
-        "balanced_accuracy": 0.9264,
-        "balanced_accuracy_ci_doc_low": 0.8947,
-        "balanced_accuracy_ci_doc_high": 0.9555,
-        "balanced_accuracy_ci_site_low": 0.8484,
-        "balanced_accuracy_ci_site_high": 0.9623,
-        "delta_f1_vs_m1": -0.0035,
-        "delta_f1_vs_m1_ci_doc_low": -0.0396,
-        "delta_f1_vs_m1_ci_doc_high": 0.032,
-        "delta_f1_vs_m1_ci_site_low": -0.0533,
-        "delta_f1_vs_m1_ci_site_high": 0.0671,
-        "delta_f1_vs_m1_verdict": "no clear gain",
-        "mcnemar_p_m1": 1.0,
-        "delta_f1_vs_m1_only_ref_correct": 10.0,
-        "delta_f1_vs_m1_only_new_correct": 10.0,
-        "contribution_f1_vs_m2": -0.0089,
-        "contribution_f1_vs_m2_ci_doc_low": -0.038,
-        "contribution_f1_vs_m2_ci_doc_high": 0.0182,
-        "contribution_f1_vs_m2_ci_site_low": -0.0365,
-        "contribution_f1_vs_m2_ci_site_high": 0.0323,
-        "contribution_f1_vs_m2_verdict": "no clear gain",
-        "mcnemar_p_m2": 0.7744,
-        "contribution_f1_vs_m2_only_ref_correct": 7.0,
-        "contribution_f1_vs_m2_only_new_correct": 5.0
-      },
-      "lr_extended_minus_style": {
-        "model_id": "lr_extended_minus_style",
-        "label": "M2 without style",
-        "kind": "drop_one",
-        "C": 30.0,
-        "class_weight": "balanced",
-        "validation_documents": 398,
-        "validation_websites": 19,
-        "precision": 0.9339,
-        "precision_ci_doc_low": 0.8879,
-        "precision_ci_doc_high": 0.9752,
-        "precision_ci_site_low": 0.7551,
-        "precision_ci_site_high": 0.9843,
-        "recall": 0.8828,
-        "recall_ci_doc_low": 0.8264,
-        "recall_ci_doc_high": 0.9339,
-        "recall_ci_site_low": 0.7388,
-        "recall_ci_site_high": 0.9496,
-        "f1": 0.9076,
-        "f1_ci_doc_low": 0.8692,
-        "f1_ci_doc_high": 0.9435,
-        "f1_ci_site_low": 0.7662,
-        "f1_ci_site_high": 0.9547,
-        "macro_f1": 0.9328,
-        "macro_f1_ci_doc_low": 0.9055,
-        "macro_f1_ci_doc_high": 0.958,
-        "macro_f1_ci_site_low": 0.8607,
-        "macro_f1_ci_site_high": 0.961,
-        "balanced_accuracy": 0.9266,
-        "balanced_accuracy_ci_doc_low": 0.896,
-        "balanced_accuracy_ci_doc_high": 0.9542,
-        "balanced_accuracy_ci_site_low": 0.855,
-        "balanced_accuracy_ci_site_high": 0.9619,
-        "delta_f1_vs_m1": -0.0064,
-        "delta_f1_vs_m1_ci_doc_low": -0.0412,
-        "delta_f1_vs_m1_ci_doc_high": 0.0271,
-        "delta_f1_vs_m1_ci_site_low": -0.0575,
-        "delta_f1_vs_m1_ci_site_high": 0.063,
-        "delta_f1_vs_m1_verdict": "no clear gain",
-        "mcnemar_p_m1": 1.0,
-        "delta_f1_vs_m1_only_ref_correct": 10.0,
-        "delta_f1_vs_m1_only_new_correct": 9.0,
-        "contribution_f1_vs_m2": -0.006,
-        "contribution_f1_vs_m2_ci_doc_low": -0.0363,
-        "contribution_f1_vs_m2_ci_doc_high": 0.021,
-        "contribution_f1_vs_m2_ci_site_low": -0.0364,
-        "contribution_f1_vs_m2_ci_site_high": 0.0358,
-        "contribution_f1_vs_m2_verdict": "no clear gain",
-        "mcnemar_p_m2": 1.0,
-        "contribution_f1_vs_m2_only_ref_correct": 7.0,
-        "contribution_f1_vs_m2_only_new_correct": 6.0
-      }
-    },
-    "verdicts": {
-      "H2": {
-        "verdict": "no clear gain",
-        "added_to_words": {
-          "model_id": "lr_plus_ngrams",
-          "delta_f1": 0.0059,
-          "verdict": "no clear gain",
-          "ci_site": [
-            -0.0166,
-            0.0496
-          ],
-          "ci_doc": [
-            -0.0143,
-            0.0277
-          ],
-          "mcnemar_p": 0.7266
-        },
-        "contribution_in_m2": {
-          "model_id": "lr_extended_minus_ngrams",
-          "delta_f1": -0.0147,
-          "verdict": "no clear gain",
-          "ci_site": [
-            -0.0407,
-            0.0305
-          ],
-          "ci_doc": [
-            -0.0421,
-            0.0092
-          ],
-          "mcnemar_p": 0.5078
-        },
-        "ngrams_minus_epistemic_added_f1_site_ci": {
-          "estimate": -0.0128,
-          "ci_low": -0.0526,
-          "ci_high": 0.0078
-        },
-        "ngrams_minus_style_added_f1_site_ci": {
-          "estimate": 0.0066,
-          "ci_low": -0.0355,
-          "ci_high": 0.0581
-        }
-      },
-      "H3": {
-        "verdict": "no clear gain",
-        "added_to_words": {
-          "model_id": "lr_plus_epistemic",
-          "delta_f1": 0.0187,
-          "verdict": "no clear gain",
-          "ci_site": [
-            -0.0099,
-            0.0851
-          ],
-          "ci_doc": [
-            -0.0074,
-            0.0464
-          ],
-          "mcnemar_p": 0.2668
-        },
-        "contribution_in_m2": {
-          "model_id": "lr_extended_minus_epistemic",
-          "delta_f1": -0.0089,
-          "verdict": "no clear gain",
-          "ci_site": [
-            -0.0365,
-            0.0323
-          ],
-          "ci_doc": [
-            -0.038,
-            0.0182
-          ],
-          "mcnemar_p": 0.7744
-        }
-      },
-      "H4": {
-        "verdict": "no clear gain",
-        "added_to_words": {
-          "model_id": "lr_plus_style",
-          "delta_f1": -0.0007,
-          "verdict": "no clear gain",
-          "ci_site": [
-            -0.043,
-            0.0563
-          ],
-          "ci_doc": [
-            -0.0292,
-            0.0284
-          ],
-          "mcnemar_p": 1.0
-        },
-        "contribution_in_m2": {
-          "model_id": "lr_extended_minus_style",
-          "delta_f1": -0.006,
-          "verdict": "no clear gain",
-          "ci_site": [
-            -0.0364,
-            0.0358
-          ],
-          "ci_doc": [
-            -0.0363,
-            0.021
-          ],
-          "mcnemar_p": 1.0
-        },
-        "ngrams_minus_style_added_f1_site_ci": {
-          "estimate": 0.0066,
-          "ci_low": -0.0355,
-          "ci_high": 0.0581
-        }
+        "f1": 0.8869,
+        "delta_f1": -0.0269,
+        "verdict": "hurts"
       }
     },
     "chosen_lr": {
-      "chosen": "lr_words_v2",
-      "rule": "M2 only if delta-F1 vs M1 has a website-bootstrap CI above 0 on validation",
-      "delta_f1": -0.0124,
-      "ci_site": [
-        -0.0613,
-        0.073
-      ]
+      "chosen": "lr_plus_epistemic",
+      "rule": "best validation F1, but only if it beats TF-IDF alone by at least 0.01",
+      "f1": 0.9304
     },
-    "epistemic_negation": {
-      "data": "filtered documents, split_v1, validation rows only (test never read)",
-      "negation_window_tokens": 3,
-      "negators": [
-        "not",
-        "no",
-        "never",
-        "*n't"
-      ],
-      "f1_plain": 0.9328,
-      "f1_negation_aware": 0.9328,
-      "delta_f1": 0.0,
-      "ci_site": [
-        0.0,
-        0.0
-      ],
-      "ci_doc": [
-        0.0,
-        0.0
-      ],
-      "mcnemar_p": 1.0,
-      "verdict": "no clear gain",
-      "selected_C": {
-        "epistemic_plain": 10.0,
-        "epistemic_negation_aware": 10.0
+    "verdict_sentence": "These groups raised validation F1 by 0.01 or more: + certainty words.",
+    "coverage": [
+      {
+        "category": "hedges",
+        "list_size": 13,
+        "class": "conspiracy",
+        "train_documents": 542,
+        "share_with_hit": 0.6993
       },
-      "coverage": [
-        {
-          "category": "hedges",
-          "list_size": 13,
-          "class": "conspiracy",
-          "train_documents": 551,
-          "share_plain": 0.7024,
-          "share_negation_aware": 0.6951,
-          "share_any_negated": 0.049,
-          "negated_hit_share": 0.0204
-        },
-        {
-          "category": "hedges",
-          "list_size": 13,
-          "class": "mainstream",
-          "train_documents": 1236,
-          "share_plain": 0.4563,
-          "share_negation_aware": 0.4555,
-          "share_any_negated": 0.0129,
-          "negated_hit_share": 0.013
-        },
-        {
-          "category": "boosters",
-          "list_size": 12,
-          "class": "conspiracy",
-          "train_documents": 551,
-          "share_plain": 0.4991,
-          "share_negation_aware": 0.4973,
-          "share_any_negated": 0.0254,
-          "negated_hit_share": 0.0238
-        },
-        {
-          "category": "boosters",
-          "list_size": 12,
-          "class": "mainstream",
-          "train_documents": 1236,
-          "share_plain": 0.1756,
-          "share_negation_aware": 0.1707,
-          "share_any_negated": 0.0113,
-          "negated_hit_share": 0.0455
-        },
-        {
-          "category": "hidden_truth",
-          "list_size": 11,
-          "class": "conspiracy",
-          "train_documents": 551,
-          "share_plain": 0.4555,
-          "share_negation_aware": 0.4501,
-          "share_any_negated": 0.0327,
-          "negated_hit_share": 0.0241
-        },
-        {
-          "category": "hidden_truth",
-          "list_size": 11,
-          "class": "mainstream",
-          "train_documents": 1236,
-          "share_plain": 0.0324,
-          "share_negation_aware": 0.0307,
-          "share_any_negated": 0.0024,
-          "negated_hit_share": 0.06
-        },
-        {
-          "category": "debunking",
-          "list_size": 11,
-          "class": "conspiracy",
-          "train_documents": 551,
-          "share_plain": 0.2777,
-          "share_negation_aware": 0.2722,
-          "share_any_negated": 0.0236,
-          "negated_hit_share": 0.0394
-        },
-        {
-          "category": "debunking",
-          "list_size": 11,
-          "class": "mainstream",
-          "train_documents": 1236,
-          "share_plain": 0.0987,
-          "share_negation_aware": 0.0987,
-          "share_any_negated": 0.0032,
-          "negated_hit_share": 0.0146
-        }
-      ]
-    },
-    "test": {
-      "lr_words_v2": {
-        "model_id": "lr_words_v2",
-        "config_hash": "686c1de15756e287",
-        "n_docs": 423,
-        "confusion": {
-          "tp": 50,
-          "fn": 48,
-          "fp": 23,
-          "tn": 302
-        },
-        "metrics_documents": {
-          "precision": {
-            "estimate": 0.6849,
-            "ci_low": 0.5811,
-            "ci_high": 0.7903
-          },
-          "recall": {
-            "estimate": 0.5102,
-            "ci_low": 0.4062,
-            "ci_high": 0.6095
-          },
-          "f1": {
-            "estimate": 0.5848,
-            "ci_low": 0.491,
-            "ci_high": 0.6667
-          },
-          "macro_f1": {
-            "estimate": 0.7398,
-            "ci_low": 0.6863,
-            "ci_high": 0.7884
-          },
-          "balanced_accuracy": {
-            "estimate": 0.7197,
-            "ci_low": 0.6678,
-            "ci_high": 0.7694
-          }
-        },
-        "metrics_websites": {
-          "precision": {
-            "estimate": 0.6849,
-            "ci_low": 0.3,
-            "ci_high": 0.9063
-          },
-          "recall": {
-            "estimate": 0.5102,
-            "ci_low": 0.2755,
-            "ci_high": 0.8636
-          },
-          "f1": {
-            "estimate": 0.5848,
-            "ci_low": 0.3235,
-            "ci_high": 0.8036
-          },
-          "macro_f1": {
-            "estimate": 0.7398,
-            "ci_low": 0.5911,
-            "ci_high": 0.8746
-          },
-          "balanced_accuracy": {
-            "estimate": 0.7197,
-            "ci_low": 0.601,
-            "ci_high": 0.9031
-          }
-        },
-        "test_websites": 18,
-        "test_conspiracy": 98
+      {
+        "category": "hedges",
+        "list_size": 13,
+        "class": "mainstream",
+        "train_documents": 1226,
+        "share_with_hit": 0.4568
       },
-      "lr_extended": {
-        "model_id": "lr_extended",
-        "config_hash": "43d92b1cf6d754b7",
-        "n_docs": 423,
-        "confusion": {
-          "tp": 51,
-          "fn": 47,
-          "fp": 26,
-          "tn": 299
-        },
-        "metrics_documents": {
-          "precision": {
-            "estimate": 0.6623,
-            "ci_low": 0.5584,
-            "ci_high": 0.7647
-          },
-          "recall": {
-            "estimate": 0.5204,
-            "ci_low": 0.4193,
-            "ci_high": 0.6168
-          },
-          "f1": {
-            "estimate": 0.5829,
-            "ci_low": 0.4932,
-            "ci_high": 0.6667
-          },
-          "macro_f1": {
-            "estimate": 0.737,
-            "ci_low": 0.6854,
-            "ci_high": 0.787
-          },
-          "balanced_accuracy": {
-            "estimate": 0.7202,
-            "ci_low": 0.6706,
-            "ci_high": 0.7716
-          }
-        },
-        "metrics_websites": {
-          "precision": {
-            "estimate": 0.6623,
-            "ci_low": 0.2608,
-            "ci_high": 0.9334
-          },
-          "recall": {
-            "estimate": 0.5204,
-            "ci_low": 0.2745,
-            "ci_high": 0.8493
-          },
-          "f1": {
-            "estimate": 0.5829,
-            "ci_low": 0.3137,
-            "ci_high": 0.8221
-          },
-          "macro_f1": {
-            "estimate": 0.737,
-            "ci_low": 0.583,
-            "ci_high": 0.8887
-          },
-          "balanced_accuracy": {
-            "estimate": 0.7202,
-            "ci_low": 0.5932,
-            "ci_high": 0.8927
-          }
-        },
-        "test_websites": 18,
-        "test_conspiracy": 98
+      {
+        "category": "boosters",
+        "list_size": 12,
+        "class": "conspiracy",
+        "train_documents": 542,
+        "share_with_hit": 0.4945
+      },
+      {
+        "category": "boosters",
+        "list_size": 12,
+        "class": "mainstream",
+        "train_documents": 1226,
+        "share_with_hit": 0.1762
+      },
+      {
+        "category": "hidden_truth",
+        "list_size": 11,
+        "class": "conspiracy",
+        "train_documents": 542,
+        "share_with_hit": 0.452
+      },
+      {
+        "category": "hidden_truth",
+        "list_size": 11,
+        "class": "mainstream",
+        "train_documents": 1226,
+        "share_with_hit": 0.0318
+      },
+      {
+        "category": "debunking",
+        "list_size": 11,
+        "class": "conspiracy",
+        "train_documents": 542,
+        "share_with_hit": 0.2768
+      },
+      {
+        "category": "debunking",
+        "list_size": 11,
+        "class": "mainstream",
+        "train_documents": 1226,
+        "share_with_hit": 0.0987
       }
-    }
+    ]
   },
   "llm": {
+    "model": "claude-haiku-5-5",
+    "question": "source: conspiracy-oriented or mainstream website",
+    "max_input_words": 3000,
+    "max_output_tokens": 1000,
+    "documents": 376,
     "variants": {
       "v1": {
-        "prompt_words": 42,
+        "precision": 1.0,
+        "recall": 0.9744,
+        "f1": 0.987,
         "confusion": {
-          "tp": 97,
-          "fn": 31,
+          "tp": 114,
+          "fn": 3,
           "fp": 0,
-          "tn": 270
-        },
-        "validation": {
-          "precision": {
-            "estimate": 1.0,
-            "ci_low": 1.0,
-            "ci_high": 1.0
-          },
-          "recall": {
-            "estimate": 0.7578,
-            "ci_low": 0.6807,
-            "ci_high": 0.8289
-          },
-          "f1": {
-            "estimate": 0.8622,
-            "ci_low": 0.81,
-            "ci_high": 0.9064
-          },
-          "macro_f1": {
-            "estimate": 0.904,
-            "ci_low": 0.8714,
-            "ci_high": 0.9335
-          },
-          "balanced_accuracy": {
-            "estimate": 0.8789,
-            "ci_low": 0.8403,
-            "ci_high": 0.9144
-          }
-        },
-        "validation_website_bootstrap": {
-          "precision": {
-            "estimate": 1.0,
-            "ci_low": 1.0,
-            "ci_high": 1.0
-          },
-          "recall": {
-            "estimate": 0.7578,
-            "ci_low": 0.6097,
-            "ci_high": 0.9024
-          },
-          "f1": {
-            "estimate": 0.8622,
-            "ci_low": 0.7575,
-            "ci_high": 0.9487
-          },
-          "macro_f1": {
-            "estimate": 0.904,
-            "ci_low": 0.8236,
-            "ci_high": 0.9669
-          },
-          "balanced_accuracy": {
-            "estimate": 0.8789,
-            "ci_low": 0.8049,
-            "ci_high": 0.9512
-          }
-        },
-        "n_docs": 398,
-        "parse_errors": 64,
-        "truncated_docs": 36,
-        "max_input_words": 3000,
-        "input_tokens": 873180,
-        "output_tokens": 38573,
-        "cost_usd": 0.1066
+          "tn": 259
+        }
       },
       "v2": {
-        "prompt_words": 102,
+        "precision": 1.0,
+        "recall": 0.9658,
+        "f1": 0.9826,
         "confusion": {
-          "tp": 116,
-          "fn": 12,
+          "tp": 113,
+          "fn": 4,
           "fp": 0,
-          "tn": 270
-        },
-        "validation": {
-          "precision": {
-            "estimate": 1.0,
-            "ci_low": 1.0,
-            "ci_high": 1.0
-          },
-          "recall": {
-            "estimate": 0.9062,
-            "ci_low": 0.8547,
-            "ci_high": 0.9531
-          },
-          "f1": {
-            "estimate": 0.9508,
-            "ci_low": 0.9217,
-            "ci_high": 0.976
-          },
-          "macro_f1": {
-            "estimate": 0.9645,
-            "ci_low": 0.944,
-            "ci_high": 0.9826
-          },
-          "balanced_accuracy": {
-            "estimate": 0.9531,
-            "ci_low": 0.9274,
-            "ci_high": 0.9766
-          }
-        },
-        "validation_website_bootstrap": {
-          "precision": {
-            "estimate": 1.0,
-            "ci_low": 1.0,
-            "ci_high": 1.0
-          },
-          "recall": {
-            "estimate": 0.9062,
-            "ci_low": 0.7727,
-            "ci_high": 1.0
-          },
-          "f1": {
-            "estimate": 0.9508,
-            "ci_low": 0.8718,
-            "ci_high": 1.0
-          },
-          "macro_f1": {
-            "estimate": 0.9645,
-            "ci_low": 0.9123,
-            "ci_high": 1.0
-          },
-          "balanced_accuracy": {
-            "estimate": 0.9531,
-            "ci_low": 0.8864,
-            "ci_high": 1.0
-          }
-        },
-        "n_docs": 398,
-        "parse_errors": 44,
-        "truncated_docs": 36,
-        "max_input_words": 3000,
-        "input_tokens": 922532,
-        "output_tokens": 35521,
-        "cost_usd": 0.11
+          "tn": 259
+        }
       },
       "v3": {
-        "prompt_words": 107,
+        "precision": 1.0,
+        "recall": 0.9744,
+        "f1": 0.987,
         "confusion": {
-          "tp": 88,
-          "fn": 40,
+          "tp": 114,
+          "fn": 3,
           "fp": 0,
-          "tn": 270
-        },
-        "validation": {
-          "precision": {
-            "estimate": 1.0,
-            "ci_low": 1.0,
-            "ci_high": 1.0
-          },
-          "recall": {
-            "estimate": 0.6875,
-            "ci_low": 0.6066,
-            "ci_high": 0.7643
-          },
-          "f1": {
-            "estimate": 0.8148,
-            "ci_low": 0.7551,
-            "ci_high": 0.8664
-          },
-          "macro_f1": {
-            "estimate": 0.8729,
-            "ci_low": 0.8338,
-            "ci_high": 0.9076
-          },
-          "balanced_accuracy": {
-            "estimate": 0.8438,
-            "ci_low": 0.8033,
-            "ci_high": 0.8821
-          }
-        },
-        "validation_website_bootstrap": {
-          "precision": {
-            "estimate": 1.0,
-            "ci_low": 1.0,
-            "ci_high": 1.0
-          },
-          "recall": {
-            "estimate": 0.6875,
-            "ci_low": 0.5,
-            "ci_high": 0.8438
-          },
-          "f1": {
-            "estimate": 0.8148,
-            "ci_low": 0.6667,
-            "ci_high": 0.9153
-          },
-          "macro_f1": {
-            "estimate": 0.8729,
-            "ci_low": 0.7768,
-            "ci_high": 0.9449
-          },
-          "balanced_accuracy": {
-            "estimate": 0.8438,
-            "ci_low": 0.75,
-            "ci_high": 0.9219
-          }
-        },
-        "n_docs": 398,
-        "parse_errors": 91,
-        "truncated_docs": 36,
-        "max_input_words": 3000,
-        "input_tokens": 922930,
-        "output_tokens": 43533,
-        "cost_usd": 0.1141
+          "tn": 259
+        }
       }
     },
-    "chosen": "v2",
-    "selection_rule": "chosen prompt = highest conspiracy-F1 on filtered VALIDATION documents (rounded to 4 digits); tie -> fewer input tokens (cheaper). Fixed and written to metrics.json before any test document is classified.",
-    "validation_documents": 398,
-    "validation_conspiracy": 128,
-    "validation_websites": 19,
-    "model_id": "llm_haiku",
-    "question": "source: conspiracy-oriented or mainstream website",
-    "model": "claude-haiku-5-5",
-    "temperature": 0,
-    "max_input_words": 3000,
-    "bootstrap": {
-      "resamples": 2000,
-      "seed": 20261016,
-      "level": 0.95
-    },
-    "token_limit_sensitivity": {
-      "status": "run",
-      "split": "validation",
-      "variant": "v2",
-      "n_docs": 150,
-      "limit_default": 150,
-      "limit_large": 400,
-      "default": {
-        "parse_errors": 20,
-        "parse_error_rate": 0.1333,
-        "f1": 0.9425
-      },
-      "large": {
-        "parse_errors": 18,
-        "parse_error_rate": 0.12,
-        "f1": 0.9545
-      },
-      "f1_difference": 0.012,
-      "parse_error_rate_difference": -0.0133,
-      "label_flips": 4,
-      "pass": 3
-    },
-    "parse_error_causes": {
-      "counts": {
-        "empty": 0,
-        "truncated_at_max_tokens": 344,
-        "refusal_or_hedging": 0,
-        "wrong_format": 0,
-        "other": 0
-      },
-      "parse_errors": 344,
-      "replies": 2190,
-      "share_of_replies": 0.1571,
-      "max_output_tokens": 150,
-      "raw_replies_stored": false
-    },
-    "test": {
-      "model_id": "llm_haiku",
-      "config_hash": "56d18291d053bf3a",
-      "n_docs": 423,
+    "chosen_prompt": "v1",
+    "validation": {
+      "precision": 1.0,
+      "recall": 0.9744,
+      "f1": 0.987,
       "confusion": {
-        "tp": 52,
-        "fn": 46,
-        "fp": 2,
-        "tn": 323
-      },
-      "metrics_documents": {
-        "precision": {
-          "estimate": 0.963,
-          "ci_low": 0.9016,
-          "ci_high": 1.0
-        },
-        "recall": {
-          "estimate": 0.5306,
-          "ci_low": 0.4285,
-          "ci_high": 0.6292
-        },
-        "f1": {
-          "estimate": 0.6842,
-          "ci_low": 0.5917,
-          "ci_high": 0.7625
-        },
-        "macro_f1": {
-          "estimate": 0.8075,
-          "ci_low": 0.7543,
-          "ci_high": 0.8543
-        },
-        "balanced_accuracy": {
-          "estimate": 0.7622,
-          "ci_low": 0.7113,
-          "ci_high": 0.811
-        }
-      },
-      "metrics_websites": {
-        "precision": {
-          "estimate": 0.963,
-          "ci_low": 0.793,
-          "ci_high": 1.0
-        },
-        "recall": {
-          "estimate": 0.5306,
-          "ci_low": 0.24,
-          "ci_high": 0.8923
-        },
-        "f1": {
-          "estimate": 0.6842,
-          "ci_low": 0.3713,
-          "ci_high": 0.9333
-        },
-        "macro_f1": {
-          "estimate": 0.8075,
-          "ci_low": 0.6212,
-          "ci_high": 0.9617
-        },
-        "balanced_accuracy": {
-          "estimate": 0.7622,
-          "ci_low": 0.6171,
-          "ci_high": 0.9435
-        }
-      },
-      "test_websites": 18,
-      "test_conspiracy": 98,
-      "pass_scored": "pass 1 (official; pass 2 is a sensitivity check)",
-      "parse_errors": 61,
-      "truncated_docs": 28,
-      "max_input_words": 3000,
-      "input_tokens": 820815,
-      "output_tokens": 38067,
-      "cost_usd": 0.1011
+        "tp": 114,
+        "fn": 3,
+        "fp": 0,
+        "tn": 259
+      }
     },
-    "test_pass2": {
-      "confusion": {
-        "tp": 52,
-        "fn": 46,
-        "fp": 2,
-        "tn": 323
-      },
-      "metrics_documents": {
-        "precision": {
-          "estimate": 0.963,
-          "ci_low": 0.902,
-          "ci_high": 1.0
-        },
-        "recall": {
-          "estimate": 0.5306,
-          "ci_low": 0.4272,
-          "ci_high": 0.6303
-        },
-        "f1": {
-          "estimate": 0.6842,
-          "ci_low": 0.5902,
-          "ci_high": 0.7654
-        },
-        "macro_f1": {
-          "estimate": 0.8075,
-          "ci_low": 0.7539,
-          "ci_high": 0.8559
-        },
-        "balanced_accuracy": {
-          "estimate": 0.7622,
-          "ci_low": 0.7105,
-          "ci_high": 0.8117
-        }
-      },
-      "metrics_websites": {
-        "precision": {
-          "estimate": 0.963,
-          "ci_low": 0.7895,
-          "ci_high": 1.0
-        },
-        "recall": {
-          "estimate": 0.5306,
-          "ci_low": 0.278,
-          "ci_high": 0.8816
-        },
-        "f1": {
-          "estimate": 0.6842,
-          "ci_low": 0.4142,
-          "ci_high": 0.9184
-        },
-        "macro_f1": {
-          "estimate": 0.8075,
-          "ci_low": 0.6439,
-          "ci_high": 0.9518
-        },
-        "balanced_accuracy": {
-          "estimate": 0.7622,
-          "ci_low": 0.6348,
-          "ci_high": 0.9375
-        }
-      },
-      "input_tokens": 820815,
-      "output_tokens": 38626,
-      "cost_usd": 0.1014
-    },
-    "stability": {
-      "documents": 423,
-      "agreement": 0.9504,
-      "flipped_docs": 21,
-      "cohen_kappa": 0.8871,
-      "parse_errors_pass1": 61,
-      "parse_errors_pass2": 66
-    }
+    "unreadable": 0,
+    "truncated_docs": 30,
+    "repeat_agreement": 0.992
   },
   "comparison": {
-    "data": "filtered documents, split_v1, TEST rows; predictions from evaluate_final files only",
     "models": [
-      "majority",
-      "lr_words_v2",
-      "lr_extended",
-      "llm_haiku"
+      "final_word_counts",
+      "final_tfidf",
+      "final_tfidf_features",
+      "final_llm"
     ],
-    "lr_best": "lr_words_v2",
-    "lr_best_rule": "chosen on validation (ablation.chosen_lr)",
-    "llm_pass_scored": 1,
+    "lr_best": "final_tfidf_features",
+    "test_documents": 410,
+    "test_conspiracy": 96,
     "bootstrap": {
       "resamples": 2000,
       "seed": 20261016,
       "level": 0.95
     },
-    "test_documents": 423,
-    "test_conspiracy": 98,
-    "test_websites": 18,
-    "test_conspiracy_websites": 6,
-    "few_conspiracy_websites": false,
     "table": [
       {
-        "model": "majority",
-        "documents": 423,
-        "conspiracy": 98,
-        "websites": 18,
-        "tp": 0,
-        "fn": 98,
-        "fp": 0,
-        "tn": 325,
-        "precision": 0.0,
-        "precision_ci_doc_low": 0.0,
-        "precision_ci_doc_high": 0.0,
-        "precision_ci_site_low": 0.0,
-        "precision_ci_site_high": 0.0,
-        "recall": 0.0,
-        "recall_ci_doc_low": 0.0,
-        "recall_ci_doc_high": 0.0,
-        "recall_ci_site_low": 0.0,
-        "recall_ci_site_high": 0.0,
-        "f1": 0.0,
-        "f1_ci_doc_low": 0.0,
-        "f1_ci_doc_high": 0.0,
-        "f1_ci_site_low": 0.0,
-        "f1_ci_site_high": 0.0,
-        "macro_f1": 0.4345,
-        "macro_f1_ci_doc_low": 0.4205,
-        "macro_f1_ci_doc_high": 0.4471,
-        "macro_f1_ci_site_low": 0.3462,
-        "macro_f1_ci_site_high": 0.4878,
-        "balanced_accuracy": 0.5,
-        "balanced_accuracy_ci_doc_low": 0.5,
-        "balanced_accuracy_ci_doc_high": 0.5,
-        "balanced_accuracy_ci_site_low": 0.5,
-        "balanced_accuracy_ci_site_high": 0.5
-      },
-      {
-        "model": "lr_words_v2",
-        "documents": 423,
-        "conspiracy": 98,
-        "websites": 18,
+        "model": "final_word_counts",
+        "documents": 410,
+        "conspiracy": 96,
         "tp": 50,
-        "fn": 48,
-        "fp": 23,
-        "tn": 302,
-        "precision": 0.6849,
-        "precision_ci_doc_low": 0.5811,
-        "precision_ci_doc_high": 0.7903,
-        "precision_ci_site_low": 0.3,
-        "precision_ci_site_high": 0.9063,
-        "recall": 0.5102,
-        "recall_ci_doc_low": 0.4062,
-        "recall_ci_doc_high": 0.6095,
-        "recall_ci_site_low": 0.2755,
-        "recall_ci_site_high": 0.8636,
-        "f1": 0.5848,
-        "f1_ci_doc_low": 0.491,
-        "f1_ci_doc_high": 0.6667,
-        "f1_ci_site_low": 0.3235,
-        "f1_ci_site_high": 0.8036,
-        "macro_f1": 0.7398,
-        "macro_f1_ci_doc_low": 0.6863,
-        "macro_f1_ci_doc_high": 0.7884,
-        "macro_f1_ci_site_low": 0.5911,
-        "macro_f1_ci_site_high": 0.8746,
-        "balanced_accuracy": 0.7197,
-        "balanced_accuracy_ci_doc_low": 0.6678,
-        "balanced_accuracy_ci_doc_high": 0.7694,
-        "balanced_accuracy_ci_site_low": 0.601,
-        "balanced_accuracy_ci_site_high": 0.9031
-      },
-      {
-        "model": "lr_extended",
-        "documents": 423,
-        "conspiracy": 98,
-        "websites": 18,
-        "tp": 51,
-        "fn": 47,
-        "fp": 26,
-        "tn": 299,
-        "precision": 0.6623,
-        "precision_ci_doc_low": 0.5584,
-        "precision_ci_doc_high": 0.7647,
-        "precision_ci_site_low": 0.2608,
-        "precision_ci_site_high": 0.9334,
-        "recall": 0.5204,
-        "recall_ci_doc_low": 0.4193,
-        "recall_ci_doc_high": 0.6168,
-        "recall_ci_site_low": 0.2745,
-        "recall_ci_site_high": 0.8493,
-        "f1": 0.5829,
-        "f1_ci_doc_low": 0.4932,
-        "f1_ci_doc_high": 0.6667,
-        "f1_ci_site_low": 0.3137,
-        "f1_ci_site_high": 0.8221,
-        "macro_f1": 0.737,
-        "macro_f1_ci_doc_low": 0.6854,
-        "macro_f1_ci_doc_high": 0.787,
-        "macro_f1_ci_site_low": 0.583,
-        "macro_f1_ci_site_high": 0.8887,
-        "balanced_accuracy": 0.7202,
-        "balanced_accuracy_ci_doc_low": 0.6706,
-        "balanced_accuracy_ci_doc_high": 0.7716,
-        "balanced_accuracy_ci_site_low": 0.5932,
-        "balanced_accuracy_ci_site_high": 0.8927
-      },
-      {
-        "model": "llm_haiku",
-        "documents": 423,
-        "conspiracy": 98,
-        "websites": 18,
-        "tp": 52,
         "fn": 46,
-        "fp": 2,
-        "tn": 323,
-        "precision": 0.963,
-        "precision_ci_doc_low": 0.9016,
-        "precision_ci_doc_high": 1.0,
-        "precision_ci_site_low": 0.793,
-        "precision_ci_site_high": 1.0,
-        "recall": 0.5306,
-        "recall_ci_doc_low": 0.4285,
-        "recall_ci_doc_high": 0.6292,
-        "recall_ci_site_low": 0.24,
-        "recall_ci_site_high": 0.8923,
-        "f1": 0.6842,
-        "f1_ci_doc_low": 0.5917,
-        "f1_ci_doc_high": 0.7625,
-        "f1_ci_site_low": 0.3713,
-        "f1_ci_site_high": 0.9333,
-        "macro_f1": 0.8075,
-        "macro_f1_ci_doc_low": 0.7543,
-        "macro_f1_ci_doc_high": 0.8543,
-        "macro_f1_ci_site_low": 0.6212,
-        "macro_f1_ci_site_high": 0.9617,
-        "balanced_accuracy": 0.7622,
-        "balanced_accuracy_ci_doc_low": 0.7113,
-        "balanced_accuracy_ci_doc_high": 0.811,
-        "balanced_accuracy_ci_site_low": 0.6171,
-        "balanced_accuracy_ci_site_high": 0.9435
+        "fp": 33,
+        "tn": 281,
+        "precision": 0.6024,
+        "precision_ci_low": 0.4937,
+        "precision_ci_high": 0.7093,
+        "recall": 0.5208,
+        "recall_ci_low": 0.4255,
+        "recall_ci_high": 0.62,
+        "f1": 0.5587,
+        "f1_ci_low": 0.4706,
+        "f1_ci_high": 0.6417
+      },
+      {
+        "model": "final_tfidf",
+        "documents": 410,
+        "conspiracy": 96,
+        "tp": 48,
+        "fn": 48,
+        "fp": 21,
+        "tn": 293,
+        "precision": 0.6957,
+        "precision_ci_low": 0.5882,
+        "precision_ci_high": 0.8001,
+        "recall": 0.5,
+        "recall_ci_low": 0.4036,
+        "recall_ci_high": 0.6026,
+        "f1": 0.5818,
+        "f1_ci_low": 0.4927,
+        "f1_ci_high": 0.6631
+      },
+      {
+        "model": "final_tfidf_features",
+        "documents": 410,
+        "conspiracy": 96,
+        "tp": 50,
+        "fn": 46,
+        "fp": 18,
+        "tn": 296,
+        "precision": 0.7353,
+        "precision_ci_low": 0.6308,
+        "precision_ci_high": 0.8358,
+        "recall": 0.5208,
+        "recall_ci_low": 0.4242,
+        "recall_ci_high": 0.6217,
+        "f1": 0.6098,
+        "f1_ci_low": 0.5175,
+        "f1_ci_high": 0.6927
+      },
+      {
+        "model": "final_llm",
+        "documents": 410,
+        "conspiracy": 96,
+        "tp": 64,
+        "fn": 32,
+        "fp": 1,
+        "tn": 313,
+        "precision": 0.9846,
+        "precision_ci_low": 0.9492,
+        "precision_ci_high": 1.0,
+        "recall": 0.6667,
+        "recall_ci_low": 0.5699,
+        "recall_ci_high": 0.759,
+        "f1": 0.795,
+        "f1_ci_low": 0.7234,
+        "f1_ci_high": 0.8571
       }
     ],
     "mcnemar": {
-      "lr_best_vs_llm": {
-        "a": "lr_words_v2",
-        "b": "llm_haiku",
+      "words_vs_tfidf": {
+        "a": "final_word_counts",
+        "b": "final_tfidf",
         "a_only_correct": 9,
-        "b_only_correct": 32,
+        "b_only_correct": 19,
+        "both_correct": 322,
+        "both_wrong": 60,
+        "p_value": 0.0872,
+        "p_text": "0.087"
+      },
+      "tfidf_vs_features": {
+        "a": "final_tfidf",
+        "b": "final_tfidf_features",
+        "a_only_correct": 6,
+        "b_only_correct": 11,
+        "both_correct": 335,
+        "both_wrong": 58,
+        "p_value": 0.3323,
+        "p_text": "0.332"
+      },
+      "best_lr_vs_llm": {
+        "a": "final_tfidf_features",
+        "b": "final_llm",
+        "a_only_correct": 3,
+        "b_only_correct": 34,
         "both_correct": 343,
-        "both_wrong": 39,
-        "mcnemar_p": 0.0004,
-        "delta_f1_b_minus_a": {
-          "documents": {
-            "estimate": 0.0994,
-            "ci_low": 0.0235,
-            "ci_high": 0.1795
-          },
-          "websites": {
-            "estimate": 0.0994,
-            "ci_low": -0.0166,
-            "ci_high": 0.3891
-          }
-        }
-      },
-      "lr_words_vs_lr_extended": {
-        "a": "lr_words_v2",
-        "b": "lr_extended",
-        "a_only_correct": 19,
-        "b_only_correct": 17,
-        "both_correct": 333,
-        "both_wrong": 54,
-        "mcnemar_p": 0.8679,
-        "delta_f1_b_minus_a": {
-          "documents": {
-            "estimate": -0.0019,
-            "ci_low": -0.066,
-            "ci_high": 0.0638
-          },
-          "websites": {
-            "estimate": -0.0019,
-            "ci_low": -0.1146,
-            "ci_high": 0.0972
-          }
-        }
+        "both_wrong": 30,
+        "p_value": 0.0,
+        "p_text": "< 0.0001"
       }
     },
-    "h1": {
-      "lr_words_v2": {
-        "f1": 0.5848,
-        "majority_f1": 0.0,
-        "delta_f1_vs_majority_sites": {
-          "estimate": 0.5848,
-          "ci_low": 0.3235,
-          "ci_high": 0.8036
-        },
-        "beats_majority": true,
-        "site_ci_excludes_majority": true
-      },
-      "llm_haiku": {
-        "f1": 0.6842,
-        "majority_f1": 0.0,
-        "delta_f1_vs_majority_sites": {
-          "estimate": 0.6842,
-          "ci_low": 0.3713,
-          "ci_high": 0.9333
-        },
-        "beats_majority": true,
-        "site_ci_excludes_majority": true
-      }
-    },
-    "winner_by_metric": {
-      "precision": "llm_haiku",
-      "recall": "llm_haiku",
-      "f1": "llm_haiku"
-    },
-    "mainstream_accuracy": {
-      "lr_words_v2": 0.9292,
-      "llm_haiku": 0.9938
-    },
-    "average_precision": {
-      "lr_words_v2": 0.6762,
-      "llm_haiku": 0.6409
-    },
-    "length_buckets": [
-      {
-        "bucket": "0-149 words",
-        "documents": 27,
-        "conspiracy": 5,
-        "f1_lr_words_v2": 0.5,
-        "f1_lr_extended": 0.5,
-        "f1_llm_haiku": 1.0
-      },
-      {
-        "bucket": "150-249 words",
-        "documents": 32,
-        "conspiracy": 7,
-        "f1_lr_words_v2": 0.6154,
-        "f1_lr_extended": 0.6667,
-        "f1_llm_haiku": 0.7273
-      },
-      {
-        "bucket": ">= 250 words",
-        "documents": 364,
-        "conspiracy": 86,
-        "f1_lr_words_v2": 0.5867,
-        "f1_lr_extended": 0.5806,
-        "f1_llm_haiku": 0.6565
-      }
-    ],
-    "llm_stability": {
-      "documents": 423,
-      "agreement": 0.9504,
-      "flipped_docs": 21,
-      "cohen_kappa": 0.8871,
-      "parse_errors_pass1": 61,
-      "parse_errors_pass2": 66
-    },
-    "lr_config_validation_sensitivity": {
-      "data": "validation split only; the stale lr_words test result is not stored and not used",
-      "lr_words_v1_stale": {
-        "setting": "C=100, none",
-        "precision": 0.965,
-        "recall": 0.867,
-        "f1": 0.914
-      },
-      "lr_words_v2": {
-        "setting": "C=10, balanced",
-        "precision": 0.914,
-        "recall": 0.914,
-        "f1": 0.914
-      },
-      "llm_haiku": {
-        "setting": "prompt v2",
-        "precision": 1.0,
-        "recall": 0.906,
-        "f1": 0.951
-      },
-      "f1_v2_minus_v1": 0.0
-    },
-    "no_duplicate_sensitivity": {
-      "n_excluded": 9,
-      "n_excluded_conspiracy": 1,
-      "n_remaining": 414,
-      "n_remaining_conspiracy": 97,
-      "f1_all_test": {
-        "lr_words_v2": 0.5848,
-        "llm_haiku": 0.6842
-      },
-      "f1_without_duplicates": {
-        "lr_words_v2": 0.5799,
-        "llm_haiku": 0.68
-      },
-      "delta_f1_without_minus_all": {
-        "lr_words_v2": -0.0049,
-        "llm_haiku": -0.0042
-      },
-      "gap_f1_b_minus_a_all_test": 0.0994,
-      "gap_f1_b_minus_a_without_duplicates": 0.1001,
-      "same_winner": true,
-      "compared": [
-        "lr_words_v2",
-        "llm_haiku"
-      ],
-      "pairs_across_splits_in_data": 36
-    }
+    "llm_stability": 0.992
   },
   "errors": {
     "data": "TEST rows, filtered documents; predictions from evaluate_final files only",
-    "prior_knowledge_probe": {
-      "status": "run",
-      "n": 40,
-      "identified": 5,
-      "share_identified": 0.125,
-      "prompt_hash": "b67f79668ebeb1d2",
-      "model": "claude-haiku-5-5",
-      "split": "validation"
-    },
-    "lr_model": "lr_words_v2",
-    "llm_pass": 1,
+    "lr_model": "final_tfidf_features",
     "stance_model": "claude-sonnet-5-5",
     "counts": {
       "lr_only_wrong": {
-        "total": 32,
-        "conspiracy": 10,
-        "mainstream": 22,
-        "false_positive": 22,
-        "false_negative": 10,
-        "coded": 32
+        "total": 34,
+        "conspiracy": 16,
+        "mainstream": 18,
+        "false_positive": 18,
+        "false_negative": 16,
+        "coded": 33
       },
       "llm_only_wrong": {
-        "total": 9,
-        "conspiracy": 8,
+        "total": 3,
+        "conspiracy": 2,
         "mainstream": 1,
         "false_positive": 1,
-        "false_negative": 8,
-        "coded": 9
+        "false_negative": 2,
+        "coded": 3
       },
       "both_wrong": {
-        "total": 39,
-        "conspiracy": 38,
-        "mainstream": 1,
-        "false_positive": 1,
-        "false_negative": 38,
-        "coded": 39
+        "total": 30,
+        "conspiracy": 30,
+        "mainstream": 0,
+        "false_positive": 0,
+        "false_negative": 30,
+        "coded": 29
       }
     },
-    "coded_documents": 80,
-    "stance_parse_errors": 2,
+    "coded_documents": 65,
     "stance_counts": {
-      "no_claim": 62,
-      "reports_neutrally": 9,
-      "rejects_or_debunks": 4,
-      "endorses": 3
+      "no_claim": 55,
+      "reports_neutrally": 5,
+      "rejects_or_debunks": 3,
+      "endorses": 2
     },
     "verdict_counts": {
-      "label does not describe the text": 54,
-      "model wrong": 24
+      "label does not describe the text": 47,
+      "model wrong": 18
+    },
+    "label_problem_share": {
+      "label_problems": 47,
+      "of_coded": 65,
+      "source": "Claude stance coding only, not checked by people"
     },
     "rule": "conspiracy site + (rejects|neutral|no_claim) -> label problem; mainstream site + endorses -> label problem; else model wrong",
-    "h6": {
-      "fp_mainstream_not_endorsing_but_discusses": {
-        "n": 23,
-        "hit": 8,
-        "share": 0.3478
-      },
-      "fp_mainstream_debunking": {
-        "n": 23,
-        "hit": 3,
-        "share": 0.1304
-      },
-      "fn_conspiracy_no_claim": {
-        "n": 55,
-        "hit": 48,
-        "share": 0.8727
-      },
-      "fn_conspiracy_not_endorsing": {
-        "n": 55,
-        "hit": 53,
-        "share": 0.9636
-      },
-      "label_problem_overall": {
-        "n": 78,
-        "hit": 54,
-        "share": 0.6923
-      }
-    },
-    "label_problem_range": {
-      "variants": {
-        "a_current_rule_all_coded": {
-          "n": 80,
-          "label_problems": 54,
-          "share": 0.675
-        },
-        "b_endorse_reject_only": {
-          "n": 7,
-          "label_problems": 2,
-          "share": 0.2857
-        },
-        "c_current_rule_excluding_unparsed": {
-          "n": 78,
-          "label_problems": 54,
-          "share": 0.6923
-        }
-      },
-      "min_share": 0.2857,
-      "max_share": 0.6923,
-      "basis": "Claude-coded stance, not yet checked by humans"
-    },
     "human_check": {
-      "status": "pending: 0/40 filled",
-      "rows": 40,
-      "human_filled": 0,
-      "kappa": null,
-      "agreement": null,
       "sample_file": "results/tables/stance_check_sample.csv",
-      "file_rewritten_this_run": true
+      "rows": 40,
+      "file_rewritten_this_run": true,
+      "status": "to be filled by the team"
     }
   }
 }

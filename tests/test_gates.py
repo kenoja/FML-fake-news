@@ -132,3 +132,52 @@ def test_gate_catches_an_injected_60_word_cell(tmp_path):
     # A long justification is usually copied article text; the gate must see it.
     (tmp_path / "x.csv").write_text("doc_id,claude_justification\nA1," + " ".join(["w"] * 60) + "\n")
     assert _long_cells(tmp_path, _limits(), _limits())
+
+
+def test_assembled_report_is_at_most_5000_words_by_plain_count():
+    # The team counts by whitespace, tables included; the report must stay within the limit by that count.
+    from pathlib import Path
+
+    import pytest
+
+    report = Path(__file__).resolve().parents[1] / "reports" / "report.md"
+    if not report.is_file():
+        pytest.skip("report not built yet (python -m sitegen build)")
+    body = report.read_text(encoding="utf-8").split("\n## References")[0]
+    assert 3000 <= len(body.split()) <= 5000
+
+
+def test_report_has_no_internal_model_ids():
+    from pathlib import Path
+
+    import pytest
+
+    report = Path(__file__).resolve().parents[1] / "reports" / "report.md"
+    if not report.is_file():
+        pytest.skip("report not built yet (python -m sitegen build)")
+    text = report.read_text(encoding="utf-8")
+    for name in ("final_tfidf_features", "lr_words_v2", "lr_extended"):
+        assert name not in text
+
+
+def test_explained_simply_limit_is_exactly_450_words(tmp_path, monkeypatch):
+    # Long explanations get skipped by the team, so 451 words must fail and 450 must pass.
+    monkeypatch.setattr(tools, "REPO", tmp_path)
+    sec = tmp_path / "content" / "sections"
+    sec.mkdir(parents=True)
+    (sec / "99-glossary.md").write_text("### Term\nmeaning\n")
+    template = ("## Explained simply\n{}\n## The code\n<!-- cell: a.py#f -->\n## Report\ntext\n"
+                "## Check yourself\nQ: one?\nA: yes\nQ: two?\nA: yes\n")
+    (sec / "03-split-by-website.md").write_text(template.format("word " * 450))
+    assert tools.gate_sections() == []
+    (sec / "03-split-by-website.md").write_text(template.format("word " * 451))
+    assert "451 words" in " | ".join(tools.gate_sections())
+
+
+def test_a_broken_site_cell_is_a_gate_failure(tmp_path, monkeypatch):
+    # Why: the published site is built with --strict; the agent must see a broken cell before CI does.
+    monkeypatch.setattr(tools, "REPO", tmp_path)
+    sec = tmp_path / "content" / "sections"
+    sec.mkdir(parents=True)
+    (sec / "01-a.md").write_text("## The code\n<!-- cell: src/fml/missing.py#nothing -->\n")
+    assert any("could not be built" in f for f in tools.gate_site_builds())

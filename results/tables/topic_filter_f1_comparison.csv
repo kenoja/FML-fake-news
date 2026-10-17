@@ -1,4 +1,0 @@
-setting,trained_on,evaluated_on,documents,conspiracy,websites,precision,recall,f1,macro_f1,balanced_accuracy,f1_ci_doc_low,f1_ci_doc_high,f1_ci_site_low,f1_ci_site_high
-"A: all-docs model, all validation docs (first run)",all,all validation,471,140,20,0.962,0.893,0.926,0.948,0.939,0.892,0.957,0.791,0.957
-"B: all-docs model, filtered validation docs (like-for-like)",all,filtered validation,398,128,19,0.959,0.914,0.936,0.953,0.948,0.903,0.964,0.815,0.965
-"C: filtered model, filtered validation docs",filtered,filtered validation,398,128,19,0.914,0.914,0.914,0.937,0.937,0.877,0.946,0.742,0.957
