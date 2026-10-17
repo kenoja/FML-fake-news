@@ -12,6 +12,7 @@ cache, like the classifier cache, stores doc_id + prompt hash + answer and never
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -23,8 +24,17 @@ from .paths import REPO_ROOT, project_config
 STANCES = ("endorses", "rejects_or_debunks", "reports_neutrally", "no_claim")
 PARSE_ERROR = llm.PARSE_ERROR
 SETS = ("lr_only_wrong", "llm_only_wrong", "both_wrong")
-MODEL_WRONG, LABEL_PROBLEM, UNCODED = "model wrong", "label does not describe the text", "not coded"
+MODEL_WRONG, LABEL_PROBLEM, UNCODED = "model wrong", "label does not describe the text", "unparsed"
 JUSTIFICATION_MAX_WORDS = 25
+NAME_ALLOWLIST = {
+    "The", "This", "That", "These", "Those", "It", "Its", "A", "An", "Both", "Although", "While", "Written",
+    "Article", "Articles", "Some", "No", "Not", "Only", "Many", "Most", "Neither", "Either", "However",
+    "Saudi", "Saudis", "Russia", "Russian", "American", "Americans", "US", "USA", "WTC", "FBI", "CIA", "NIST",
+    "Pentagon", "World", "Trade", "Center", "Twin", "Towers", "Qaeda", "Al", "Iraq", "Afghanistan", "Islamic",
+    "Muslim", "Muslims", "Israel", "Israeli", "COVID", "September", "Building", "Washington", "New", "York",
+    "Congress", "Senate", "Arabia", "Arab", "Middle", "East", "Taliban", "ISIS", "UK", "EU", "NATO",
+}
+_CAP_TOKEN = re.compile(r"[A-Z][\w'’-]*")
 CHECK_COLUMNS = ["doc_id", "website", "true_label", "lr_pred", "llm_pred", "claude_stance",
                  "claude_justification", "human_stance", "human_note"]
 
@@ -41,6 +51,20 @@ STANCE_PROMPT = (
     'Do not explain your reasoning first. Your reply must START with the character { and be strict JSON '
     'only, no other text: {"stance": one of the four values, "justification": "at most 25 words"}'
 )
+
+
+def scrub_justification(text: str, max_words: int = JUSTIFICATION_MAX_WORDS) -> str:
+    """Shorten to `max_words` and replace capitalised name-like tokens outside NAME_ALLOWLIST by "[name]".
+
+    Why: Claude's justifications are public (CSV tables, report) and may name people from the articles. A
+    word-level rule over-strips (a place may become "[name]") but never leaks a name, which matters more.
+    """
+    def repl(m: re.Match) -> str:
+        base = re.sub(r"(['’]s|-\d+)$", "", m.group(0))
+        return m.group(0) if base in NAME_ALLOWLIST else "[name]"
+
+    out = _CAP_TOKEN.sub(repl, " ".join(str(text).split()[:max_words]))
+    return re.sub(r"\[name\](?:\s+\[name\])+", "[name]", out)
 
 
 def stance_config() -> dict:
@@ -132,7 +156,7 @@ def parse_stance(raw: str) -> dict:
         return bad
     if stance not in STANCES:
         return bad
-    just = " ".join(str(obj.get("justification", "")).split()[:JUSTIFICATION_MAX_WORDS])
+    just = scrub_justification(obj.get("justification", ""))
     return {"stance": stance, "justification": just}
 
 
@@ -171,7 +195,7 @@ def code_stances(df: pd.DataFrame, client=None, cache_file: Path | None = None,
             llm.append_cache(path, rec)
             cache[(doc_id, key)] = rec
         rows.append({"doc_id": doc_id, "claude_stance": rec["answer"]["stance"],
-                     "claude_justification": rec["answer"]["justification"]})
+                     "claude_justification": scrub_justification(rec["answer"]["justification"])})
     return pd.DataFrame(rows)
 
 
@@ -202,7 +226,12 @@ def classify_error(true_label: bool, stance: str) -> str:
 
 
 def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
-    """Counts by set x error type: all errors, coded, and the coded ones per verdict."""
+    """Counts by set x error type: all errors, coded, and the coded ones per verdict.
+
+    Columns `model wrong` + `label does not describe the text` + `unparsed` (stance reply could not be
+    parsed) + `not_sampled` (error not sent to coding) always add up to `errors_total`, so no error
+    silently disappears from the table.
+    """
     rows = []
     for s in (*SETS, "all"):
         for et in ("false positive", "false negative", "all"):
@@ -210,8 +239,28 @@ def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.
             c = sel(coded)
             rows.append({"set": s, "error_type": et, "errors_total": len(sel(totals)), "coded": len(c),
                          **{v: int((c["verdict"] == v).sum()) for v in (MODEL_WRONG, LABEL_PROBLEM, UNCODED)},
+                         "not_sampled": len(sel(totals)) - len(c),
                          **{f"stance_{st}": int((c["claude_stance"] == st).sum()) for st in STANCES}})
     return pd.DataFrame(rows)
+
+
+def label_problem_range(coded: pd.DataFrame) -> pd.DataFrame:
+    """Share of coded errors that are label problems under three readings of the stance codes.
+
+    Why: the headline share rests on Claude's stance codes, which no human has checked, and on a rule that
+    also counts the vague codes (`reports_neutrally`, `no_claim`) as "label does not describe the text".
+    One number would look more certain than it is, so we report the spread:
+    (a) current rule, every coded error in the denominator (unparsed replies count as not a label problem);
+    (b) only decisive stance codes (`endorses`, `rejects_or_debunks`) are counted;
+    (c) current rule, unparsed replies left out of the denominator.
+    """
+    decisive = coded[coded["claude_stance"].isin(["endorses", "rejects_or_debunks"])]
+    parsed = coded[coded["claude_stance"].isin(STANCES)]
+    variants = [("a_current_rule_all_coded", coded, coded["verdict"] == LABEL_PROBLEM),
+                ("b_endorse_reject_only", decisive, decisive["verdict"] == LABEL_PROBLEM),
+                ("c_current_rule_excluding_unparsed", parsed, parsed["verdict"] == LABEL_PROBLEM)]
+    return pd.DataFrame([{"variant": name, "n": len(d), "label_problems": int(hit.sum()),
+                          "share": float(hit.sum() / len(d)) if len(d) else None} for name, d, hit in variants])
 
 
 # ---------------------------------------------------------------- LR explanation
@@ -245,7 +294,8 @@ def human_agreement(path: Path) -> dict:
     filled = df[df["human_stance"].str.strip() != ""].copy()
     n_rows = len(df)
     if filled.empty:
-        return {"status": "not yet verified", "rows": n_rows, "human_filled": 0, "kappa": None, "agreement": None}
+        return {"status": f"pending: 0/{n_rows} filled", "rows": n_rows, "human_filled": 0, "kappa": None,
+                "agreement": None}
     filled["human_stance"] = filled["human_stance"].str.strip().str.lower()
     bad = sorted(set(filled["human_stance"]) - set(STANCES))
     if bad:
@@ -254,6 +304,21 @@ def human_agreement(path: Path) -> dict:
     kappa = float(cohen_kappa_score(h, c)) if len(set(h) | set(c)) > 1 else None
     return {"status": "verified" if len(filled) == n_rows else "partly verified", "rows": n_rows,
             "human_filled": int(len(filled)), "kappa": kappa, "agreement": float((h == c).mean())}
+
+
+def scrub_public_csv(path: Path, columns: list[str]) -> int:
+    """Rewrite free-text `columns` of an existing public CSV through `scrub_justification`; returns cells changed.
+
+    Human columns are never touched, so a half-filled check sample survives.
+    """
+    df = pd.read_csv(path, dtype=str, keep_default_na=False)
+    changed = 0
+    for c in columns:
+        new = df[c].map(scrub_justification)
+        changed += int((new != df[c]).sum())
+        df[c] = new
+    df.to_csv(path, index=False)
+    return changed
 
 
 def has_human_input(path: Path) -> bool:

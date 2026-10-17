@@ -77,9 +77,15 @@ A second pass (same prompt, same documents) is reported separately as a sensitiv
 
 <!-- output: results/metrics.json#llm.test_pass2 -->
 
+How to read it: the stability keys give the agreement, the number of flipped documents and kappa for the 423 test documents. They are the measured consequence of running with default sampling instead of temperature 0; the decision is marked "accepted default, awaiting team confirmation" in `docs/decisions.md`. The same numbers are quoted in the report.
+
 ### Parse errors, tokens and cost
 
-A reply that is not the requested JSON is a **parse error**. Almost all of them are replies cut off at the output limit of 150 tokens (the model started explaining before it answered). A parse error is never turned into a label by hand; for scoring it counts as "not conspiracy", so it lowers recall, and the count is reported next to every score. The test recall is therefore partly a formatting problem, not only a judgement problem.
+A reply that is not the requested JSON is a **parse error**. We first suspected replies cut off at the output limit of 150 tokens. We tested this on validation only: the chosen prompt was re-asked on a seeded subset of 150 validation documents with a limit of 400 tokens (cache pass 3, no test document). The result is in `llm.token_limit_sensitivity` below: the parse-error rate hardly changes, so the limit is not the main cause. A parse error is never turned into a label by hand; for scoring it counts as "not conspiracy", so it lowers recall, and the count is reported next to every score. The test recall is therefore partly a formatting problem, not only a judgement problem.
+
+<!-- output: results/metrics.json#llm.token_limit_sensitivity -->
+
+<!-- cell: src/fml/llm.py#token_limit_sensitivity -->
 
 <!-- output: results/tables/llm_usage.csv -->
 
@@ -93,7 +99,7 @@ Cost is computed from the token counts and the list prices in `config/project.ya
 - **Unstable answers.** Temperature could not be set to 0, so the same input can give different answers; the second pass quantifies this.
 - **The model may know the sites.** Haiku may have seen these websites or these exact articles in training, so a correct answer can be memory rather than reading. We cannot test this; a good score on 9/11 does not show it would work on unseen topics.
 - **The source question is hard from text alone.** The model sees one article, not the website, its design or its other pages. Mainstream sites sometimes publish conspiracy-friendly pieces and conspiracy sites publish plain news; those articles are close to unanswerable from the text.
-- **Parse errors lower recall.** Replies cut off at 150 output tokens count as "not conspiracy" (see above). A larger limit might raise recall, but the cache key does not include the limit and changing it now would mean a new run after seeing test results, so we did not.
+- **Parse errors lower recall.** Replies cut off at 150 output tokens count as "not conspiracy" (see above). The 400-token check on validation changed the parse-error rate and F1 only slightly (`llm.token_limit_sensitivity`); the official runs keep 150 tokens, and a larger limit for test would be a new run that needs a team decision.
 - **Test-set size.** The test split has few websites; the website-level intervals are wide, so small differences to the logistic regression must not be over-read.
 - **Truncation.** Cutting at the word limit removes the end of long articles for the LLM but not for the logistic regression's counts if limits differ; we report how many documents are cut.
 - **Cost and privacy.** Article text is sent to an external API; it is never written to this repository or to the cache.

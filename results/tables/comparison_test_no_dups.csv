@@ -1,0 +1,5 @@
+model,setting,documents,conspiracy,precision,recall,f1
+lr_words_v2,all_test,423,98,0.685,0.51,0.585
+lr_words_v2,without_duplicates,414,97,0.681,0.505,0.58
+llm_haiku,all_test,423,98,0.963,0.531,0.684
+llm_haiku,without_duplicates,414,97,0.962,0.526,0.68

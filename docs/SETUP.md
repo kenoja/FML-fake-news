@@ -44,6 +44,9 @@ Go to https://claude.ai/code, open the environment picker (cloud icon) → **Add
   The key is an environment variable, not a "network secret", because network secrets are never
   attached to requests to `api.anthropic.com`. Do **not** call it `ANTHROPIC_API_KEY`.
 - **Setup script:** leave empty. `python -m agent run` installs what it needs on first start.
+- **Exact versions:** `pip install -e .` accepts the version ranges in `pyproject.toml`;
+  `pip install -r requirements-lock.txt` installs the exact versions the results were produced with.
+  `fml run-all` writes the versions it ran with and its total run time to `results/run_info.json`.
 
 ## 4. The agent routine (started by hand)
 

@@ -26,7 +26,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "stance-agreement":
         from .errors import human_agreement
 
-        print(json.dumps(human_agreement(Path(args.csv)), indent=2))
+        result = human_agreement(Path(args.csv))
+        if result["human_filled"] == 0:
+            print(f"{result['status']} (kappa = null: nobody has filled human_stance yet)")
+        print(json.dumps(result, indent=2))
         return 0
 
     if args.command == "data-summary":

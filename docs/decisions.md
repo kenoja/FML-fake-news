@@ -88,25 +88,31 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 
 ## Needs a team decision
 
-- **LLM temperature 0 cannot be set (T8).** AGENTS.md asks for temperature 0, but `claude-haiku-5-5`
-  answers HTTP 400 ("`temperature` is deprecated for this model") and the installed SDK has no such
-  argument. Conflict between the rule and the model; the rule cannot be followed. Conservative choice:
-  call the model with default sampling, keep `temperature: 0` in config (it stays in the cache key),
-  and measure the consequence with the second test pass (agreement, Cohen's kappa, flipped documents).
-  The team should confirm that this is acceptable.
+- **LLM temperature 0 cannot be set (T8). Status: accepted default, awaiting team confirmation.** AGENTS.md
+  asks for temperature 0, but `claude-haiku-5-5` answers HTTP 400 ("`temperature` is deprecated for this
+  model") and the installed SDK has no such argument. Default chosen: call the model with its default
+  sampling and keep `temperature: 0` in config (it stays in the cache key). Why: the rule cannot be
+  followed, and sending nothing is the only call the API accepts. Measured effect (second test pass, 423
+  documents, `metrics.json#llm.stability`): agreement 0.9504, 21 flipped documents, Cohen's kappa 0.8871;
+  the official pass-1 and pass-2 confusion matrices give the same F1. Quoted in section 09 and report §5.4.
 
-- **Licence of the LOCO texts.** Unconfirmed (see above). Conservative reading chosen: texts not
-  redistributable; private data repo only; excerpt limits apply.
+- **Licence of the LOCO texts.** Unconfirmed (see above). Default: texts not redistributable; private
+  data repo only; excerpt limits apply. Measured effect: not run: the OSF page was unreachable, so no
+  licence text could be read (recheck is queued as a separate task).
 - **LLM API key in the cloud environment.** It was unknown whether `LLM_CLASSIFIER_API_KEY` is set when
-  the agent runs. In the T8 run it was set, so the three validation variants and both test passes were
+  the agent runs. Default: assume it is set and fail loudly if not. Measured effect: it was set in the T8 run, so the three validation variants and both test passes were
   produced (numbers: `metrics.json` key `llm`). The committed cache `results/llm_cache.jsonl` is
   complete for those runs, so `fml run-all` needs no key; without key and cache the stage still fails
   loudly with exact missing counts, and never falls back to `ANTHROPIC_API_KEY`.
-- **LLM parse errors from the 150-token output limit (T8).** Many replies (validation: 44 of 398 for the
-  chosen prompt v2; see `metrics.json`) were cut off at `max_output_tokens: 150` before the JSON closed
-  and are counted as parse errors, scored as "not conspiracy" (lowers recall). Raising the limit now
-  would be a re-run after seeing test results, so it was not done. Team decision: accept, or approve a
-  new documented run with a larger limit (new model id on test).
+- **LLM parse errors and the 150-token output limit (T8). Status: accepted default, awaiting team
+  confirmation.** Default: keep `max_output_tokens: 150` for the official runs (changing it now would
+  mean a new test run after seeing test results). Why: the measured effect of a larger limit is small.
+  Validation only, chosen prompt v2, a seeded subset of 150 documents re-asked with 400 tokens (cache
+  pass 3, no test document touched; `metrics.json#llm.token_limit_sensitivity`): parse errors 20 → 18
+  (rate 0.1333 → 0.12), F1 0.9425 → 0.9545 (difference +0.012), 4 documents changed label. So most
+  parse errors are NOT caused by the 150-token cut-off, and the earlier wording "mostly cut off" was
+  wrong; cause not yet investigated (the cache stores no raw replies). The team may still approve a new
+  documented run with a larger limit (new model id on test).
 - **Parallel LLM runs left duplicate lines (T8).** Two interrupted-attempt processes ran the stage at the
   same time, which duplicated cache lines (1,059 dropped; first answer per `doc_id`+`prompt_hash` kept,
   `read_cache` now does the same) and wrote the `llm_haiku` test-access entry twice (the second,
@@ -116,6 +122,9 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   topic filter, the count will fall below 2,608 and that is the number used downstream. Conservative
   reading (T2 measured 63 near-duplicate pairs, 53 documents would go, 36 pairs cross splits): report 2,608 after the topic filter first, then the count after near-duplicate removal
   separately, and use the smaller set only if the team approves; until then experiments use 2,608.
+  Default: experiments use 2,608. Measured effect (T4, `comparison.no_duplicate_sensitivity`, see "T4:
+  near-duplicates are quantified, not removed" below): leaving out the 9 test documents with a
+  near-duplicate partner moves F1 by -0.0049 (LR) and -0.0042 (LLM); the conclusion is unchanged.
 
 ## Gate fix: `fml run-all` timeout and the `lr_words` test lock
 
@@ -132,3 +141,64 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   another configuration. Choice: new model id `lr_words_v2` (this is a second test access for the
   words-only LR, openly recorded); the old log lines are kept untouched and `lr_words` numbers from the
   stale run are no longer used. Report and sections 08/10/11 were updated to the regenerated results.
+
+## T3: freeze rule and the sequence of test looks
+
+- `fml.pipeline.freeze_model` writes `results/frozen_models.json` (model_id, config_hash,
+  selection_source=validation, timestamp, retroactive flag) before the first test scoring; `evaluate_final`
+  raises `PermissionError` if the entry is missing or its hash differs. `ablation()` and `llm_stage()`
+  freeze after the validation results are written. `fml evaluate-final` alone therefore refuses until the
+  model is frozen. Test: `tests/test_test_lock.py`.
+- Actual order in `results/test_access_log.jsonl`: `lr_words` 01:19:52, `lr_extended` 01:21:07,
+  `llm_haiku` 09:26:03, `lr_words_v2` 10:35:02 (UTC, 2026-10-17). The task text listed the LLM before
+  `lr_extended`; the log was followed. Section 10 and report §4 state this sequence and list the stale
+  `lr_words` look and the second words-only look as limitations.
+- The three looks that predate the rule get `retroactive: true` entries on the next `fml run-all`; this
+  freeze is honest bookkeeping, not proof that the choice preceded the look.
+
+## T4: near-duplicates are quantified, not removed
+
+- The split stays frozen (`split_v1.csv`) and the filtered 2,608-document set is unchanged. Test documents
+  with a near-duplicate partner in train or validation (TF-IDF cosine >= 0.9, the same pair list as
+  `data.near_duplicate_pairs_across_splits`) are only left out of a sensitivity table
+  (`results/tables/comparison_test_no_dups.csv`, `comparison.no_duplicate_sensitivity`).
+- Result: 9 test documents excluded; F1 moves by -0.0049 (LR) and -0.0042 (LLM); the LR-vs-LLM gap is
+  0.0994 before and 0.1001 after, so the conclusion is unchanged. Removal from the corpus stays a team decision.
+
+## T5: LLM prior-knowledge probe — NOT RUN
+
+- `llm.website_probe` (<=40 validation documents, seeded) asks Haiku to name the website and caches only
+  `doc_id`, prompt hash and a boolean `matched` in `results/llm_cache.jsonl`. `errors_stage` writes the result to
+  `metrics.json` `errors.prior_knowledge_probe`.
+- The probe has **not been run**: the implementing session could not run commands that read the API key
+  (`LLM_CLASSIFIER_API_KEY`) or execute Python, and no probe answers are cached. Until `fml run-all` runs with the
+  key, `errors.prior_knowledge_probe` reads `{"status": "not run"}` and report §5.6/§6 say so. No share was invented.
+- The tests added in this task (`test_classification_table_rows_sum_to_errors`) were also not executed here.
+- `error_classification.csv` gains `unparsed` (renamed from `not coded`) and `not_sampled`; the existing CSV in
+  `results/` is stale until the next run (report §5.6 table was updated by hand from its old `not coded` values).
+
+## T7: human check of the stance codes — partly, needs team member
+
+- Status: **partly - needs team member.** The agent cannot produce human labels, so `human_stance` stays empty
+  (pending, Member to fill; kappa = null). `fml stance-agreement` prints `pending: 0/40 filled` while it is empty.
+- Privacy: Claude justifications and LLM reasons in `stance_check_sample.csv` and `error_examples.csv` are cut to
+  25 words and name-like capitalised words outside a small allowlist become `[name]`
+  (`errors.scrub_justification`, applied at parse time, on cache read and when writing the tables).
+  Gate test `tests/test_gates.py` checks every public CSV cell against the excerpt limit (justifications: 25 words).
+- The two existing CSVs were scrubbed in place; the next `fml run-all` regenerates them the same way.
+
+## Compliance with `requirements/cycle-01.md` (numbered requirements 1-7)
+
+Status after task T8; "partly" items name the reason. Numbers live in `results/`.
+
+| # | Requirement | Status | Reason / pointer |
+|---|---|---|---|
+| 1 | Build the analysis in `src/fml/` (load, clean, frozen split, first run, filter, baseline, features, ablation, LLM, comparison with bootstrap CIs and McNemar, error analysis) | partly | All stages exist and write `results/`. Near-duplicates are detected and quantified but not removed (T4, team decision open); the LLM answers at temperature "default", not 0 (model rejects the setting); 150-token limit kept (sensitivity measured). |
+| 2 | Error analysis: disagreement sets, Claude stance codes, 40-row human sample, "model wrong" vs "label does not describe the text" | partly | Sets, codes and the sample file exist. The human column `human_stance` is empty (needs a team member), so kappa is null and H6 is provisional. The website prior-knowledge probe was not run (T5 note). |
+| 3 | Websites and documents per split and class; loud warning below 3 conspiracy websites | done | 25 / 7 / 7 conspiracy websites per split; no split below 3, so no per-website table was required (T2). The test split loses 2 conspiracy websites' worth of documents to the topic filter; reported in T4. |
+| 4 | Every notebook section in the required format, answering the open questions | partly | Sections exist with headings and code cells. Teaching polish of sections 06, 11 and 13 is queued as a later task. |
+| 5 | `reports/report.md`, 3,000-5,000 words, assignment structure, figures and tables by path | partly | Written and number-checked by `tests/test_report_numbers.py`. Literature, feature reasons and trimming are queued as a later task. |
+| 6 | Keep `docs/ai-log.md` and `docs/decisions.md` up to date | partly | Decisions are current; the final AI-log pass and the human-check records are queued as a later task. |
+| 7 | Re-check the LOCO licence on the OSF page | partly | Page unreachable on 2026-10-16 (fetch tool denied), result recorded; the recheck is queued as a later task. Excerpt rules stay in force. |
+
+No requirement is declined.

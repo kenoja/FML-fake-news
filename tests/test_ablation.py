@@ -81,9 +81,10 @@ def test_test_log_has_one_entry_per_model(tmp_path, monkeypatch):
         return pipeline.ModelSpec({"model_id": model_id}, lambda tr, te: fit(tr, te)[0], fit, filtered=True)
 
     builders = {m: (lambda m=m: spec(m)) for m in ("lr_words", "lr_extended")}
-    log = tmp_path / "log.jsonl"
+    log, frozen = tmp_path / "log.jsonl", tmp_path / "frozen.json"
     for m in ("lr_words", "lr_extended", "lr_words"):
-        out = pipeline.evaluate_final(m, builders=builders, frame=df, log_path=log)
+        pipeline.freeze_model(m, builders, frozen, log)
+        out = pipeline.evaluate_final(m, builders=builders, frame=df, log_path=log, frozen_path=frozen)
         assert list(out["predictions"].columns) == ["model_id", "doc_id", "label", "pred", "proba"]
         assert set(out["predictions"]["doc_id"]) <= set(split.loc[split["split"] == "test", "doc_id"])
     assert [e["model_id"] for e in pipeline.read_access_log(log)] == ["lr_words", "lr_extended"]

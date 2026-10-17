@@ -9,6 +9,7 @@ import json
 from math import comb
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from fml.comparison import length_bucket_f1, model_row, pairwise, per_website_table
@@ -90,3 +91,24 @@ def test_stage_output_matches_prediction_files():
     assert (m["a_only_correct"], m["b_only_correct"]) == (int((a_ok & ~b_ok).sum()), int((~a_ok & b_ok).sum()))
     n = m["a_only_correct"] + m["b_only_correct"]
     assert m["mcnemar_p"] == pytest.approx(hand_mcnemar_p(min(m["a_only_correct"], m["b_only_correct"]), n), abs=1e-4)
+
+
+def test_near_duplicate_exclusion_removes_only_test_docs_with_train_or_validation_partner():
+    """Why: a test text copied from training is 'seen'; only those documents may be dropped, and
+    a duplicate pair inside test must stay, otherwise the sensitivity check shrinks the test set wrongly."""
+    from fml.comparison import duplicate_test_ids, no_duplicate_sensitivity
+
+    split = pd.Series({"a": "train", "b": "test", "c": "validation", "d": "test", "e": "test", "f": "test"})
+    pairs = pd.DataFrame({"doc_id_a": ["a", "d", "e"], "doc_id_b": ["b", "c", "f"]})
+    assert duplicate_test_ids(pairs, split) == {"b", "d"}
+
+    ids = np.array(["b", "d", "e", "f"])
+    y = np.array([1, 1, 0, 0], dtype=bool)
+    lr = np.array([1, 1, 1, 0], dtype=bool)
+    llm = np.array([0, 1, 0, 0], dtype=bool)
+    _, s = no_duplicate_sensitivity(ids, y, {"lr": lr, "llm": llm}, {"b", "d"}, "lr", "llm")
+    assert s["n_excluded"] == 2 and s["n_remaining"] == 2 and s["n_remaining_conspiracy"] == 0
+    assert s["f1_all_test"]["lr"] == pytest.approx(0.8) and s["f1_all_test"]["llm"] == pytest.approx(2 / 3)
+    assert s["f1_without_duplicates"]["lr"] == 0.0
+    assert s["delta_f1_without_minus_all"]["lr"] == pytest.approx(-0.8)
+    assert s["gap_f1_b_minus_a_all_test"] == pytest.approx(2 / 3 - 0.8)

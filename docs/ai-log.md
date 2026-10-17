@@ -37,7 +37,7 @@ after every cycle; team members add what they checked or changed by hand.
   (the harness runs it afterwards), so byte-identical `metrics.json` across two runs is checked by the harness,
   not claimed here. The LOCO licence could not be confirmed (page unreachable).
 - **What humans must still check:**
-  1. Fill `human_stance` in `results/tables/stance_check_sample.csv` (40 rows). Until then the H6 verdict is provisional.
+  1. **Pending, Member to fill (kappa = null):** fill `human_stance` in `results/tables/stance_check_sample.csv` (40 rows; instructions in section 11), then run `fml stance-agreement`. Until then it prints `pending: 0/40 filled` and the H6 verdict is provisional.
   2. Confirm the licence of the LOCO texts at https://osf.io/snpcg/ and record it in `docs/decisions.md`.
   3. Review the open points in `docs/decisions.md` ("Needs a team decision"): temperature, output limit, near-duplicates.
   4. API key state: `LLM_CLASSIFIER_API_KEY` was set during the LLM task; `fml run-all` needs it only if the cache

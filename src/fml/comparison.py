@@ -60,3 +60,48 @@ def length_bucket_f1(words, y, preds: dict[str, np.ndarray], edges=(150, 250)) -
             row[f"f1_{name}"] = classification_metrics(y[m], np.asarray(p)[m])["f1"] if y[m].any() else float("nan")
         rows.append(row)
     return pd.DataFrame(rows)
+
+
+def duplicate_test_ids(pairs: pd.DataFrame, split: pd.Series) -> set:
+    """Test documents with a near-duplicate partner in train or validation.
+
+    `split` maps doc_id -> split name. Pairs inside the test split are kept: both texts are test
+    documents, so neither can have been learned from.
+    """
+    if not len(pairs):
+        return set()
+    a, b = pairs["doc_id_a"], pairs["doc_id_b"]
+    sa, sb = a.map(split), b.map(split)
+    out = set(a[(sa == "test") & sb.isin(["train", "validation"])])
+    return out | set(b[(sb == "test") & sa.isin(["train", "validation"])])
+
+
+def no_duplicate_sensitivity(doc_ids, y, preds: dict[str, np.ndarray], excluded: set,
+                             a: str, b: str) -> tuple[pd.DataFrame, dict]:
+    """Recompute conspiracy P/R/F1 on the test documents without near-duplicate partners.
+
+    Why: a test text that is a near copy of a training text is partly "seen", which could flatter a
+    model that memorises (the logistic regression) more than one that does not. The split stays
+    frozen; this only quantifies how much the head-to-head depends on those documents.
+    Returns a table (all test vs. remainder, per model) and a summary with F1 deltas (b minus a).
+    """
+    ids, y = np.asarray(doc_ids), np.asarray(y, dtype=bool)
+    keep = ~np.isin(ids, list(excluded))
+    rows, f1 = [], {}
+    for name, p in preds.items():
+        p = np.asarray(p, dtype=bool)
+        for setting, m in (("all_test", np.ones(len(y), dtype=bool)), ("without_duplicates", keep)):
+            met = classification_metrics(y[m], p[m]) if m.any() else dict.fromkeys(METRIC_NAMES, float("nan"))
+            rows.append({"model": name, "setting": setting, "documents": int(m.sum()),
+                         "conspiracy": int(y[m].sum()), **{k: met[k] for k in ("precision", "recall", "f1")}})
+            f1[(name, setting)] = met["f1"]
+    summary = {"n_excluded": int((~keep).sum()), "n_excluded_conspiracy": int(y[~keep].sum()),
+               "n_remaining": int(keep.sum()), "n_remaining_conspiracy": int(y[keep].sum()),
+               "f1_all_test": {n: f1[(n, "all_test")] for n in preds},
+               "f1_without_duplicates": {n: f1[(n, "without_duplicates")] for n in preds},
+               "delta_f1_without_minus_all": {n: f1[(n, "without_duplicates")] - f1[(n, "all_test")] for n in preds},
+               "gap_f1_b_minus_a_all_test": f1[(b, "all_test")] - f1[(a, "all_test")],
+               "gap_f1_b_minus_a_without_duplicates": f1[(b, "without_duplicates")] - f1[(a, "without_duplicates")]}
+    summary["same_winner"] = bool((summary["gap_f1_b_minus_a_all_test"] > 0)
+                                  == (summary["gap_f1_b_minus_a_without_duplicates"] > 0))
+    return pd.DataFrame(rows), summary

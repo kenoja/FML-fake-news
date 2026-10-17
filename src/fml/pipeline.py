@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import platform
+import time
 from dataclasses import dataclass
 from functools import lru_cache
 from datetime import datetime, timezone
@@ -249,7 +251,10 @@ def title_word_counts(titles: pd.Series, k: int = 15) -> pd.Series:
     from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
     sets = titles.fillna("").str.lower().map(lambda t: set(re.findall(r"[a-z]{3,}", t)) - ENGLISH_STOP_WORDS)
-    return pd.Series([w for ws in sets for w in ws], dtype=object).value_counts().head(k)
+    counts = pd.Series([w for ws in sets for w in ws], dtype=object).value_counts()
+    # Set iteration order changes between processes, so ties must be broken by an explicit total key.
+    ordered = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:k]
+    return pd.Series([c for _, c in ordered], index=[w for w, _ in ordered], dtype="int64")
 
 
 def term_table(raw: pd.DataFrame) -> pd.DataFrame:
@@ -266,7 +271,7 @@ def term_table(raw: pd.DataFrame) -> pd.DataFrame:
                      "mainstream": int((m & ~lab).sum()), "only_this_term": int(only.sum()),
                      "only_this_term_conspiracy": int((only & lab).sum()),
                      "only_this_term_mainstream": int((only & ~lab).sum())})
-    return pd.DataFrame(rows).sort_values("documents_matching", ascending=False)
+    return pd.DataFrame(rows).sort_values(["documents_matching", "term"], ascending=[False, True])
 
 
 def topic_filter() -> dict:
@@ -295,7 +300,7 @@ def topic_filter() -> dict:
              .reset_index().assign(removed=lambda d: d["documents"] - d["kept"]))
     sites["removal_rate"] = sites["removed"] / sites["documents"]
     sites["label"] = sites["label"].map(CLASS_NAMES)
-    sites = sites.sort_values(["removed", "documents"], ascending=False)
+    sites = sites.sort_values(["removed", "documents", "website"], ascending=[False, False, True])
     write_table("topic_filter_by_website", sites)
 
     terms = term_table(raw)
@@ -476,8 +481,42 @@ def read_access_log(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+def read_frozen(path: Path) -> dict[str, dict]:
+    if not path.is_file():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def freeze_model(model_id: str, builders: dict[str, Callable[[], ModelSpec]] | None = None,
+                 frozen_path: Path | None = None, log_path: Path | None = None) -> dict:
+    """Write the configuration chosen on validation to results/frozen_models.json BEFORE any test look.
+
+    Why: `evaluate_final` refuses to score a model whose chosen config is not frozen, or whose hash
+    differs from the frozen one, so the test split cannot influence which configuration is reported.
+    An entry is never rewritten. If the access log already holds a look for this model (a freeze made
+    after the fact), the entry says `retroactive: true` instead of pretending it came first.
+    """
+    builders = MODEL_BUILDERS if builders is None else builders
+    digest = config_hash(builders[model_id]().config)
+    frozen_path = frozen_path or results_dir() / "frozen_models.json"
+    log_path = log_path or results_dir() / "test_access_log.jsonl"
+    frozen = read_frozen(frozen_path)
+    if model_id in frozen:
+        if frozen[model_id]["config_hash"] != digest:
+            raise PermissionError(f"{model_id} is frozen with another configuration; use a new model id.")
+        return frozen[model_id]
+    entry = {"model_id": model_id, "config_hash": digest, "selection_source": "validation",
+             "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+             "retroactive": any(e["model_id"] == model_id for e in read_access_log(log_path))}
+    frozen[model_id] = entry
+    frozen_path.parent.mkdir(parents=True, exist_ok=True)
+    frozen_path.write_text(json.dumps(frozen, indent=2) + "\n", encoding="utf-8")
+    return entry
+
+
 def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] | None = None,
-                   frame: pd.DataFrame | None = None, log_path: Path | None = None) -> dict:
+                   frame: pd.DataFrame | None = None, log_path: Path | None = None,
+                   frozen_path: Path | None = None) -> dict:
     """Score one model on the locked TEST split and log the access in results/test_access_log.jsonl.
 
     The only code path that reads the test rows. A model id may be scored with one configuration only:
@@ -491,6 +530,13 @@ def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] |
     spec = builders[model_id]()
     digest = config_hash(spec.config)
     log_path = log_path or results_dir() / "test_access_log.jsonl"
+    frozen = read_frozen(frozen_path or results_dir() / "frozen_models.json").get(model_id)
+    if frozen is None:
+        raise PermissionError(f"{model_id} has no entry in frozen_models.json: freeze the configuration "
+                              "chosen on validation (freeze_model) before the first test scoring.")
+    if frozen["config_hash"] != digest:
+        raise PermissionError(f"{model_id}: configuration hash {digest} differs from the frozen "
+                              f"{frozen['config_hash']}; refusing to score on test.")
     previous = [e for e in read_access_log(log_path) if e["model_id"] == model_id]
     if any(e["config_hash"] != digest for e in previous):
         raise PermissionError(f"{model_id} was already scored on test with a different configuration; "
@@ -646,6 +692,8 @@ def ablation() -> dict:
               "verdicts": verdicts, "chosen_lr": chosen}
     write_metrics("ablation", round_floats(values, 4))
 
+    for m in (LR_WORDS_ID, LR_EXTENDED_ID):
+        freeze_model(m)                 # the validation choice is on disk before the first test look
     tests = {m: evaluate_final(m) for m in (LR_WORDS_ID, LR_EXTENDED_ID)}
     rows, test_values = [], {}
     for m, out in tests.items():
@@ -787,9 +835,11 @@ def llm_stage() -> dict:
     values.update(model_id=LLM_ID, question="source: conspiracy-oriented or mainstream website",
                   model=cfg["model"], temperature=cfg["temperature"], max_input_words=cfg["max_input_words"],
                   bootstrap={"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95})
+    values["token_limit_sensitivity"] = llm.token_limit_sensitivity(f["validation"], values["chosen"], client)
     write_metrics("llm", round_floats(values, 4))      # the rule and the choice are on disk before test is touched
 
     holder: dict = {}
+    freeze_model(LLM_ID, builders={LLM_ID: lambda: _llm_spec({})})   # prompt chosen on validation, on disk above
     out = evaluate_final(LLM_ID, builders={LLM_ID: lambda: _llm_spec(holder)})
     test, p1, p2 = holder["test"], holder["pass1"], holder["pass2"]
     for r in holder["recs1"] + holder["recs2"] + llm.cached_records(f["validation"], values["chosen"], 1):
@@ -890,7 +940,9 @@ def comparison_stage() -> dict:
     Reads only the prediction files written by `evaluate_final` (plus website and length metadata of
     the same documents). No model is fitted or scored here, so this stage cannot select anything on test.
     """
-    from .comparison import length_bucket_f1, model_row, pairwise, per_website_table
+    from .clean import find_near_duplicates
+    from .comparison import (duplicate_test_ids, length_bucket_f1, model_row, no_duplicate_sensitivity, pairwise,
+                             per_website_table)
 
     frame = analysis_frame()
     split = load_split().set_index("doc_id")["split"]
@@ -940,6 +992,11 @@ def comparison_stage() -> dict:
                  "beats_majority": bool(f1_of[m]["f1"] > f1_of["majority"]["f1"]),
                  "site_ci_excludes_majority": bool(f1_of[m]["f1_ci_site_low"] > f1_of["majority"]["f1"])}
     pair = (chosen_lr, LLM_ID)
+    # same pairs as metrics.json data.near_duplicate_pairs_across_splits (exact duplicates dropped first)
+    dup_pairs = find_near_duplicates(cleaned_frame(keep_all=False))
+    excluded = duplicate_test_ids(dup_pairs, split)
+    dup_table, dup_summary = no_duplicate_sensitivity(ids, y, {m: preds[m] for m in pair}, excluded, chosen_lr, LLM_ID)
+    write_table("comparison_test_no_dups", dup_table.round(4))
     wins = {k: max(pair, key=lambda m: f1_of[m][k]) for k in ("precision", "recall", "f1")}
     values = {"data": "filtered documents, split_v1, TEST rows; predictions from evaluate_final files only",
               "models": list(preds), "lr_best": chosen_lr,
@@ -950,7 +1007,10 @@ def comparison_stage() -> dict:
               "table": table.to_dict("records"), "mcnemar": tests, "h1": h1, "winner_by_metric": wins,
               "mainstream_accuracy": {m: float((preds[m][~y] == y[~y]).mean()) for m in pair},
               "average_precision": {n: c[1] for n, c in curves.items()},
-              "length_buckets": lengths.to_dict("records"), "llm_stability": metrics["llm"]["stability"]}
+              "length_buckets": lengths.to_dict("records"), "llm_stability": metrics["llm"]["stability"],
+              "no_duplicate_sensitivity": {**dup_summary, "compared": list(pair),
+                                           "pairs_across_splits_in_data":
+                                               metrics["data"]["near_duplicate_pairs_across_splits"]}}
     write_metrics("comparison", round_floats(_nan_to_none_deep(values), 4))
     return values
 
@@ -1025,7 +1085,7 @@ def errors_stage() -> dict:
     key = llm_mod.cache_key(reasons["variant"].iloc[0], 1)
     ex = pd.concat([ex.reset_index(drop=True), pd.DataFrame(contrib)], axis=1)
     ex["llm_label"] = ex["doc_id"].map(reasons["llm_label"])
-    ex["llm_reason"] = [cache[(d, key)]["reason"] for d in ex["doc_id"]]
+    ex["llm_reason"] = [errors.scrub_justification(cache[(d, key)]["reason"]) for d in ex["doc_id"]]
     ex["true_label"] = ex["true_label"].map(CLASS_NAMES)
     write_table("error_examples", ex[["kind", "doc_id", "website", "set", "true_label", "error_type", "claude_stance",
                                       "claude_justification", "verdict", "llm_label", "llm_reason",
@@ -1043,8 +1103,20 @@ def errors_stage() -> dict:
           "fn_conspiracy_no_claim": share(fn, fn & (usable["claude_stance"] == "no_claim")),
           "fn_conspiracy_not_endorsing": share(fn, fn & nonendorse),
           "label_problem_overall": share(usable["verdict"].notna(), usable["verdict"] == errors.LABEL_PROBLEM)}
+    lp_range = errors.label_problem_range(coded)
+    write_table("label_problem_range", lp_range)
+    shares = lp_range["share"].dropna()
+    label_problem_range = {"variants": lp_range.set_index("variant").to_dict("index"),
+                           "min_share": float(shares.min()), "max_share": float(shares.max()),
+                           "basis": "Claude-coded stance, not yet checked by humans"}
     totals = sets.groupby(["set", "error_type"]).size()
+    val = f[f["doc_id"].map(split) == "validation"]
+    try:
+        probe = llm_mod.website_probe(llm_mod.probe_sample(val, seed))
+    except RuntimeError as exc:             # no key and no cached probe: say so, never invent a share
+        probe = {"status": "not run", "reason": str(exc)}
     values = {"data": "TEST rows, filtered documents; predictions from evaluate_final files only",
+              "prior_knowledge_probe": probe,
               "lr_model": chosen, "llm_pass": 1, "stance_model": cfg["model"],
               "counts": {s: {"total": int((sets["set"] == s).sum()),
                              "conspiracy": int(((sets["set"] == s) & sets["true_label"]).sum()),
@@ -1056,7 +1128,7 @@ def errors_stage() -> dict:
               "stance_counts": usable["claude_stance"].value_counts().to_dict(),
               "verdict_counts": usable["verdict"].value_counts().to_dict(),
               "rule": "conspiracy site + (rejects|neutral|no_claim) -> label problem; mainstream site + endorses -> label problem; else model wrong",
-              "h6": h6, "human_check": {**human, "sample_file": "results/tables/stance_check_sample.csv",
+              "h6": h6, "label_problem_range": label_problem_range, "human_check": {**human, "sample_file": "results/tables/stance_check_sample.csv",
                                         "file_rewritten_this_run": written}}
     write_metrics("errors", round_floats(values, 4))
     return values
@@ -1070,12 +1142,31 @@ STAGES: list[tuple[str, Callable[[], object]]] = [("baseline_all_docs", baseline
 PENDING_STAGES: list[str] = []
 
 
+def write_run_info(seconds: float) -> Path:
+    """Record how long `fml run-all` took and which software versions produced results/.
+
+    Kept apart from metrics.json (whose top-level keys are a contract) so the report can
+    quote runtime and versions from a file instead of typing them.
+    """
+    from importlib.metadata import version
+
+    packages = ("numpy", "pandas", "scipy", "scikit-learn", "matplotlib", "anthropic", "pyyaml")
+    info = {"run_all_seconds": round(seconds, 1),
+            "python": platform.python_version(),
+            "packages": {name: version(name) for name in packages}}
+    path = results_dir() / "run_info.json"
+    path.write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
 def run_all() -> None:
     """Reproduce every file in results/ from the data repo (LLM answers come from the cache)."""
     from .data_report import run_data_stage
 
+    started = time.perf_counter()
     run_data_stage()
     for _, stage in STAGES:
         stage()
+    write_run_info(time.perf_counter() - started)
     if PENDING_STAGES:
         raise NotImplementedError("fml run-all: stages not implemented yet: " + ", ".join(PENDING_STAGES))

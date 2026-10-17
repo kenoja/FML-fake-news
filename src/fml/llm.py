@@ -285,6 +285,126 @@ def classify(df: pd.DataFrame, variant: str = "v1", pass_id: int = 1, client: Cl
     return pd.DataFrame(rows)
 
 
+# ---------------------------------------------------------------- token-limit sensitivity
+
+SENSITIVITY_PASS = 3     # own cache key, so 150-token answers (pass 1) and 400-token answers never mix
+
+
+def sensitivity_subset(valid: pd.DataFrame, n: int, seed: int) -> pd.DataFrame:
+    """Seeded random subset of validation documents (never test), sorted by doc_id for a stable order."""
+    return valid.sample(n=min(n, len(valid)), random_state=seed).sort_values("doc_id")
+
+
+def token_limit_sensitivity(valid: pd.DataFrame, variant: str, client: Client | None = None,
+                            cache_file: Path | None = None, cfg: dict | None = None) -> dict:
+    """Does the 150-token output limit hurt? Re-ask the chosen prompt with a larger limit on a validation subset.
+
+    Why: cut-off replies are parse errors scored as 'not conspiracy'. Comparing both limits on the same
+    documents shows how much recall that costs. Test documents are never touched. Without a key and
+    without cached pass-3 answers the result is {"status": "not run", ...}; nothing is guessed.
+    """
+    from sklearn.metrics import f1_score
+
+    cfg = cfg or llm_config()
+    sens = cfg["token_limit_sensitivity"]
+    sub = sensitivity_subset(valid, sens["n_docs"], project_config()["split"]["seed"])
+    big = {**cfg, "max_output_tokens": sens["max_output_tokens"]}
+    path = cache_file or cache_path(cfg)
+    base = {"split": "validation", "variant": variant, "n_docs": int(len(sub)),
+            "limit_default": cfg["max_output_tokens"], "limit_large": sens["max_output_tokens"]}
+    if client is None and missing_count(sub, variant, SENSITIVITY_PASS, path, cfg):
+        env = api_key_env_name(cfg)
+        if not os.environ.get(env):
+            return {"status": "not run", "reason": f"no cached answers and {env} not set", **base}
+    if client is None:
+        client = make_client(big) if missing_count(sub, variant, SENSITIVITY_PASS, path, cfg) else None
+    small_res = classify(sub, variant, 1, cache_file=path, cfg=cfg)
+    large_res = classify(sub, variant, SENSITIVITY_PASS, client=client, cache_file=path, cfg=big)
+    y = sub["label"].to_numpy()
+
+    def score(res: pd.DataFrame) -> dict:
+        pred = (res["label"] == "conspiracy").to_numpy()
+        errs = int((res["label"] == PARSE_ERROR).sum())
+        return {"parse_errors": errs, "parse_error_rate": errs / len(res), "f1": float(f1_score(y, pred))}
+
+    a, b = score(small_res), score(large_res)
+    return {"status": "run", **base, "default": a, "large": b, "f1_difference": b["f1"] - a["f1"],
+            "parse_error_rate_difference": b["parse_error_rate"] - a["parse_error_rate"],
+            "label_flips": int((small_res["label"].to_numpy() != large_res["label"].to_numpy()).sum()),
+            "pass": SENSITIVITY_PASS}
+
+
+# ---------------------------------------------------------------- prior-knowledge probe
+
+PROBE_SAMPLE_MAX = 40
+PROBE_PROMPT = (
+    "Read the article below. Which website published it? Name the website's domain if you recognise it, "
+    "otherwise answer unknown. Do not guess.\n"
+    'Answer with strict JSON only, no other text: {"website": "domain or unknown"}'
+)
+
+
+def _site_key(name: str) -> str:
+    """Lower-case letters and digits of a domain without scheme, 'www.' and the final top-level domain."""
+    s = re.sub(r"^\w+://", "", str(name).strip().lower())
+    s = re.sub(r"^www\.", "", s).split("/")[0]
+    s = re.sub(r"\.[a-z]{2,}$", "", s)
+    return re.sub(r"[^a-z0-9]", "", s)
+
+
+def site_matches(answer: str, true_site: str) -> bool:
+    """Did the model name the true website? Compared on the domain without 'www.' and the final TLD."""
+    a, t = _site_key(answer), _site_key(true_site)
+    return bool(a) and a != "unknown" and bool(t) and (a == t or t in a or a in t and len(a) >= 4)
+
+
+def probe_key(cfg: dict | None = None) -> str:
+    cfg = cfg or llm_config()
+    return prompt_hash(PROBE_PROMPT, cfg["model"], cfg["temperature"], cfg["max_input_words"], 0)
+
+
+def probe_sample(df: pd.DataFrame, seed: int, n: int = PROBE_SAMPLE_MAX) -> pd.DataFrame:
+    """Seeded sample of at most `n` documents (sorted by doc_id first so the draw is reproducible)."""
+    df = df.sort_values("doc_id")
+    return df if len(df) <= n else df.sample(n=n, random_state=seed).sort_values("doc_id")
+
+
+def website_probe(df: pd.DataFrame, client: Client | None = None, cache_file: Path | None = None,
+                  cfg: dict | None = None) -> dict:
+    """Can Haiku name the true website from the article alone? A high share means the LLM may lean on
+    memory of the corpus, not on reading style, which would flatter its score.
+
+    `df` has columns doc_id, txt, website (validation sample, at most 40 rows). The cache record holds
+    only doc_id, prompt_hash and the boolean `matched`: neither article text nor the model's answer.
+    Cache first; a miss needs a client or the API key, else RuntimeError (no guessing).
+    """
+    cfg = cfg or llm_config()
+    if len(df) > PROBE_SAMPLE_MAX:
+        raise ValueError(f"probe sample of {len(df)} documents exceeds {PROBE_SAMPLE_MAX}")
+    key = probe_key(cfg)
+    path = cache_file or cache_path(cfg)
+    cache = read_cache(path)
+    hits = 0
+    for doc_id, txt, site in zip(df["doc_id"], df["txt"], df["website"]):
+        rec = cache.get((doc_id, key))
+        if rec is None:
+            if client is None:
+                client = make_client(cfg)
+            article, _ = truncate_words(txt, cfg["max_input_words"])
+            raw = client.complete(PROBE_PROMPT, article).text
+            try:
+                answer = str(json.loads(re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip()))["website"])
+            except (ValueError, KeyError, TypeError):
+                answer = ""
+            rec = {"doc_id": doc_id, "prompt_hash": key, "matched": site_matches(answer, site)}
+            append_cache(path, rec)
+            cache[(doc_id, key)] = rec
+        hits += bool(rec["matched"])
+    n = int(len(df))
+    return {"status": "run", "n": n, "identified": hits, "share_identified": hits / n if n else None,
+            "prompt_hash": key, "model": cfg["model"], "split": "validation"}
+
+
 def summarise(result: pd.DataFrame) -> dict:
     """Counts that must be reported: parse errors and truncated documents are never hidden."""
     return {"n_docs": int(len(result)),

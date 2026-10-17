@@ -1,0 +1,4 @@
+variant,n,label_problems,share
+a_current_rule_all_coded,80,54,0.675
+b_endorse_reject_only,7,2,0.286
+c_current_rule_excluding_unparsed,78,54,0.692

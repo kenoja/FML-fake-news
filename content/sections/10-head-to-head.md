@@ -7,6 +7,8 @@ hypothesis: Both approaches beat the always-mainstream baseline on conspiracy F1
 
 Everything so far was tuned on **validation**. This section is the one place where all approaches meet on the same **test** documents, which were scored exactly once per model by `fml evaluate-final` (the log is `results/test_access_log.jsonl`). The comparison stage reads only the saved prediction files, so it cannot choose or re-score anything on test.
 
+**Sequence of test looks.** The log `results/test_access_log.jsonl` shows this actual order (UTC, copied from the log): `lr_words` at 2026-10-17T01:19:52 (config hash 4c7ae4b64bb07dc1), `lr_extended` at 2026-10-17T01:21:07, `llm_haiku` at 2026-10-17T09:26:03, and `lr_words_v2` at 2026-10-17T10:35:02 (changed configuration, new hash 686c1de15756e287). So `lr_words_v2` is a second test look at the words-only logistic regression, made after the test results of the other models were known. The LR choice rule (M2 only if its F1 gain over M1 has a website-bootstrap interval above 0) is applied to validation rows only (`ablation.chosen_lr`); we state that it was fixed before any test look, but the log cannot prove it, because the first `lr_words` look already used an earlier configuration. Limitation: the stale `lr_words` entry stays in the log and is not used for any number, yet the sequence means the words-only configuration was revised after one test look. From now on `evaluate_final` refuses to score a model unless its validation-chosen configuration is already in `results/frozen_models.json` (model id, config hash, source `validation`, timestamp) with the same hash. Entries for looks that happened before this rule are marked `retroactive` there, so their timestamps are later than the log lines.
+
 We compare four things on the same 423 test documents (numbers in `results/metrics.json`, key `comparison`):
 
 - **majority**: always answers "mainstream" (the most common class in training);
@@ -68,7 +70,18 @@ The precision-recall figure ranks documents by the logistic regression's probabi
 
 <!-- output: results/tables/per_website_test.csv -->
 
-The per-website table is the most important caution. The test split has only **6 conspiracy websites** (`test_conspiracy_websites`), and one of them (neonnettle.com, 44 pages) is the large majority of the misses for all three models: accuracy there is 0.2045 for both logistic regressions and 0.1591 for the LLM. One oye.news page counts as a whole website. A different website draw could move every number in the table, which is exactly what the wide website intervals say.
+The per-website table is the most important caution. The test split has only **6 conspiracy websites** (`test_conspiracy_websites`), and one of them (neonnettle.com, 44 pages) is the large majority of the misses for all three models: accuracy there is 0.204 for both logistic regressions and 0.159 for the LLM. One oye.news page counts as a whole website. A different website draw could move every number in the table, which is exactly what the wide website intervals say.
+
+### Sensitivity: test documents with a near-duplicate in train or validation
+
+A *near-duplicate* is a pair of articles whose TF-IDF vectors have cosine similarity of at least 0.9 (the pairs counted in `data.near_duplicate_pairs_across_splits`, 36 of them). A test article that is nearly a copy of a training article is partly "seen", which could flatter a model that memorises vocabulary. To measure this we drop every test document that has such a partner in train or validation and recompute precision, recall and F1 for both models on the rest. The split stays frozen and nothing is removed from the main results; the duplicates are quantified, not removed.
+
+<!-- cell: src/fml/comparison.py#no_duplicate_sensitivity -->
+
+<!-- output: results/tables/comparison_test_no_dups.csv -->
+<!-- output: results/metrics.json#comparison.no_duplicate_sensitivity -->
+
+Nine test documents (one of them conspiracy) are excluded (`n_excluded`), leaving 414. F1 of the logistic regression moves from 0.5848 to 0.5799 (change -0.0049) and F1 of the LLM from 0.6842 to 0.68 (change -0.0042). The gap between them is 0.0994 on all test documents and 0.1001 without the duplicates. Both models lose about the same tiny amount, so near-duplicates do not explain the LLM's lead and do not change the conclusion of this section.
 
 ## What could go wrong
 

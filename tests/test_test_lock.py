@@ -77,9 +77,10 @@ def builders(C: float = 1.0):
 
 def test_evaluate_final_logs_and_is_idempotent(frames, tmp_path):
     df, split = frames
-    log = tmp_path / "log.jsonl"
-    out = pipeline.evaluate_final("toy", builders(), df, log)
-    again = pipeline.evaluate_final("toy", builders(), df, log)
+    log, fz = tmp_path / "log.jsonl", tmp_path / "frozen.json"
+    pipeline.freeze_model("toy", builders(), fz, log)
+    out = pipeline.evaluate_final("toy", builders(), df, log, fz)
+    again = pipeline.evaluate_final("toy", builders(), df, log, fz)
     entries = [json.loads(l) for l in log.read_text().splitlines()]
     assert len(entries) == 1 and set(entries[0]) == {"model_id", "config_hash", "at", "n_docs"}
     assert entries[0]["n_docs"] == out["n_docs"] == int((split["split"] == "test").sum())
@@ -88,17 +89,47 @@ def test_evaluate_final_logs_and_is_idempotent(frames, tmp_path):
 
 def test_evaluate_final_rejects_changed_config(frames, tmp_path):
     df, _ = frames
-    log = tmp_path / "log.jsonl"
-    pipeline.evaluate_final("toy", builders(1.0), df, log)
+    log, fz = tmp_path / "log.jsonl", tmp_path / "frozen.json"
+    pipeline.freeze_model("toy", builders(1.0), fz, log)
+    pipeline.evaluate_final("toy", builders(1.0), df, log, fz)
     with pytest.raises(PermissionError):
-        pipeline.evaluate_final("toy", builders(10.0), df, log)
+        pipeline.evaluate_final("toy", builders(10.0), df, log, fz)
     assert len(log.read_text().splitlines()) == 1
 
 
 def test_evaluate_final_unknown_model(frames, tmp_path):
     df, _ = frames
     with pytest.raises(KeyError):
-        pipeline.evaluate_final("nope", builders(), df, tmp_path / "log.jsonl")
+        pipeline.evaluate_final("nope", builders(), df, tmp_path / "log.jsonl", tmp_path / "f.json")
+
+
+def test_test_scoring_refused_without_frozen_entry(frames, tmp_path):
+    """The chosen config must be on disk before the first test look; otherwise test could steer the choice."""
+    df, _ = frames
+    log = tmp_path / "log.jsonl"
+    with pytest.raises(PermissionError, match="frozen"):
+        pipeline.evaluate_final("toy", builders(), df, log, tmp_path / "absent.json")
+    assert not log.exists()
+
+
+def test_test_scoring_refused_when_frozen_hash_differs(frames, tmp_path):
+    df, _ = frames
+    log, fz = tmp_path / "log.jsonl", tmp_path / "frozen.json"
+    pipeline.freeze_model("toy", builders(1.0), fz, log)
+    with pytest.raises(PermissionError, match="differs"):
+        pipeline.evaluate_final("toy", builders(10.0), df, log, fz)
+    assert not log.exists()
+
+
+def test_freeze_records_validation_source_and_flags_late_freeze(frames, tmp_path):
+    log, fz = tmp_path / "log.jsonl", tmp_path / "frozen.json"
+    e = pipeline.freeze_model("toy", builders(), fz, log)
+    assert e["selection_source"] == "validation" and e["retroactive"] is False and e["config_hash"]
+    log.write_text(json.dumps({"model_id": "late", "config_hash": "x", "at": "t", "n_docs": 1}) + "\n")
+    b = {"late": builders()["toy"]}
+    assert pipeline.freeze_model("late", b, fz, log)["retroactive"] is True
+    with pytest.raises(PermissionError):
+        pipeline.freeze_model("toy", builders(10.0), fz, log)
 
 
 def test_metrics_on_hand_table():

@@ -17,6 +17,7 @@ MAINSTREAM_COLOUR = "#2b7a6a"
 METRIC_KEYS = ("data", "split", "baseline_all_docs", "topic_filter", "baseline", "ablation",
                "llm", "comparison", "errors")
 DPI = 150
+TABLE_DECIMALS = 3  # floats in CSV tables are written rounded, so reruns and diffs stay stable
 
 
 def results_dir() -> Path:
@@ -46,7 +47,7 @@ def write_table(name: str, df: pd.DataFrame, directory: Path | None = None) -> P
     directory = directory or results_dir() / "tables"
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / (name if name.endswith(".csv") else f"{name}.csv")
-    df.to_csv(path, index=False)
+    df.round(TABLE_DECIMALS).to_csv(path, index=False)
     return path
 
 

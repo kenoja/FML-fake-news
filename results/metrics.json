@@ -1760,6 +1760,28 @@
       "cohen_kappa": 0.8871,
       "parse_errors_pass1": 61,
       "parse_errors_pass2": 66
+    },
+    "token_limit_sensitivity": {
+      "status": "run",
+      "split": "validation",
+      "variant": "v2",
+      "n_docs": 150,
+      "limit_default": 150,
+      "limit_large": 400,
+      "default": {
+        "parse_errors": 20,
+        "parse_error_rate": 0.1333,
+        "f1": 0.9425
+      },
+      "large": {
+        "parse_errors": 18,
+        "parse_error_rate": 0.12,
+        "f1": 0.9545
+      },
+      "f1_difference": 0.012,
+      "parse_error_rate_difference": -0.0133,
+      "label_flips": 4,
+      "pass": 3
     }
   },
   "comparison": {
@@ -2039,10 +2061,45 @@
       "cohen_kappa": 0.8871,
       "parse_errors_pass1": 61,
       "parse_errors_pass2": 66
+    },
+    "no_duplicate_sensitivity": {
+      "n_excluded": 9,
+      "n_excluded_conspiracy": 1,
+      "n_remaining": 414,
+      "n_remaining_conspiracy": 97,
+      "f1_all_test": {
+        "lr_words_v2": 0.5848,
+        "llm_haiku": 0.6842
+      },
+      "f1_without_duplicates": {
+        "lr_words_v2": 0.5799,
+        "llm_haiku": 0.68
+      },
+      "delta_f1_without_minus_all": {
+        "lr_words_v2": -0.0049,
+        "llm_haiku": -0.0042
+      },
+      "gap_f1_b_minus_a_all_test": 0.0994,
+      "gap_f1_b_minus_a_without_duplicates": 0.1001,
+      "same_winner": true,
+      "compared": [
+        "lr_words_v2",
+        "llm_haiku"
+      ],
+      "pairs_across_splits_in_data": 36
     }
   },
   "errors": {
     "data": "TEST rows, filtered documents; predictions from evaluate_final files only",
+    "prior_knowledge_probe": {
+      "status": "run",
+      "n": 40,
+      "identified": 5,
+      "share_identified": 0.125,
+      "prompt_hash": "b67f79668ebeb1d2",
+      "model": "claude-haiku-5-5",
+      "split": "validation"
+    },
     "lr_model": "lr_words_v2",
     "llm_pass": 1,
     "stance_model": "claude-sonnet-5-5",
@@ -2111,6 +2168,28 @@
         "hit": 54,
         "share": 0.6923
       }
+    },
+    "label_problem_range": {
+      "variants": {
+        "a_current_rule_all_coded": {
+          "n": 80,
+          "label_problems": 54,
+          "share": 0.675
+        },
+        "b_endorse_reject_only": {
+          "n": 7,
+          "label_problems": 2,
+          "share": 0.2857
+        },
+        "c_current_rule_excluding_unparsed": {
+          "n": 78,
+          "label_problems": 54,
+          "share": 0.6923
+        }
+      },
+      "min_share": 0.2857,
+      "max_share": 0.6923,
+      "basis": "Claude-coded stance, not yet checked by humans"
     },
     "human_check": {
       "status": "not yet verified",

@@ -3,11 +3,19 @@ title: Error analysis
 part: Evaluation
 hypothesis: H6 - many false positives are mainstream articles that discuss or debunk conspiracy theories, and many false negatives are conspiracy-site articles that contain no conspiracy claim, so part of the "error" is the label, not the model.
 ---
+**In five lines**
+
+1. We compared the LR and the LLM on the test articles where they disagree, and asked Claude how each article treats conspiracy claims.
+2. Conspiracy-site misses are mostly articles with no conspiracy claim; mainstream false positives are mostly plain model errors.
+3. The share of errors that are label problems is a range, not one number: see `errors.label_problem_range` below.
+4. The range rests on stance codes written by Claude and not yet checked by humans, so the H6 verdict is provisional.
+5. The long detail (rule, worked examples, how to check the codes) follows in the sub-headings below; read it only if you need it.
+
 ## Goal and hypothesis
 
 The labels say which **website** published an article, not what the article says. A mainstream outlet can run a piece that debunks 9/11 theories; a conspiracy site can run a plain news item. If the model "fails" on such an article, is the model wrong, or does the label simply not describe the text? This section counts both cases on the **test** documents (hypothesis H6, see the header). Everything here is read from the saved prediction files of `fml evaluate-final`; nothing is scored or selected on test.
 
-**Human verification is still pending.** The stance codes below were produced by Claude (Sonnet 5.5). A teammate has not yet checked any of them, so no agreement figure (Cohen's kappa) exists yet and none is reported. The H6 verdict is therefore **provisional**: it rests on Claude's reading of the articles.
+**Human verification: pending, Member to fill (kappa = null).** To fill: open `results/tables/stance_check_sample.csv`, read each article in the private data repo, write one of `endorses`, `rejects_or_debunks`, `reports_neutrally`, `no_claim` into `human_stance`, then run `fml stance-agreement` (it shows `pending: 0/40 filled` until you do). Justifications in the public CSVs are cut to 25 words and name-like words are replaced by `[name]` (`errors.scrub_justification`). The stance codes below were produced by Claude (Sonnet 5.5). A teammate has not yet checked any of them, so no agreement figure (Cohen's kappa) exists yet and none is reported. The H6 verdict is therefore **provisional**: it rests on Claude's reading of the articles.
 
 ## Explanation
 
@@ -39,7 +47,7 @@ It also gave a justification of at most 25 words. We coded **all** 80 disagreeme
 | mainstream | endorses | label does not describe the text |
 | mainstream | rejects_or_debunks, reports_neutrally, no_claim | model wrong |
 
-The last row is deliberately strict: a mainstream article that debunks theories *is* mainstream content, so calling it "conspiracy" is a model mistake, even though we can explain it (the model reacted to the topic). Documents whose stance reply could not be parsed are "not coded" and left out.
+The last row is deliberately strict: a mainstream article that debunks theories *is* mainstream content, so calling it "conspiracy" is a model mistake, even though we can explain it (the model reacted to the topic). Documents whose stance reply could not be parsed are counted in the "unparsed" column and left out of the verdicts, so each row of the table adds up to its error count.
 
 ### Results
 
@@ -51,11 +59,21 @@ Read the `h6` block as `hit` out of `n` (with `share`):
 
 - **False negatives (conspiracy sites missed).** `fn_conspiracy_no_claim`: 48 of 55 coded documents (87%) contain no conspiracy claim at all according to Claude. Another 5 only report or reject. Only 2 endorse a claim and are really "missed" conspiracy content. Many of these pages are show announcements, politics or health news that merely mention 9/11. The label (conspiracy *website*) is true, but a text-only model has nothing to find.
 - **False positives (mainstream articles flagged).** `fp_mainstream_not_endorsing_but_discusses`: 8 of 23 (35%) discuss conspiracy claims, 3 of them to debunk them (13%) and 5 neutrally. Most others were classified `no_claim`, so the model flagged them for other reasons (topic words such as "Saudi", "FBI", "government").
-- Overall 54 of 78 coded errors (69%) are "label does not describe the text".
+- Overall, between 0.2857 and 0.6923 of the coded errors are "label does not describe the text", depending on how the stance codes are counted (see "How sure is the label-problem share?" below).
 
 **Verdict on H6: supported for false negatives, only partly for false positives.** The false-negative half is strong (87% have no claim), but see the cautions below. For false positives, a minority debunk or discuss conspiracy theories (35%), and only 13% debunk; the large majority of FP errors are plain model mistakes (22 of 24 by the rule). Because Claude's stance codes are unchecked, we call this provisional.
 
 The two models err differently. In `lr_only_wrong` the LR's false positives are mostly "model wrong" (20 of 22), while in `both_wrong` almost everything (37 of 39) is a conspiracy-site article without a conspiracy claim: neither approach can be expected to get these right from the text.
+
+### How sure is the label-problem share?
+
+One number would look more certain than it is, so we compute it three ways (`label_problem_range`): (a) the current rule with every coded error in the count, (b) counting only the decisive stance codes (endorses, rejects or debunks), and (c) the current rule leaving out unparsed replies. The range is the minimum and maximum of the three. It rests on Claude-coded stance that humans have not checked.
+
+<!-- output: results/tables/label_problem_range.csv -->
+
+<!-- output: results/metrics.json#errors.label_problem_range -->
+
+Variant (b) is low because most "label problem" verdicts come from the vague codes `no_claim` and `reports_neutrally`, which that variant does not count. Whether those vague codes deserve the verdict is what the human check must decide.
 
 ### Worked examples
 
@@ -98,7 +116,7 @@ The file `results/tables/stance_check_sample.csv` has 40 disagreement documents 
 3. **Pick exactly one value** for `human_stance`, written exactly like this: `endorses`, `rejects_or_debunks`, `reports_neutrally`, `no_claim`. The question: how does the article treat conspiracy claims about 9/11 (inside job, cover-up, the official account is a lie)?
 4. **Unclear cases.** If the article only mentions 9/11 in passing: `no_claim`. If it describes claims but you cannot tell whether it sides with them: `reports_neutrally`. If it endorses a claim not about 9/11 itself (for example about Saudi involvement or an FBI cover-up), choose by whether it presents the claim as true; write your reasoning in `human_note`. If you truly cannot decide, leave `human_stance` empty and say why in `human_note`; empty rows are left out of the agreement.
 5. **No article text in `human_note`**: write your reason in your own words (at most 25 words).
-6. **Agreement.** Run `fml stance-agreement` (or `python -m fml.cli stance-agreement path/to/file.csv`). It prints how many rows are filled, the share of agreement and **Cohen's kappa** (agreement between two raters beyond what chance alone would give: 1 means perfect, 0 means no better than chance). While `human_stance` is empty it prints `"status": "not yet verified"` and no kappa. Rerunning `fml run-all` never overwrites a file that already contains human entries.
+6. **Agreement.** Run `fml stance-agreement` (or `python -m fml.cli stance-agreement path/to/file.csv`). It prints how many rows are filled, the share of agreement and **Cohen's kappa** (agreement between two raters beyond what chance alone would give: 1 means perfect, 0 means no better than chance). While `human_stance` is empty it prints `pending: 0/40 filled` and kappa = null. Rerunning `fml run-all` never overwrites a file that already contains human entries.
 
 Once at least some rows are filled, the report quotes the kappa from this command; until then the stance codes stay "unverified".
 
@@ -113,7 +131,7 @@ Once at least some rows are filled, the report quotes the kappa from this comman
 
 ## Technical infrastructure
 
-- `src/fml/errors.py`: disagreement sets, selection for coding, stratified human sample, stance cache and client, the rule, kappa.
+- `src/fml/errors.py`: disagreement sets, selection for coding, stratified human sample, stance cache and client, the rule, the label-problem range, kappa.
 - `src/fml/pipeline.py#errors_stage`: runs it all (also part of `fml run-all`) and writes `results/metrics.json` (key `errors`), `results/tables/error_classification.csv`, `error_examples.csv` and `stance_check_sample.csv`. The LR is refitted on the **training** split only, just to compute per-document contributions.
 - Settings: `config/project.yaml`, block `stance_coding` (model `claude-sonnet-5-5`, key from `LLM_CLASSIFIER_API_KEY`, cache path, cap, sample size).
 - Commands: `fml run-all`, `fml stance-agreement [csv]`.

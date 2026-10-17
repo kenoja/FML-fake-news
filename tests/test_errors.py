@@ -96,6 +96,33 @@ def test_cache_holds_only_id_hash_answer_and_is_reused(tmp_path):
     assert "secret" not in path.read_text()
 
 
+def test_classification_table_rows_sum_to_errors():
+    """Every error must appear in exactly one column, or a reader cannot reconcile the table with the error count."""
+    sets = pd.DataFrame({"doc_id": list("abcdef"), "set": ["both_wrong"] * 4 + ["lr_only_wrong"] * 2,
+                         "error_type": ["false negative"] * 3 + ["false positive"] * 3})
+    coded = sets.iloc[:5].copy()
+    coded["claude_stance"] = ["endorses", "no_claim", "parse_error", "endorses", "rejects_or_debunks"]
+    coded["true_label"] = [True, True, True, False, False]
+    coded["verdict"] = [errors.classify_error(t, s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
+    table = errors.error_classification_table(coded, sets)
+    parts = [errors.MODEL_WRONG, errors.LABEL_PROBLEM, "unparsed", "not_sampled"]
+    assert (table[parts].sum(axis=1) == table["errors_total"]).all()
+    assert table.loc[(table["set"] == "all") & (table["error_type"] == "all"), "unparsed"].item() == 1
+
+
+def test_label_problem_range_counts_three_readings():
+    """The headline share must not hide that it depends on the vague stance codes and on unparsed replies."""
+    coded = pd.DataFrame({"true_label": [True, True, True, False, False, True],
+                          "claude_stance": ["no_claim", "rejects_or_debunks", "endorses", "endorses", "no_claim", "parse_error"]})
+    coded["verdict"] = [errors.classify_error(t, s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
+    r = errors.label_problem_range(coded).set_index("variant")
+    # label problems: no_claim(C), rejects(C), endorses(M) = 3
+    assert r.loc["a_current_rule_all_coded", "share"] == pytest.approx(3 / 6)
+    assert r.loc["c_current_rule_excluding_unparsed", "share"] == pytest.approx(3 / 5)
+    # decisive codes only: rejects(C) yes, endorses(C) no, endorses(M) yes -> 2 of 3
+    assert r.loc["b_endorse_reject_only", "share"] == pytest.approx(2 / 3)
+
+
 def _sample(tmp_path, human):
     p = tmp_path / "s.csv"
     pd.DataFrame({"doc_id": list("abcd"), "claude_stance": ["endorses", "no_claim", "endorses", "reports_neutrally"],
@@ -103,9 +130,16 @@ def _sample(tmp_path, human):
     return p
 
 
-def test_kappa_not_yet_verified_when_empty(tmp_path):
+def test_kappa_pending_when_empty(tmp_path):
     r = errors.human_agreement(_sample(tmp_path, [""] * 4))
-    assert r["status"] == "not yet verified" and r["kappa"] is None
+    assert r["status"] == "pending: 0/4 filled" and r["kappa"] is None
+
+
+def test_justification_is_shortened_and_names_are_stripped():
+    text = "The article quotes Jane Doe and Scott Wolter about the WTC " + " ".join(["word"] * 40)
+    out = errors.scrub_justification(text)
+    assert len(out.split()) <= 25
+    assert "Jane" not in out and "Wolter" not in out and "[name]" in out and "WTC" in out
 
 
 def test_kappa_matches_hand_value_and_rejects_bad_labels(tmp_path):

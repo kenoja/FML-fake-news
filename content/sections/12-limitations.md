@@ -54,6 +54,12 @@ Differences that look clear at document level (the McNemar test on documents is 
 - **No transfer test.** The JFK transfer test is out of scope for now. We cannot say whether anything learned here works on another topic.
 - **Full articles only, first 3,000 words for the LLM.** Longer articles are cut for the LLM; the logistic regression sees the full cleaned text.
 
+### Near-duplicates across splits
+
+Some articles are near copies of each other (`data.near_duplicate_pairs_across_splits`: 36 pairs lie across splits). The grouped split keeps websites apart, but copies on different sites can still cross it. We did not remove them, because that would change the frozen split. We measured instead: dropping the test documents with a train or validation partner (9 documents) changes F1 by -0.0049 for the logistic regression and -0.0042 for the LLM, and leaves the gap at 0.1001 (`comparison.no_duplicate_sensitivity`). The effect is small, but the check only covers pairs above the 0.9 cosine threshold, so looser paraphrases are not covered.
+
+<!-- output: results/tables/comparison_test_no_dups.csv -->
+
 ## What could go wrong
 
 - Reading the F1 numbers as "how good the model is at spotting conspiracy theories". They show how well each approach recovers the website type under these conditions.
