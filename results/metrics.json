@@ -8,10 +8,6 @@
     "on_topic_documents": 2608,
     "on_topic_conspiracy": 777,
     "on_topic_mainstream": 1831,
-    "near_duplicate_pairs_across_splits": 36,
-    "near_duplicate_pairs": 63,
-    "near_duplicate_pairs_same_website": 10,
-    "documents_after_exact_dedup": 3144,
     "length": {
       "shortest_words": 101,
       "median_words": 637.5,
@@ -63,268 +59,6 @@
     "splits_with_few_conspiracy_websites": [],
     "min_positive_groups_per_split": 3
   },
-  "baseline_all_docs": {
-    "model_id": "m1_words_all_docs",
-    "split_evaluated": "validation",
-    "features": {
-      "ngram_range": [
-        1,
-        1
-      ],
-      "min_df": 2,
-      "sublinear_tf": true,
-      "numeric_columns": []
-    },
-    "selected": {
-      "C": 100.0,
-      "class_weight": "none",
-      "selection_metric": "f1 (validation)"
-    },
-    "grid_values_tried": 18,
-    "documents": {
-      "all": 3146,
-      "train": 2204,
-      "validation": 471,
-      "validation_conspiracy": 140,
-      "validation_websites": 20
-    },
-    "confusion": {
-      "tp": 125,
-      "fn": 15,
-      "fp": 5,
-      "tn": 326
-    },
-    "validation": {
-      "precision": {
-        "estimate": 0.962,
-        "ci_low": 0.927,
-        "ci_high": 0.992
-      },
-      "recall": {
-        "estimate": 0.893,
-        "ci_low": 0.838,
-        "ci_high": 0.941
-      },
-      "f1": {
-        "estimate": 0.926,
-        "ci_low": 0.892,
-        "ci_high": 0.957
-      },
-      "macro_f1": {
-        "estimate": 0.948,
-        "ci_low": 0.925,
-        "ci_high": 0.969
-      },
-      "balanced_accuracy": {
-        "estimate": 0.939,
-        "ci_low": 0.912,
-        "ci_high": 0.964
-      }
-    },
-    "validation_website_bootstrap": {
-      "precision": {
-        "estimate": 0.962,
-        "ci_low": 0.83,
-        "ci_high": 0.991
-      },
-      "recall": {
-        "estimate": 0.893,
-        "ci_low": 0.75,
-        "ci_high": 0.942
-      },
-      "f1": {
-        "estimate": 0.926,
-        "ci_low": 0.791,
-        "ci_high": 0.957
-      },
-      "macro_f1": {
-        "estimate": 0.948,
-        "ci_low": 0.884,
-        "ci_high": 0.966
-      },
-      "balanced_accuracy": {
-        "estimate": 0.939,
-        "ci_low": 0.868,
-        "ci_high": 0.964
-      }
-    },
-    "bootstrap": {
-      "resamples": 2000,
-      "seed": 20261016,
-      "level": 0.95
-    },
-    "average_precision": 0.97,
-    "baselines": {
-      "majority_class": {
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "macro_f1": 0.413,
-        "balanced_accuracy": 0.5
-      },
-      "stratified_random": {
-        "precision": 0.297,
-        "recall": 0.298,
-        "f1": 0.297,
-        "macro_f1": 0.5,
-        "balanced_accuracy": 0.5
-      }
-    },
-    "website_name_tokens_in_top_coefficients": [],
-    "top_coefficient_note": "No website-name token among the top 25 words per class."
-  },
-  "topic_filter": {
-    "pattern_source": "config/project.yaml: data.topic_filter_pattern",
-    "documents_before": 3146,
-    "documents_after": 2608,
-    "removed": 538,
-    "after_by_class": {
-      "conspiracy": 777,
-      "mainstream": 1831
-    },
-    "expected_after": {
-      "documents": 2608,
-      "conspiracy": 777,
-      "mainstream": 1831
-    },
-    "matches_expected": true,
-    "removed_by_class": {
-      "conspiracy": 162,
-      "mainstream": 376
-    },
-    "removal_rate_by_class": {
-      "conspiracy": 0.1725,
-      "mainstream": 0.1704
-    },
-    "class_share_before": {
-      "conspiracy": 0.2985,
-      "mainstream": 0.7015
-    },
-    "class_share_after": {
-      "conspiracy": 0.2979,
-      "mainstream": 0.7021
-    },
-    "removal_rate_difference_test": {
-      "test": "Fisher exact on documents (ignores that documents of one website are alike)",
-      "odds_ratio_removed_conspiracy_vs_mainstream": 1.0153,
-      "p_value": 0.8768
-    },
-    "removal_rate_by_split": {
-      "train": 0.1892,
-      "validation": 0.155,
-      "test": 0.1019
-    },
-    "share_of_removed_by_split": {
-      "train": 0.7751,
-      "validation": 0.1357,
-      "test": 0.0892
-    },
-    "websites": {
-      "before": 118,
-      "after": 116,
-      "conspiracy_before": 39,
-      "conspiracy_after": 37,
-      "mainstream_before": 79,
-      "mainstream_after": 79,
-      "with_no_document_left": 2
-    },
-    "websites_with_most_removed": [
-      {
-        "website": "nationalgeographic.co.uk",
-        "label": "mainstream",
-        "removed": 48,
-        "documents": 50
-      },
-      {
-        "website": "healthline.com",
-        "label": "mainstream",
-        "removed": 45,
-        "documents": 55
-      },
-      {
-        "website": "fiercepharma.com",
-        "label": "mainstream",
-        "removed": 42,
-        "documents": 49
-      },
-      {
-        "website": "medicalnewstoday.com",
-        "label": "mainstream",
-        "removed": 36,
-        "documents": 40
-      },
-      {
-        "website": "escapeallthesethings.com",
-        "label": "conspiracy",
-        "removed": 30,
-        "documents": 36
-      }
-    ],
-    "terms": {
-      "9/11": {
-        "matching": 2020,
-        "only_this_term": 204
-      },
-      "september 11": {
-        "matching": 1514,
-        "only_this_term": 156
-      },
-      "world trade center": {
-        "matching": 1163,
-        "only_this_term": 2
-      },
-      "pentagon": {
-        "matching": 829,
-        "only_this_term": 10
-      },
-      "al[- ]qa'?e?da": {
-        "matching": 707,
-        "only_this_term": 8
-      },
-      "sept.? 11": {
-        "matching": 638,
-        "only_this_term": 25
-      },
-      "twin towers": {
-        "matching": 611,
-        "only_this_term": 0
-      },
-      "bin laden": {
-        "matching": 581,
-        "only_this_term": 2
-      },
-      "ground zero": {
-        "matching": 406,
-        "only_this_term": 1
-      },
-      "wtc": {
-        "matching": 290,
-        "only_this_term": 0
-      },
-      "9-11": {
-        "matching": 194,
-        "only_this_term": 17
-      },
-      "11 september": {
-        "matching": 146,
-        "only_this_term": 21
-      },
-      "nine[- ]eleven": {
-        "matching": 2,
-        "only_this_term": 0
-      }
-    },
-    "pentagon_only": {
-      "documents": 10,
-      "conspiracy": 7,
-      "share_of_kept": 0.0038,
-      "single_mention": 4,
-      "median_mentions": 2.0,
-      "with_attack_words": 10,
-      "attack_words_pattern": "attack|terror|hijack|plane"
-    },
-    "split_file_sha256": "800843b0d022354453f369dfa10ea18695b9e5564f63f142f905f2bd9cdd0aed"
-  },
   "baseline": {
     "model_id": "m1_words_filtered",
     "split_evaluated": "validation",
@@ -337,7 +71,7 @@
       "sublinear_tf": true,
       "numeric_columns": []
     },
-    "data": "filtered (documents matching data.topic_filter_pattern), same split_v1",
+    "data": "cleaned documents, split_v1",
     "selected": {
       "C": 10.0,
       "class_weight": "balanced",
@@ -345,69 +79,69 @@
     },
     "grid_values_tried": 18,
     "documents": {
-      "filtered": 2608,
-      "train": 1787,
-      "validation": 398,
-      "validation_conspiracy": 128,
+      "cleaned": 2554,
+      "train": 1768,
+      "validation": 376,
+      "validation_conspiracy": 117,
       "validation_websites": 19
     },
     "confusion": {
-      "tp": 117,
+      "tp": 106,
       "fn": 11,
-      "fp": 11,
-      "tn": 259
+      "fp": 9,
+      "tn": 250
     },
     "validation": {
       "precision": {
-        "estimate": 0.914,
-        "ci_low": 0.865,
-        "ci_high": 0.96
+        "estimate": 0.922,
+        "ci_low": 0.867,
+        "ci_high": 0.968
       },
       "recall": {
-        "estimate": 0.914,
-        "ci_low": 0.865,
-        "ci_high": 0.958
+        "estimate": 0.906,
+        "ci_low": 0.847,
+        "ci_high": 0.957
       },
       "f1": {
         "estimate": 0.914,
-        "ci_low": 0.877,
-        "ci_high": 0.946
+        "ci_low": 0.872,
+        "ci_high": 0.949
       },
       "macro_f1": {
-        "estimate": 0.937,
-        "ci_low": 0.911,
-        "ci_high": 0.96
+        "estimate": 0.938,
+        "ci_low": 0.909,
+        "ci_high": 0.963
       },
       "balanced_accuracy": {
-        "estimate": 0.937,
-        "ci_low": 0.909,
-        "ci_high": 0.961
+        "estimate": 0.936,
+        "ci_low": 0.905,
+        "ci_high": 0.963
       }
     },
     "validation_website_bootstrap": {
       "precision": {
-        "estimate": 0.914,
-        "ci_low": 0.702,
-        "ci_high": 0.981
+        "estimate": 0.922,
+        "ci_low": 0.71,
+        "ci_high": 0.982
       },
       "recall": {
-        "estimate": 0.914,
-        "ci_low": 0.783,
-        "ci_high": 0.955
+        "estimate": 0.906,
+        "ci_low": 0.774,
+        "ci_high": 0.95
       },
       "f1": {
         "estimate": 0.914,
-        "ci_low": 0.742,
-        "ci_high": 0.957
+        "ci_low": 0.741,
+        "ci_high": 0.955
       },
       "macro_f1": {
-        "estimate": 0.937,
-        "ci_low": 0.851,
-        "ci_high": 0.959
+        "estimate": 0.938,
+        "ci_low": 0.854,
+        "ci_high": 0.961
       },
       "balanced_accuracy": {
-        "estimate": 0.937,
-        "ci_low": 0.872,
+        "estimate": 0.936,
+        "ci_low": 0.868,
         "ci_high": 0.961
       }
     },
@@ -416,155 +150,24 @@
       "seed": 20261016,
       "level": 0.95
     },
-    "average_precision": 0.973,
+    "average_precision": 0.972,
     "baselines": {
       "majority_class": {
         "precision": 0.0,
         "recall": 0.0,
         "f1": 0.0,
-        "macro_f1": 0.404,
+        "macro_f1": 0.408,
         "balanced_accuracy": 0.5
       },
       "stratified_random": {
-        "precision": 0.324,
-        "recall": 0.311,
-        "f1": 0.317,
-        "macro_f1": 0.501,
-        "balanced_accuracy": 0.502
+        "precision": 0.31,
+        "recall": 0.306,
+        "f1": 0.307,
+        "macro_f1": 0.499,
+        "balanced_accuracy": 0.499
       }
     },
-    "website_name_tokens_in_top_coefficients": [],
-    "comparison_with_all_docs": {
-      "note": "The validation sets differ (all validation documents vs only the on-topic ones), so the F1 values of rows A and C are NOT directly comparable. Row B scores the all-documents model on exactly the documents of row C. Differences are descriptive; no significance test is claimed.",
-      "rows": [
-        {
-          "setting": "A: all-docs model, all validation docs (first run)",
-          "trained_on": "all",
-          "evaluated_on": "all validation",
-          "documents": 471,
-          "conspiracy": 140,
-          "websites": 20,
-          "precision": 0.962,
-          "recall": 0.893,
-          "f1": 0.926,
-          "macro_f1": 0.948,
-          "balanced_accuracy": 0.939,
-          "f1_ci_doc_low": 0.892,
-          "f1_ci_doc_high": 0.957,
-          "f1_ci_site_low": 0.791,
-          "f1_ci_site_high": 0.957
-        },
-        {
-          "setting": "B: all-docs model, filtered validation docs (like-for-like)",
-          "trained_on": "all",
-          "evaluated_on": "filtered validation",
-          "documents": 398,
-          "conspiracy": 128,
-          "websites": 19,
-          "precision": 0.959,
-          "recall": 0.914,
-          "f1": 0.936,
-          "macro_f1": 0.953,
-          "balanced_accuracy": 0.948,
-          "f1_ci_doc_low": 0.903,
-          "f1_ci_doc_high": 0.964,
-          "f1_ci_site_low": 0.815,
-          "f1_ci_site_high": 0.965
-        },
-        {
-          "setting": "C: filtered model, filtered validation docs",
-          "trained_on": "filtered",
-          "evaluated_on": "filtered validation",
-          "documents": 398,
-          "conspiracy": 128,
-          "websites": 19,
-          "precision": 0.914,
-          "recall": 0.914,
-          "f1": 0.914,
-          "macro_f1": 0.937,
-          "balanced_accuracy": 0.937,
-          "f1_ci_doc_low": 0.877,
-          "f1_ci_doc_high": 0.946,
-          "f1_ci_site_low": 0.742,
-          "f1_ci_site_high": 0.957
-        }
-      ],
-      "f1_change_c_minus_b": -0.022,
-      "f1_change_c_minus_a": -0.012,
-      "all_docs_model_on_removed_validation_docs": {
-        "documents": 73,
-        "conspiracy": 12,
-        "accuracy": 0.945,
-        "predicted_conspiracy": 8
-      }
-    },
-    "test": {
-      "model_id": "lr_words_v2",
-      "config_hash": "686c1de15756e287",
-      "n_docs": 423,
-      "confusion": {
-        "tp": 50,
-        "fn": 48,
-        "fp": 23,
-        "tn": 302
-      },
-      "metrics_documents": {
-        "precision": {
-          "estimate": 0.6849,
-          "ci_low": 0.5811,
-          "ci_high": 0.7903
-        },
-        "recall": {
-          "estimate": 0.5102,
-          "ci_low": 0.4062,
-          "ci_high": 0.6095
-        },
-        "f1": {
-          "estimate": 0.5848,
-          "ci_low": 0.491,
-          "ci_high": 0.6667
-        },
-        "macro_f1": {
-          "estimate": 0.7398,
-          "ci_low": 0.6863,
-          "ci_high": 0.7884
-        },
-        "balanced_accuracy": {
-          "estimate": 0.7197,
-          "ci_low": 0.6678,
-          "ci_high": 0.7694
-        }
-      },
-      "metrics_websites": {
-        "precision": {
-          "estimate": 0.6849,
-          "ci_low": 0.3,
-          "ci_high": 0.9063
-        },
-        "recall": {
-          "estimate": 0.5102,
-          "ci_low": 0.2755,
-          "ci_high": 0.8636
-        },
-        "f1": {
-          "estimate": 0.5848,
-          "ci_low": 0.3235,
-          "ci_high": 0.8036
-        },
-        "macro_f1": {
-          "estimate": 0.7398,
-          "ci_low": 0.5911,
-          "ci_high": 0.8746
-        },
-        "balanced_accuracy": {
-          "estimate": 0.7197,
-          "ci_low": 0.601,
-          "ci_high": 0.9031
-        }
-      },
-      "test_websites": 18,
-      "test_conspiracy": 98
-    }
+    "website_name_tokens_in_top_coefficients": []
   },
   "ablation": {
     "data": "filtered documents, split_v1, validation rows only",
@@ -2344,6 +1947,44 @@
       "agreement": null,
       "sample_file": "results/tables/stance_check_sample.csv",
       "file_rewritten_this_run": true
+    }
+  },
+  "cleaning": {
+    "before": 3146,
+    "after_topic": 2608,
+    "after_duplicates": 2554,
+    "counts": {
+      "before": {
+        "documents": 3146,
+        "conspiracy": 939,
+        "mainstream": 2207
+      },
+      "after_topic": {
+        "documents": 2608,
+        "conspiracy": 777,
+        "mainstream": 1831
+      },
+      "after_duplicates": {
+        "documents": 2554,
+        "conspiracy": 755,
+        "mainstream": 1799
+      }
+    },
+    "near_duplicate_threshold": 0.9,
+    "near_duplicate_pairs": 64,
+    "near_duplicate_pairs_across_splits": 36,
+    "near_duplicate_pairs_same_website": 9,
+    "near_duplicates_dropped": 54,
+    "near_duplicates_dropped_by_split": {
+      "train": 19,
+      "validation": 22,
+      "test": 13
+    },
+    "short_texts": {
+      "threshold_words": 50,
+      "shortest_words": 102,
+      "documents_under_threshold": 0,
+      "median_words": 622.0
     }
   }
 }

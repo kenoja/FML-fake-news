@@ -1,7 +1,4 @@
-step,documents_before,documents_after,words_before,words_after,note
-start,3146,3146,3401456,3401456,
-exact duplicates (normalised-text hash),3146,3144,3401456,3391801,
-"near-duplicates (TF-IDF cosine >= 0.9): detected, not removed",3144,3144,3391801,3391801,63 pairs (10 within one website); 53 documents would go
-URLs and e-mail-like strings removed,3144,3144,3391801,3390849,
-website names removed,3144,3144,3390849,3382029,
-lines repeated in >= 3 documents of one website removed,3144,3144,3382029,3364113,
+step,removed,remaining,removed_conspiracy,removed_mainstream,remaining_conspiracy,remaining_mainstream
+all documents,0,3146,0,0,939,2207
+off-topic articles removed,538,2608,162,376,777,1831
+near-duplicates removed,54,2554,22,32,755,1799

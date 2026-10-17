@@ -76,10 +76,10 @@ def check_variants(variants, max_variants: int | None = None) -> list[str]:
     return variants
 
 
-def prompt_hash(prompt: str, model: str, temperature: float, max_words: int, pass_id: int) -> str:
-    """Cache key part. Any change to prompt, model, temperature, truncation or pass gives a new key,
+def prompt_hash(prompt: str, model: str, max_words: int, pass_id: int) -> str:
+    """Cache key part. Any change to prompt, model, truncation or pass gives a new key,
     so a stale answer can never be mistaken for one from the current setting."""
-    payload = json.dumps([prompt, model, temperature, max_words, pass_id])
+    payload = json.dumps([prompt, model, max_words, pass_id])
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
@@ -155,11 +155,8 @@ class AnthropicClient:
 
         cfg = cfg or llm_config()
         self.model = cfg["model"]
-        # Temperature 0 is the configured intent, but claude-haiku-5-5 rejects the parameter ("`temperature` is
-        # deprecated for this model", HTTP 400) and the SDK has no argument for it, so it cannot be sent.
-        # It stays in the cache key; decisions.md records the deviation and the stability pass measures it.
-        self.temperature = cfg["temperature"]
-        self.max_tokens = cfg.get("max_output_tokens", 150)
+        # no temperature is sent: claude-haiku-5-5 rejects it, so its default sampling is used
+        self.max_tokens = cfg["max_output_tokens"]
         self._anthropic = anthropic
         self._client = anthropic.Anthropic(api_key=api_key, max_retries=0)
 
@@ -230,7 +227,7 @@ def append_cache(path: Path, rec: dict) -> None:
 
 def cache_key(variant: str, pass_id: int = 1, cfg: dict | None = None) -> str:
     cfg = cfg or llm_config()
-    return prompt_hash(PROMPTS[variant], cfg["model"], cfg["temperature"], cfg["max_input_words"], pass_id)
+    return prompt_hash(PROMPTS[variant], cfg["model"], cfg["max_input_words"], pass_id)
 
 
 def missing_count(df: pd.DataFrame, variant: str, pass_id: int = 1, cache_file: Path | None = None,
@@ -263,7 +260,7 @@ def classify(df: pd.DataFrame, variant: str = "v1", pass_id: int = 1, client: Cl
     check_variants([variant])
     prompt = PROMPTS[variant]
     max_words = cfg["max_input_words"]
-    key = prompt_hash(prompt, cfg["model"], cfg["temperature"], max_words, pass_id)
+    key = prompt_hash(prompt, cfg["model"], max_words, pass_id)
     path = cache_file or cache_path(cfg)
     cache = read_cache(path)
     rows = []
@@ -283,55 +280,6 @@ def classify(df: pd.DataFrame, variant: str = "v1", pass_id: int = 1, client: Cl
         rows.append({"doc_id": doc_id, "label": rec["label"], "confidence": rec["confidence"],
                      "reason": rec["reason"], "truncated": bool(rec["truncated"]), "cached": cached})
     return pd.DataFrame(rows)
-
-
-# ---------------------------------------------------------------- token-limit sensitivity
-
-SENSITIVITY_PASS = 3     # own cache key, so 150-token answers (pass 1) and 400-token answers never mix
-
-
-def sensitivity_subset(valid: pd.DataFrame, n: int, seed: int) -> pd.DataFrame:
-    """Seeded random subset of validation documents (never test), sorted by doc_id for a stable order."""
-    return valid.sample(n=min(n, len(valid)), random_state=seed).sort_values("doc_id")
-
-
-def token_limit_sensitivity(valid: pd.DataFrame, variant: str, client: Client | None = None,
-                            cache_file: Path | None = None, cfg: dict | None = None) -> dict:
-    """Does the 150-token output limit hurt? Re-ask the chosen prompt with a larger limit on a validation subset.
-
-    Why: cut-off replies are parse errors scored as 'not conspiracy'. Comparing both limits on the same
-    documents shows how much recall that costs. Test documents are never touched. Without a key and
-    without cached pass-3 answers the result is {"status": "not run", ...}; nothing is guessed.
-    """
-    from sklearn.metrics import f1_score
-
-    cfg = cfg or llm_config()
-    sens = cfg["token_limit_sensitivity"]
-    sub = sensitivity_subset(valid, sens["n_docs"], project_config()["split"]["seed"])
-    big = {**cfg, "max_output_tokens": sens["max_output_tokens"]}
-    path = cache_file or cache_path(cfg)
-    base = {"split": "validation", "variant": variant, "n_docs": int(len(sub)),
-            "limit_default": cfg["max_output_tokens"], "limit_large": sens["max_output_tokens"]}
-    if client is None and missing_count(sub, variant, SENSITIVITY_PASS, path, cfg):
-        env = api_key_env_name(cfg)
-        if not os.environ.get(env):
-            return {"status": "not run", "reason": f"no cached answers and {env} not set", **base}
-    if client is None:
-        client = make_client(big) if missing_count(sub, variant, SENSITIVITY_PASS, path, cfg) else None
-    small_res = classify(sub, variant, 1, cache_file=path, cfg=cfg)
-    large_res = classify(sub, variant, SENSITIVITY_PASS, client=client, cache_file=path, cfg=big)
-    y = sub["label"].to_numpy()
-
-    def score(res: pd.DataFrame) -> dict:
-        pred = (res["label"] == "conspiracy").to_numpy()
-        errs = int((res["label"] == PARSE_ERROR).sum())
-        return {"parse_errors": errs, "parse_error_rate": errs / len(res), "f1": float(f1_score(y, pred))}
-
-    a, b = score(small_res), score(large_res)
-    return {"status": "run", **base, "default": a, "large": b, "f1_difference": b["f1"] - a["f1"],
-            "parse_error_rate_difference": b["parse_error_rate"] - a["parse_error_rate"],
-            "label_flips": int((small_res["label"].to_numpy() != large_res["label"].to_numpy()).sum()),
-            "pass": SENSITIVITY_PASS}
 
 
 # ---------------------------------------------------------------- prior-knowledge probe
@@ -360,7 +308,7 @@ def site_matches(answer: str, true_site: str) -> bool:
 
 def probe_key(cfg: dict | None = None) -> str:
     cfg = cfg or llm_config()
-    return prompt_hash(PROBE_PROMPT, cfg["model"], cfg["temperature"], cfg["max_input_words"], 0)
+    return prompt_hash(PROBE_PROMPT, cfg["model"], cfg["max_input_words"], 0)
 
 
 def probe_sample(df: pd.DataFrame, seed: int, n: int = PROBE_SAMPLE_MAX) -> pd.DataFrame:
@@ -470,7 +418,6 @@ def parse_error_report(cache_file: Path | None = None, max_tokens: int | None = 
 
     No article text is written. The cache never stored raw replies, so `reply_start` holds only what a
     record carries (a stored reply's first 200 characters, cut to 50 words); otherwise it is empty.
-    Pass 3 (the token-limit check) is included and labelled by its pass.
     """
     cfg = llm_config()
     limit = max_tokens if max_tokens is not None else cfg["max_output_tokens"]

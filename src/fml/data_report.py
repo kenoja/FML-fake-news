@@ -1,4 +1,4 @@
-"""Data stage: cleaning log, length distribution, the frozen split and their tables, figures, metrics."""
+"""Data stage: length distribution, the frozen split and their tables, figures, metrics."""
 from __future__ import annotations
 
 import matplotlib
@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from .clean import clean_corpus  # noqa: E402
 from .data import load_corpus, summary  # noqa: E402
 from .paths import project_config  # noqa: E402
 from .results import CONSPIRACY_COLOUR, MAINSTREAM_COLOUR, savefig, write_metrics, write_table  # noqa: E402
@@ -45,8 +44,7 @@ def length_statement(df: pd.DataFrame) -> dict:
     out["statement"] = (
         f"The shortest article has {shortest} words, above the {MIN_USEFUL_WORDS}-word level below which a text "
         f"is a snippet rather than an article, so no minimum length is applied. {out[f'documents_under_{SHORT_BUCKETS[1]}_words']} "
-        f"of {len(df)} documents are under {SHORT_BUCKETS[1]} words; the model results by length bucket are checked "
-        "in the first evaluation run (results/tables)."
+        f"of {len(df)} documents are under {SHORT_BUCKETS[1]} words."
         if not out["minimum_length_needed"] else
         f"The shortest article has {shortest} words, below {MIN_USEFUL_WORDS}: a minimum length is needed."
     )
@@ -92,11 +90,8 @@ def per_website_counts(df: pd.DataFrame, split: pd.DataFrame) -> pd.DataFrame:
 
 
 def run_data_stage() -> dict:
-    """Clean, describe lengths, create the split if it does not exist (else read it), write results."""
+    """Describe lengths, create the split if it does not exist (else read it), write results."""
     df = load_corpus()
-    cleaned, log, pairs = clean_corpus(df)
-    write_table("cleaning_log", log)
-
     ltab = length_table(df)
     write_table("length_quantiles", ltab)
     savefig(plot_length(df), "length_distribution")
@@ -117,14 +112,8 @@ def run_data_stage() -> dict:
         write_table("per_website_counts", per_website_counts(df, split))
     site_split = df[["doc_id", "website"]].merge(split, on="doc_id").groupby("website")["split"].nunique()
 
-    sp = split.set_index("doc_id")["split"]
-    across = int((pairs["doc_id_a"].map(sp) != pairs["doc_id_b"].map(sp)).sum()) if len(pairs) else 0
     write_metrics("data", {
         **summary(df),
-        "near_duplicate_pairs_across_splits": across,
-        "near_duplicate_pairs": int(len(pairs)),
-        "near_duplicate_pairs_same_website": int(pairs["same_website"].sum()) if len(pairs) else 0,
-        "documents_after_exact_dedup": int(log.iloc[1]["documents_after"]),
         "length": lstat,
     })
     write_metrics("split", {
@@ -138,4 +127,4 @@ def run_data_stage() -> dict:
         "splits_with_few_conspiracy_websites": low,
         "min_positive_groups_per_split": project_config()["split"]["min_positive_groups_per_split"],
     })
-    return {"cleaning_log": log, "split_summary": summ, "length": lstat}
+    return {"split_summary": summ, "length": lstat}

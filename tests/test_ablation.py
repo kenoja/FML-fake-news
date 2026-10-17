@@ -78,7 +78,7 @@ def test_test_log_has_one_entry_per_model(tmp_path, monkeypatch):
         def fit(train, test):
             pipe = pipeline.build_pipeline({"min_df": 1}, C=1.0).fit(train, train["label"])
             return pipe.predict(test), pipe.predict_proba(test)[:, 1]
-        return pipeline.ModelSpec({"model_id": model_id}, lambda tr, te: fit(tr, te)[0], fit, filtered=True)
+        return pipeline.ModelSpec({"model_id": model_id}, lambda tr, te: fit(tr, te)[0], fit)
 
     builders = {m: (lambda m=m: spec(m)) for m in ("lr_words", "lr_extended")}
     log, frozen = tmp_path / "log.jsonl", tmp_path / "frozen.json"

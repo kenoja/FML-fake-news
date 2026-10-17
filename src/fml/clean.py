@@ -1,4 +1,5 @@
-"""Cleaning: duplicates first, then everything that would let a model recognise the website.
+"""Cleaning: off-topic articles and near-duplicates go first, then everything that would let a model
+recognise the website.
 
 Cleaned texts exist only in memory (never written to the public repo); only counts are logged to
 results/tables/cleaning_log.csv.
@@ -13,10 +14,13 @@ from functools import lru_cache
 import numpy as np
 import pandas as pd
 
+from .data import load_corpus, on_topic_mask
 from .paths import data_dir, project_config
+from .split import load_split
 
 NEAR_DUPLICATE_THRESHOLD = 0.9
 BOILERPLATE_MIN_DOCS = 3          # a line repeated in this many documents of one website is boilerplate
+SHORT_TEXT_WORDS = 50              # under this a text is a snippet rather than an article
 MIN_STEM_LENGTH = 6               # shorter site-name stems ("time", "cnn") are too often ordinary words
 
 URL_RE = re.compile(r"(?:https?://|www\.)\S+", re.IGNORECASE)
@@ -134,9 +138,9 @@ def clean_corpus(df: pd.DataFrame, metadata: list[dict] | None = None,
                  drop_exact: bool = True) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Return (cleaned frame, step log, near-duplicate pairs). The input frame is not changed.
 
-    Exact duplicates are dropped. Near-duplicates are only detected and logged: dropping them
-    would change the 2,608 documents the team fixed for the off-topic filter, so that needs a team
-    decision (docs/decisions.md). Cleaned text is in column `txt`; the original is not kept.
+    Exact duplicates are dropped (unless `drop_exact` is False). Near-duplicate pairs are only
+    reported here; `clean_documents` decides which copy goes. Cleaned text is in column `txt`; the
+    original is not kept.
     """
     log = []
     cur = df.copy()
@@ -149,10 +153,10 @@ def clean_corpus(df: pd.DataFrame, metadata: list[dict] | None = None,
 
     pairs = find_near_duplicates(cur, threshold)
     drop_b = pairs["doc_id_b"].nunique() if len(pairs) else 0
-    log.append(_log_row(f"near-duplicates (TF-IDF cosine >= {threshold}): detected, not removed",
+    log.append(_log_row(f"near-duplicate pairs (TF-IDF cosine >= {threshold}): found, not removed here",
                         _count(cur), _count(cur),
                         f"{len(pairs)} pairs ({int(pairs['same_website'].sum()) if len(pairs) else 0} within one website); "
-                        f"{drop_b} documents would go"))
+                        f"{drop_b} documents are the second copy of a pair"))
 
     names = website_names(cur, metadata)
     for step, fn in (
@@ -168,3 +172,68 @@ def clean_corpus(df: pd.DataFrame, metadata: list[dict] | None = None,
     log.append(_log_row(f"lines repeated in >= {BOILERPLATE_MIN_DOCS} documents of one website removed",
                         before, _count(cur)))
     return cur, pd.DataFrame(log), pairs
+
+
+def near_duplicate_drops(pairs: pd.DataFrame, split: pd.Series) -> dict[str, str]:
+    """doc_id -> reason, for the copy of each near-duplicate pair that is dropped. `split` maps doc_id -> split."""
+    drops = {}
+    for a, b in zip(pairs["doc_id_a"], pairs["doc_id_b"]):
+        if split[a] != split[b]:
+            # a pair across splits: keep the training copy; between validation and test keep validation
+            order = {"train": 0, "validation": 1, "test": 2}
+            drop = a if order[split[a]] > order[split[b]] else b
+            drops[drop] = "copy in another split (the validation/test copy goes)"
+        else:
+            drop = max(a, b)                    # inside one split the lower doc_id stays
+            drops[drop] = "copy inside one split (the higher doc_id goes)"
+    return drops
+
+
+def label_counts(df: pd.DataFrame) -> dict:
+    return {"documents": int(len(df)), "conspiracy": int(df["label"].sum()), "mainstream": int((~df["label"]).sum())}
+
+
+def clean_documents(raw: pd.DataFrame | None = None, split: pd.DataFrame | None = None, metadata: list[dict] | None = None,
+                    threshold: float = NEAR_DUPLICATE_THRESHOLD) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    """The cleaned documents every model uses, a step log and the numbers for metrics.json `cleaning`."""
+    raw = load_corpus() if raw is None else raw
+    split = load_split() if split is None else split
+    texts, _, pairs = clean_corpus(raw, metadata, threshold, drop_exact=False)    # clean text, drop nothing
+    texts = texts.reset_index(drop=True)
+    steps = [("all documents", texts)]
+
+    on_topic = set(raw.loc[on_topic_mask(raw), "doc_id"])       # judged on the original title and text
+    texts = texts[texts["doc_id"].isin(on_topic)]
+    steps.append(("off-topic articles removed", texts))
+
+    pairs = pairs[pairs["doc_id_a"].isin(on_topic) & pairs["doc_id_b"].isin(on_topic)]
+    where = split.set_index("doc_id")["split"]
+    drops = near_duplicate_drops(pairs, where)
+    texts = texts[~texts["doc_id"].isin(drops)].reset_index(drop=True)
+    steps.append(("near-duplicates removed", texts))
+
+    log, before = [], None
+    for name, frame in steps:
+        now = label_counts(frame)
+        gone = {k: (before[k] - now[k]) if before else 0 for k in now}
+        log.append({"step": name, "removed": gone["documents"], "remaining": now["documents"],
+                    "removed_conspiracy": gone["conspiracy"], "removed_mainstream": gone["mainstream"],
+                    "remaining_conspiracy": now["conspiracy"], "remaining_mainstream": now["mainstream"]})
+        before = now
+
+    words = raw.set_index("doc_id")["txt"].str.split().map(len)[texts["doc_id"]]
+    first, after_topic, last = (label_counts(f) for _, f in steps)
+    info = {
+        "before": first["documents"], "after_topic": after_topic["documents"], "after_duplicates": last["documents"],
+        "counts": {"before": first, "after_topic": after_topic, "after_duplicates": last},
+        "near_duplicate_threshold": threshold,
+        "near_duplicate_pairs": int(len(pairs)),
+        "near_duplicate_pairs_across_splits": int((pairs["doc_id_a"].map(where) != pairs["doc_id_b"].map(where)).sum()),
+        "near_duplicate_pairs_same_website": int(pairs["same_website"].sum()),
+        "near_duplicates_dropped": len(drops),
+        "near_duplicates_dropped_by_split": {s: int(sum(where[d] == s for d in drops)) for s in ("train", "validation", "test")},
+        "short_texts": {"threshold_words": SHORT_TEXT_WORDS, "shortest_words": int(words.min()),
+                        "documents_under_threshold": int((words < SHORT_TEXT_WORDS).sum()),
+                        "median_words": float(words.median())},
+    }
+    return texts, pd.DataFrame(log), info

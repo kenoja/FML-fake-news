@@ -7,7 +7,7 @@ import pytest
 from fml import llm
 
 SENTINEL = "zebrafish quantum sentinel sentence that must never reach the cache file"
-CFG = {"model": "claude-haiku-5-5", "temperature": 0, "api_key_env": "LLM_CLASSIFIER_API_KEY",
+CFG = {"model": "claude-haiku-5-5", "api_key_env": "LLM_CLASSIFIER_API_KEY",
        "max_prompt_variants": 3, "max_input_words": 5, "cache_file": "unused"}
 
 
@@ -64,7 +64,7 @@ def test_fenced_json_is_parsed():
 def test_pass_1_and_pass_2_are_cached_separately(tmp_path):
     cache = tmp_path / "c.jsonl"
     df = frame("a b")
-    assert llm.prompt_hash("p", "m", 0, 5, 1) != llm.prompt_hash("p", "m", 0, 5, 2)
+    assert llm.prompt_hash("p", "m", 5, 1) != llm.prompt_hash("p", "m", 5, 2)
     llm.classify(df, pass_id=1, client=llm.FakeClient(), cache_file=cache, cfg=CFG)
     second = llm.FakeClient()
     llm.classify(df, pass_id=2, client=second, cache_file=cache, cfg=CFG)
@@ -122,37 +122,6 @@ def test_stage_error_names_exact_missing_counts():
 
     err = pipeline._llm_missing_error({"validation v1 pass 1": 7, "test pass 2": 0})
     assert "validation v1 pass 1: 7" in str(err) and "test pass 2" not in str(err)
-
-
-SENS_CFG = {**CFG, "max_output_tokens": 150, "token_limit_sensitivity": {"max_output_tokens": 400, "n_docs": 4}}
-
-
-def labelled(n=6):
-    df = frame(*[f"word{i} a b" for i in range(n)])
-    df["label"] = [i % 2 == 0 for i in range(n)]
-    return df
-
-
-def test_sensitivity_without_key_or_cache_is_not_run_not_guessed(tmp_path, monkeypatch):
-    """No key and no pass-3 answers: the result says 'not run' instead of reusing the 150-token answers."""
-    monkeypatch.delenv("LLM_CLASSIFIER_API_KEY", raising=False)
-    cache = tmp_path / "c.jsonl"
-    df = labelled()
-    llm.classify(df, "v2", 1, client=llm.FakeClient(), cache_file=cache, cfg=SENS_CFG)
-    out = llm.token_limit_sensitivity(df, "v2", cache_file=cache, cfg=SENS_CFG)
-    assert out["status"] == "not run" and "LLM_CLASSIFIER_API_KEY" in out["reason"]
-
-
-def test_sensitivity_has_own_cache_key_and_only_asks_the_subset(tmp_path):
-    """Pass 3 must not collide with pass 1 or 2, otherwise the comparison would compare a run with itself."""
-    cache = tmp_path / "c.jsonl"
-    df = labelled()
-    llm.classify(df, "v2", 1, client=llm.FakeClient(), cache_file=cache, cfg=SENS_CFG)
-    client = llm.FakeClient()
-    out = llm.token_limit_sensitivity(df, "v2", client=client, cache_file=cache, cfg=SENS_CFG)
-    assert out["status"] == "run" and out["n_docs"] == 4 and client.calls == 4
-    keys = {llm.cache_key("v2", p, SENS_CFG) for p in (1, 2, llm.SENSITIVITY_PASS)}
-    assert len(keys) == 3
 
 
 def test_parse_error_causes_from_tiny_fake_cache(tmp_path):

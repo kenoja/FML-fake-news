@@ -14,7 +14,7 @@ from .paths import REPO_ROOT
 
 CONSPIRACY_COLOUR = "#8c3b76"
 MAINSTREAM_COLOUR = "#2b7a6a"
-METRIC_KEYS = ("data", "split", "baseline_all_docs", "topic_filter", "baseline", "ablation",
+METRIC_KEYS = ("data", "cleaning", "split", "baseline", "ablation",
                "llm", "comparison", "errors")
 DPI = 150
 TABLE_DECIMALS = 3  # floats in CSV tables are written rounded, so reruns and diffs stay stable

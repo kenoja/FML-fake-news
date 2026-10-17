@@ -77,7 +77,7 @@ def stance_cache_path(cfg: dict | None = None) -> Path:
 
 def stance_key(cfg: dict | None = None) -> str:
     cfg = cfg or stance_config()
-    return llm.prompt_hash(STANCE_PROMPT, cfg["model"], cfg["temperature"], cfg["max_input_words"], 1)
+    return llm.prompt_hash(STANCE_PROMPT, cfg["model"], cfg["max_input_words"], 1)
 
 
 # ---------------------------------------------------------------- disagreement sets

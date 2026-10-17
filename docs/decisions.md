@@ -113,7 +113,17 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   Test result on 423 documents: LLM F1 above the chosen LR, McNemar p in `metrics.json#comparison`. Human check of
   the stance sample is pending, so H6 is reported as provisional. LOCO licence still unconfirmed.
 
+- **2026-10-17 · Conflict (a): temperature.** `requirements/cycle-01.md` asked for temperature 0; `requirements/cycle-02.md` item 7 and AGENTS.md say default sampling (the model rejects the setting). Newest wins: `llm_classifier.temperature` is deleted from config, nothing is sent, the cache key no longer contains it, and the text says plainly that the model has no temperature setting. Output limit raised from 150 to 1000 tokens (target: 0 cut-off answers); the token-limit sensitivity check is removed.
+- **2026-10-17 · Conflict (b): first run on all documents.** Cycle 1 ran the first words-only model on all 3,146 documents. Cycle-02 item 4 drops this: cleaning (off-topic and near-duplicates) comes first and every model uses the cleaned set. The old wording is removed from `config/project.yaml`.
+- **2026-10-17 · Conflict (c): extra analyses.** Cycle 1 added a human stance kappa, a website-level bootstrap, a stability pass and sensitivity analyses. Cycle-02 item 13 removes them; only the statistics listed in AGENTS.md remain (confusion matrix, precision, recall, F1, one 95% bootstrap interval per number, three McNemar tests). Code and text for them are removed in later tasks.
+- **2026-10-17 · Near-duplicate rule (d).** Cycle 1 only counted near-duplicates; cycle-02 item 4 removes them before any model runs, together with off-topic documents. Exact threshold and counts are set in the cleaning task and shown in `02-data-and-cleaning`.
+- **2026-10-17 · Logistic regression settings.** Shared config `lr: {c_grid: [0.1, 1, 10], class_weight: balanced}`, chosen on validation only.
+
 ## Needs a team decision
+
+- **Licence of the OSF page (owner checks).** The agent cannot read https://osf.io/snpcg/. Conservative default kept: article texts only in the private data repo, short excerpts (at most 50 words, 6 per section).
+- **40-article human check.** Done by the team during the feedback period using the check sheet; not done by the agent.
+- **GitHub account name in the repo link.** Kept in `config/site.yaml`: the site's code link and comment tool need the repo address, and `sitegen/` and `config/` site files are protected. Moving the repo to a neutral account would remove it.
 
 - **LLM temperature 0 cannot be set (T8). Status: accepted default, awaiting team confirmation.** AGENTS.md
   asks for temperature 0, but `claude-haiku-5-5` answers HTTP 400 ("`temperature` is deprecated for this
@@ -350,3 +360,12 @@ Checks done by T12 (not a full run):
 - `results/test_access_log.jsonl` has 4 entries, unchanged in git; sha256 `c0cdf6eb…2ee5`.
 - `tests/test_report_numbers.py`, `test_privacy.py`, `test_sections.py`, `test_section_numbers.py`, `test_test_lock.py`: 56 passed, 0 skipped.
 - **Not run by this task:** the full test suite, `fml run-all` and the sitegen build. The task rules say the harness runs them right after the task, so there are no timings or skip lists yet; those come from the harness output.
+
+## Cycle 2, T2: cleaning (off-topic, then near-duplicates)
+
+- `clean.clean_documents()` is the one cleaning function: text cleaning, then off-topic removal (3,146 → 2,608), then near-duplicate removal (2,608 → 2,554: 755 conspiracy, 1,799 mainstream). Numbers: `results/metrics.json` `cleaning`, `results/tables/cleaning_log.csv`.
+- Near-duplicate rule (cosine ≥ 0.9, pairs found on the original texts, only pairs of on-topic documents): across splits the copy in validation/test goes; for a validation/test pair the test copy goes (the requirement does not say which; choice: keep the validation copy). Inside one split the lower doc_id stays. The split file is unchanged.
+- The two exact duplicates are no longer dropped separately; they are caught by the near-duplicate rule.
+- Short texts (team question 5): shortest article has 102 words, none under 50, so no minimum length (`cleaning.short_texts`).
+- Removed: the all-documents run, the off-topic comparison tables/figures and `src/fml/topic.py`. Content sections 01, 04, 05, 06, 12 still describe the old run; the queued section tasks rewrite them. Until then `test_sections`/sitegen checks may fail on missing outputs.
+- `baseline_filtered` stays for now (words-only model on the cleaned set) because the ablation and comparison stages read its grid; the analysis tasks replace it.
