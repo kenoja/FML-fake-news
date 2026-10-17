@@ -27,7 +27,7 @@ An **n-gram** is n words in a row: "inside job" is a 2-gram, "no evidence of" a 
 
 ### Group 2: epistemic markers (`src/fml/features/epistemic.py`)
 
-<!-- cell: src/fml/features/epistemic.py#LEXICON -->
+<!-- cell: src/fml/features/epistemic.py:27-41 -->
 <!-- cell: src/fml/features/epistemic.py#EpistemicMarkers -->
 
 "Epistemic" means "about knowledge and certainty". The module holds a small, documented word list (the constant `LEXICON`) in four categories and returns, per category, the number of hits **per 1,000 words** (`features.per_n_words`). Normalising by length matters: a 3,000-word article would otherwise always have three times the hits of a 1,000-word one. A test doubles a text by concatenation and checks that the rates do not change.

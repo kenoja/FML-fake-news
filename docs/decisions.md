@@ -78,6 +78,14 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   `feature_summary.csv` is computed on training rows of the filtered set only (1,787 documents).
   Known weakness kept and tested: negation is ignored ("no evidence of cover-up" counts "cover-up").
 
+- **2026-10-17 · T12 report and final conflicts.** The report (`reports/report.md`) quotes only numbers found in
+  `results/` or the config; `tests/test_report_numbers.py` enforces it. Conflicts resolved by the ranking in AGENTS.md:
+  (1) `fml evaluate-final` over `fml evaluate --final`; (2) rule "temperature 0" vs the model's HTTP 400 (rule cannot be
+  followed, open below); (3) the plan's "no duplicates" vs measured two exact duplicates (data wins). Chosen LR for the
+  head-to-head is `lr_words` by the pre-registered rule; `lr_extended` was scored on test once, for visibility only.
+  Test result on 423 documents: LLM F1 above the chosen LR, McNemar p in `metrics.json#comparison`. Human check of
+  the stance sample is pending, so H6 is reported as provisional. LOCO licence still unconfirmed.
+
 ## Needs a team decision
 
 - **LLM temperature 0 cannot be set (T8).** AGENTS.md asks for temperature 0, but `claude-haiku-5-5`
