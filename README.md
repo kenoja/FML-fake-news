@@ -51,6 +51,28 @@ python -m sitegen build && open site/index.html  # build the walkthrough site fr
 python -m agent run --no-git                     # one agent step locally (needs Claude Code)
 ```
 
+### Exact versions
+
+`pyproject.toml` keeps version ranges so that CI and newer machines can install the project. The exact
+versions the committed results were produced with (Python 3.11.17; numpy 2.4.6, pandas 3.0.6, scipy 1.17.1,
+scikit-learn 1.9.1, matplotlib 3.11.2, anthropic 1.15.0, pyyaml 6.0.1, as recorded in
+`results/run_info.json`) are pinned in `requirements-lock.txt`:
+
+```bash
+pip install -r requirements-lock.txt && pip install -e . --no-deps
+```
+
+### Reproducibility check
+
+`results/run_info.json` records the last `fml run-all` time (217.3 s, limit 8 min). `fml run-all` does not
+append to `results/test_access_log.jsonl`: `evaluate_final` writes a line only when the model id has no
+entry yet and refuses a different config hash (checked by reading `src/fml/pipeline.py`).
+
+Double-run diff: **not done yet.** The task that added this section was not allowed to run `fml run-all`
+(the harness runs it afterwards), so no two-run comparison of `metrics.json` exists. To do it: run
+`fml run-all`, copy `results/metrics.json` aside, run again, and compare the two files, ignoring
+timestamps and `run_info.json`. Record the outcome here.
+
 Results are in `results/` (`metrics.json`, `tables/`, `figures/`); the written report is
 [`reports/report.md`](reports/report.md); `tests/test_report_numbers.py` checks that its numbers match `results/`.
 

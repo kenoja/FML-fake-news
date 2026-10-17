@@ -3,13 +3,10 @@ title: Removing off-topic documents
 part: Data preparation and evaluation
 hypothesis: Documents that never mention 9/11 are easy to separate by topic alone, so removing them lowers the words-only score a little and makes the remaining task more honest; the filter removes both website types about equally.
 ---
-**In short**
-
-1. Some documents in the corpus never mention 9/11, so we remove them with a keyword pattern fixed before we saw results.
-2. 3,146 documents become 2,608 (777 conspiracy, 1,831 mainstream); both classes lose about 17%.
-3. The loss is uneven inside splits: the test split loses 43 of its 141 conspiracy documents, mostly from one website.
-4. The words-only model scores about the same before and after (like-for-like F1 0.936 against 0.914, inside the intervals).
-5. Details (term-by-term check, removed-title words, model rows A/B/C) follow below; read them only if you need them.
+> **Summary in 3 lines**
+> We dropped documents without 9/11 keywords: 3,146 became 2,608.
+> Both classes lose about 17%; like-for-like F1 stays similar (0.936 against 0.914).
+> Careful: test loses 43 of 141 conspiracy but 5 of 330 mainstream documents.
 
 ## Goal and hypothesis
 
@@ -33,7 +30,7 @@ Hypothesis: (1) off-topic documents make the task artificially easy or noisy, so
 
 **But the overall equality hides uneven spots.** Look at the right-hand panel and at the split-by-class rows of the table:
 
-- Removal is concentrated in a few websites. A few mainstream sites that mostly publish health or general-knowledge pages lose almost everything (one science-and-history site 48 of 50 documents, one consumer-health site 45 of 55). On the conspiracy side, one blog-style site in the **test** split loses 30 of its 36 documents. See `results/tables/topic_filter_by_website.csv`.
+- Removal is concentrated in a few websites. A few mainstream sites that mostly publish health or general-knowledge pages lose almost everything (one science-and-history site 48 of 50 documents, one consumer-health site 45 of 55). On the conspiracy side, one blog-style site in the **test** split loses 30 of its 36 documents. In the test split the conspiracy losses are 30 (of 36), 5 (of 6), 4 (of 24), 2 (of 21) and 2 (of 2) documents for five websites, and the mainstream losses are 2 (of 45), 2 (of 10) and 1 (of 23) for three websites. See `results/tables/topic_filter_by_website.csv`.
 - That one website makes the test split lose 30.5% of its conspiracy documents (43 of 141) but only 1.5% of its mainstream ones (5 of 330). In validation it is the other way round: 8.6% conspiracy against 18.4% mainstream. In train it is 16.3% against 20.1%. So the class mix per split shifts after filtering, even though the overall class mix does not. The share of all removed documents falls mostly on train (77.5%), then validation (13.6%) and test (8.9%) (`share_of_removed_by_split`). We report these counts only; no model has been scored on test.
 - The Fisher test treats each article as independent, but articles from one website are alike, so the p-value is optimistic. Read "no overall difference" as "no evidence of a systematic difference", not as proof.
 

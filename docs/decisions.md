@@ -270,3 +270,8 @@ No requirement is declined.
 - **Not run in the authoring session:** the sandbox denied every code execution, so the new tests, the coverage table and the
   validation delta were NOT run and no numbers exist yet. Section 07 therefore points at the result files and quotes no values.
   Next `fml run-all` (or the `ablation` stage) writes them; then check the delta against its CI and state in section 07 whether it is within noise.
+
+## T10 (cycle 1 review): privacy scan
+
+- Needs a team decision: AGENTS.md says "no GitHub usernames", but the repo link (`config/site.yaml`, `docs/SETUP.md`, `docs/PROJECT_PLAN.md`, and so `site/index.html`) contains the owner's account name. Most conservative workable reading: kept, because the site's comment tool and links need the repo address. If the team wants it gone, move the repo to an organisation or neutral account and change `config/site.yaml`.
+- `tests/test_privacy.py` treats bold call-out blocks and "(invented)" examples as non-excerpts when counting quote blocks.

@@ -57,12 +57,60 @@ after every cycle; team members add what they checked or changed by hand.
 
 ### Human verification
 
-Only checks recorded in this repository are entered. None are recorded yet, so every cell is pending. A member replaces `pending` with the date and what they checked.
+Only checks recorded in this repository are entered. The agent does not fill in sign-offs: every row is
+`pending`, the owner is a placeholder, and a member replaces `pending` with the date and what they checked.
 
-| Member | Stance codes (40 rows) | Report numbers vs `results/` | Read for article text / personal data | Licence and open decisions |
-|---|---|---|---|---|
-| Member A | pending | pending | pending | pending |
-| Member B | pending | pending | pending | pending |
-| Member C | pending | pending | pending | pending |
-| Member D | pending | pending | pending | pending |
-| Member E | pending | pending | pending | pending |
+| # | Check (what to do) | Owner | Status |
+|---|---|---|---|
+| 1 | **Report and section numbers.** After the last `fml run-all`, compare the numbers in `reports/report.md` and sections 05, 08 and 10 with `results/metrics.json` (spot-check at least 10, including every F1 in the head-to-head table). The automated check below does not replace this. | Member A–E | pending |
+| 2 | **Stance codes.** Fill `human_stance` for the 40 rows in `results/tables/stance_check_sample.csv`, then run `fml stance-agreement`; copy kappa into section 11 and the report only via `results/`. | Member A–E | pending |
+| 3 | **Licence.** Confirm the licence of the LOCO texts at https://osf.io/snpcg/ and record it in `docs/decisions.md`. | Member A–E | pending |
+| 4 | **Temperature decision.** Confirm or change the accepted default (the model rejects `temperature`, answers use default sampling; cache key keeps `temperature: 0`) in `docs/decisions.md`. | Member A–E | pending |
+| 5 | **Output limit and near-duplicates.** Decide on `max_output_tokens: 150` (parse errors, see below) and on near-duplicate removal; both are under "Needs a team decision". | Member A–E | pending |
+| 6 | **Privacy read.** Read the report and sections once for article text, excerpts over 50 words, names and identifiers. | Member A–E | pending |
+| 7 | **Double test access.** Read `results/test_access_log.jsonl` and the "Sequence of test looks" in section 10; agree that `lr_words_v2` is the reported words-only model. | Member A–E | pending |
+
+### What we learned in cycle 1
+
+- **The LLM's 12% parse errors have a visible cause: the output limit.** The 150-token limit cut replies off.
+  Every unparsed cache record used exactly 150 output tokens and no parsed reply used more
+  (`results/metrics.json#llm.parse_error_causes`: 344 of 2,190 replies, all `truncated_at_max_tokens`). The raw
+  replies were not stored, so refusals or wrong formats cannot be ruled out. An earlier claim that cut-offs were not
+  the cause was wrong and is retracted in `docs/decisions.md`; the 400-token check had reused the 150-token client.
+  Unparsed answers count as errors, so they lower recall (precision stays 1.0).
+- **The off-topic filter hit the splits unevenly.** It removed 18.9% of train, 15.5% of validation and 10.2% of
+  test documents (`metrics.json#topic_filter.removal_rate_by_split`), so scores before and after the filter are
+  computed on different test documents. We reported this and did not touch the frozen split.
+- **Temperature 0 was rejected by the model.** The rule in `AGENTS.md` cannot be followed (HTTP 400). The agent
+  recorded the conflict instead of hiding it; the effect is measured with a second pass, the decision is open.
+- **The test set was looked at twice for the words-only model.** `lr_words` was scored first with a stale
+  configuration; the corrected model had to get a new id, `lr_words_v2`, scored after other test results were
+  known. Both entries stay in the log and only `lr_words_v2` is used. Since then `evaluate_final` requires a
+  validation-frozen configuration (`results/frozen_models.json`).
+
+### Automated check of quoted numbers (not a human check)
+
+- **Date and tool:** 17 Oct 2026, run by the AI agent (Claude Code, Sonnet 5.5).
+- **What was run:** `tests/test_report_numbers.py` (every decimal, percentage and large integer in the report
+  against `results/metrics.json`, `results/tables/*.csv` and the config) and the new
+  `tests/test_section_numbers.py` (same matcher on sections 05, 08 and 10; front matter, cell markers,
+  config hashes and length thresholds are removed first). Both include a test that a wrong number is caught.
+- **Outcome:** 13 passed in the combined run. The first run of the section check flagged config-hash fragments and
+  a "250 words" threshold; these are not results, and the check now ignores them.
+- **Limits:** the check proves a number exists somewhere in the results, not that it is the right metric or split.
+  It ran on the `results/` currently in the repository, not after a fresh `fml run-all` (left to the harness).
+  A person still has to do row 1 above.
+
+### Reproducibility task (17 Oct 2026)
+
+- **Tool:** Claude Code (Sonnet 5.5). Kept version ranges in `pyproject.toml` (pinning with `==` could break CI) and documented `requirements-lock.txt` in the README ("Exact versions").
+- **Not done:** the double `fml run-all` and the `metrics.json` diff. The task rules forbid running `run-all` inside a task, so the README says the check is still open. Runtime of the last run is 217.3 s (`results/run_info.json`).
+- **Checked by reading code only:** `run-all` does not append to `results/test_access_log.jsonl` for an already-logged model with the same config hash.
+
+### Privacy scan (17 Oct 2026)
+
+- **Tool:** Claude Code (Sonnet 5.5). Rebuilt the site (`python -m sitegen build`) and searched `site/`, `results/tables/`, `results/*.json*`, `content/`, `reports/`, `docs/` and `README.md` with regular expressions: e-mail addresses, `github.com/<user>`, the account owner's name/e-mail words, "university", "course code", "team number".
+- **Outcome:** no e-mail addresses (only `noreply@anthropic.com` in agent code and `@example.*` in a test), no personal names, no institution, course or team identifiers in the outputs. "university" appears only in LLM reasons about article content (`results/llm_cache.jsonl`), not as an affiliation.
+- **One remaining hit:** the repository owner's GitHub account name appears in the repo link (`config/site.yaml`, rendered into `site/index.html`, plus `docs/SETUP.md`, `docs/PROJECT_PLAN.md`). It is the address of this repo and needed for the comment tool and "edit" links, so it was not removed; it is listed in `docs/decisions.md` as a team decision.
+- **Excerpt check:** no cell in `results/tables/*.csv` (including `stance_check_sample.csv` and `error_examples.csv` justifications) exceeds 50 words, and no quote block in the sections or report does. Bold call-out boxes and "(invented)" teaching examples are not counted as article excerpts.
+- **New test:** `tests/test_privacy.py` (e-mail regex plus the 50-word / 6-block limits; includes tests proving it fails on an injected e-mail, a 60-word quote block and a 60-word CSV cell). Ran it: 4 passed. Not run: the full suite and `fml run-all` (left to the harness). The private-terms gate (`FML_PRIVACY_TERMS`) was not run because the real terms are not available here.

@@ -48,6 +48,17 @@ The agent also reports against its own wishes: section 11 says that the stance c
 - **Whether the explanations are understandable** for someone without an ML background (that is what the feedback threads are for).
 - **Whether the epistemic word list** is sensible. It is a short hand-picked list, not a published one.
 
+### What we learned in cycle 1
+
+- The LLM's unparsed answers (344 of 2,190 replies, `metrics.json#llm.parse_error_causes`) all used the full 150-token output budget: truncation is the visible cause. Raw replies were not stored, so refusals cannot be excluded.
+- The off-topic filter removed 18.9% of train but 10.2% of test documents, so before/after scores use different test documents.
+- The model rejects the temperature setting our rules required; the conflict is recorded and open.
+- The words-only model was scored on test twice (`lr_words`, then `lr_words_v2`); only the second is used.
+
+### Automated check versus human check
+
+`tests/test_report_numbers.py` and `tests/test_section_numbers.py` check that every number in the report and in sections 05, 08 and 10 appears in `results/` or the config. This is an **automated** check, recorded as such in `docs/ai-log.md`. It cannot tell whether a number is the right metric. The seven human checks in the log's table (numbers after the last run, stance codes, licence, temperature, output limit and near-duplicates, privacy read, double test access) each have the placeholder owner "Member A–E" and status `pending`. The agent does not fill in sign-offs.
+
 ### Two pieces of code that make the AI parts auditable
 
 An **API response cache** is a file that stores each answer the first time it is paid for, so that rerunning the pipeline reads the file instead of calling the model again. The cache is only trustworthy if its key changes whenever anything that could change the answer changes. The key below combines the prompt text, the model name, the settings and the pass number into one fingerprint (a **hash**: a short code that changes completely if any input changes). A document is looked up by its `doc_id` plus this key, never by its text.
@@ -74,7 +85,7 @@ Last, the rule that turns a stance code into a verdict ("model wrong" or "label 
 
 - Believing a test suite proves correctness. The tests encode the rules we thought of.
 - The same model family writing the code and being evaluated by it may share blind spots. Human checks are part of the plan, not an extra.
-- The log is only useful if humans add what they checked. `docs/ai-log.md` has the setup entry, the cycle-1 entries and a human-verification table (Members A to E). Every cell is `pending`, because no human check is recorded in the repository yet.
+- The log is only useful if humans add what they checked. `docs/ai-log.md` has the setup entry, the cycle-1 entries and a table of seven human checks with placeholder owners. Every status is `pending`, because no human check is recorded in the repository yet.
 
 ## Technical infrastructure
 

@@ -3,6 +3,11 @@ title: Feature engineering
 part: Model building
 hypothesis: Phrases (n-grams), certainty and hidden-truth words (epistemic markers) and style cues each carry some signal about the kind of website, but the hidden-truth words and ALL-CAPS share will separate the classes most clearly in training data.
 ---
+> **Summary in 3 lines**
+> We built three feature groups: n-grams, epistemic markers, style cues.
+> In training data, hidden-truth words differ most between classes (Cohen's d 0.85).
+> Careful: this only describes; word lists ignore negation, style can be a website habit.
+
 ## Goal and hypothesis
 
 The words-only model (M1) sees which words occur. The course feedback suggested adding "a few other things" and checking whether they help. We chose three **feature groups** (a feature is one number that describes a document; a group is a family of related numbers):

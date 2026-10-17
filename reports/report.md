@@ -255,7 +255,11 @@ By stance, 62 articles make no claim, 9 report neutrally, 3 endorse a conspiracy
 
 **What was learned.** Rules in files and automatic gates work better than telling an agent to be careful. An agent reports conflicts between a rule and reality only if told to write them down. AI output sounds equally confident when right and wrong, so the checks that mattered were comparisons with outside facts and with the data. The main scientific findings, that many "errors" are label problems and that extra features do not help, came from looking at predictions after the first run, as the feedback advised.
 
-**What is skipped or still open.** The licence is unconfirmed, the stance codes are unchecked by people, and the temperature and output-limit decisions are open. Without the LLM cache and a key, `fml run-all` fails loudly with the count of missing entries. `docs/ai-log.md` lists what a person must still check. Its human-verification table (Members A to E) is entirely pending.
+**What we learned in cycle 1.** (1) The LLM's unparsed answers (344 of 2,190 replies) all used the whole 150-token output budget, so truncation is the visible cause; raw replies were not stored, so other causes cannot be excluded. (2) The off-topic filter removed 18.9% of train but 10.2% of test documents, so scores before and after the filter use different test documents. (3) The model rejects the temperature setting our rules required; the conflict was recorded, not hidden. (4) The words-only model was scored on test twice, because the first configuration was stale; only `lr_words_v2` is reported.
+
+**Automated versus human checks.** `tests/test_report_numbers.py` and `tests/test_section_numbers.py` check that every number in the report and in sections 05, 08 and 10 appears in `results/` or the config. That is an automated check, not a human one, and it does not show that a number is the right metric. `docs/ai-log.md` lists seven human checks, each with a placeholder owner (Member A–E); the agent does not sign them off.
+
+**What is skipped or still open.** The licence is unconfirmed, the stance codes are unchecked by people, and the temperature and output-limit decisions are open. Without the LLM cache and a key, `fml run-all` fails loudly with the count of missing entries. `docs/ai-log.md` lists what a person must still check. Its human-verification table is entirely pending.
 
 ## References
 
