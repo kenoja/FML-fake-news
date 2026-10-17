@@ -117,3 +117,19 @@ def test_the_same_step_timing_out_three_times_fails_loudly(sandbox, monkeypatch)
     monkeypatch.setattr(tools, "run_claude", plan_ok_then_always_slow)
     statuses = [agent.run(cycle=1, minutes=60, use_git=False) for _ in range(3)]
     assert statuses == ["CONTINUE", "CONTINUE", "FAILED"]
+
+
+def test_restarting_after_a_timeout_failure_gives_fresh_attempts(sandbox, monkeypatch):
+    # After a FAILED run the owner fixes something and presses Run now; the step must get new tries.
+    real = tools.run_claude
+    calls = {"n": 0}
+
+    def plan_ok_then_slow_three_times(*a, **k):
+        calls["n"] += 1
+        if 2 <= calls["n"] <= 4:
+            raise TimeoutError("too slow")
+        return real(*a, **k)
+
+    monkeypatch.setattr(tools, "run_claude", plan_ok_then_slow_three_times)
+    assert [agent.run(cycle=1, minutes=60, use_git=False) for _ in range(3)] == ["CONTINUE", "CONTINUE", "FAILED"]
+    assert agent.run(cycle=1, minutes=60, use_git=False) == "DONE"
