@@ -7,11 +7,13 @@ The scanners are plain functions so the tests can prove they fail on an injected
 from __future__ import annotations
 
 import csv
+import os
 import re
 import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 csv.field_size_limit(sys.maxsize)
 
@@ -90,13 +92,18 @@ def scan_files(files: list[Path]) -> list[str]:
     return fails
 
 
-OWNER_RE = re.compile(r"kenoja|jahn|\bkeno\b|github\.com/[\w.-]+/FML-|\b(?!<owner>)[\w.-]+/FML-(?:fake-news|data)\b",
-                      re.I)
+def _owner_re() -> re.Pattern:
+    """Owner and private names are read at run time (owner from config/site.yaml, names from the
+    FML_PRIVACY_TERMS env var), so this public file never has to contain them itself."""
+    owner = yaml.safe_load((REPO / "config" / "site.yaml").read_text())["repo_url"].rstrip("/").split("/")[-2]
+    terms = [owner] + [t.strip() for t in os.environ.get("FML_PRIVACY_TERMS", "").split(",") if t.strip()]
+    names = "|".join(rf"\b{re.escape(t)}\b" for t in terms)
+    return re.compile(names + r"|github\.com/[\w.-]+/FML-|\b(?!<owner>)[\w.-]+/FML-(?:fake-news|data)\b", re.I)
 
 
 def owner_hits(text: str) -> list[str]:
     """GitHub usernames / owner paths. Why: a username identifies a team member in a public repo."""
-    return [m.group(0) for m in OWNER_RE.finditer(text)]
+    return [m.group(0) for m in _owner_re().finditer(text)]
 
 
 def _doc_files() -> list[Path]:
@@ -111,8 +118,9 @@ def test_docs_have_no_github_owner_names():
     assert {k: v for k, v in hits.items() if v} == {}
 
 
-def test_owner_scanner_catches_injected_username():
-    assert owner_hits("see " + "keno" + "ja/FML-data") and owner_hits("by " + "Jah" + "n")
+def test_owner_scanner_catches_injected_username(monkeypatch):
+    monkeypatch.setenv("FML_PRIVACY_TERMS", "Jane Example")
+    assert owner_hits("see someuser/FML-data") and owner_hits("written by Jane Example")
     assert owner_hits("<owner>/<repo> and <owner>/FML-data") == []
 
 
