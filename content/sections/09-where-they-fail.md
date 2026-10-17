@@ -50,6 +50,10 @@ The examples are picked by a fixed rule: the first article in each cell.
 
 The stage puts it all together and writes the tables.
 
+<!-- cell: src/fml/pipeline.py#code_disagreements -->
+
+<!-- cell: src/fml/pipeline.py#pick_examples -->
+
 <!-- cell: src/fml/pipeline.py#errors_stage -->
 
 <!-- output: results/metrics.json#errors.counts -->

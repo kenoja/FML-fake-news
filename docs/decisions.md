@@ -345,3 +345,13 @@ Checks done by T12 (not a full run):
 ## Report length is counted as the plain whitespace count (cycle 2, T8)
 - The 3,000–5,000 word limit is checked as `len(text.split())` on `reports/report.md` before References, tables included. This is stricter than the agent gate, which skips table rows.
 - To stay under the limit: the report shows a 4-row comparison table (`results/tables/comparison_compact.csv`); the four counts only appear in the confusion-matrix figure; raw key-value and grid tables in sections 02–07 became one sentence each; the duplicate table in 11 was removed; the example-excerpt table in 09 stays in the notebook only. Tests: `tests/test_gates.py`.
+
+## Cycle 2, T1: out-of-scope analyses dropped
+- Removed the LLM prior-knowledge probe (`llm.website_probe`, `errors.prior_knowledge_probe`, the "12 of 40" sentence), the stance-coding "unreadable" footnote count (`errors.footnote_unreadable_codes`) and the term "website bootstrap". Reason: AGENTS.md allows only the confusion matrix, precision/recall/F1, one bootstrap CI and three McNemar tests (requirement 13). Section 10 now only says the LLM may know the articles, without a number.
+- Kept: the single count of unreadable LLM classifier answers (`llm.unreadable`), because requirement 7 asks for it as one number. Unreadable stance codes are still left out of the error classification, with no separate count.
+- Old probe lines in `results/llm_cache.jsonl` are unused.
+
+## T2: refactor and agent test
+
+- `StyleFeatures` and the long stage functions in `pipeline.py` were split into short helpers; tables are byte-identical.
+- `tests/test_agent_graph.py` tests the protected `agent/` code, not the study. It could not be deleted in this run (the delete command was blocked), so it is left in place. Needs a team decision: delete it if CI does not require it.

@@ -540,94 +540,119 @@ def plot_comparison_confusion(table: pd.DataFrame):
     return fig
 
 
-def comparison_stage() -> dict:
-    """Compare the four final models on the same test documents, from the saved prediction files only."""
-    lr, llm_all = read_final_predictions()
+def align_predictions(lr: pd.DataFrame, llm_all: pd.DataFrame) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    """True labels and each model's predictions, on the same test documents in the same order."""
     llm = llm_all[llm_all["pass"] == 1].set_index("doc_id")
-    ids = llm.index
     y = llm["label"].to_numpy(dtype=bool)
-    preds = {m: lr[lr["model_id"] == m].set_index("doc_id").loc[ids]["pred"].to_numpy(dtype=bool)
-             for m in (WORDS_FINAL, TFIDF_FINAL, FEATURES_FINAL)}           # same documents, same order
+    preds = {m: lr[lr["model_id"] == m].set_index("doc_id").loc[llm.index]["pred"].to_numpy(dtype=bool)
+             for m in (WORDS_FINAL, TFIDF_FINAL, FEATURES_FINAL)}
     preds[LLM_ID] = llm["pred"].to_numpy(dtype=bool)
+    return y, preds
 
+
+def write_comparison_tables(y: np.ndarray, preds: dict[str, np.ndarray]) -> pd.DataFrame:
+    """Write the comparison tables and figures, one row per model."""
     table = pd.DataFrame([model_row(name, y, pred) for name, pred in preds.items()])
     write_table("comparison_test", table)
     write_table("comparison_compact", compact_table(table, MODEL_NAMES))
     savefig(plot_comparison_f1(table), "comparison_f1")
     savefig(plot_comparison_confusion(table), "comparison_confusion")
+    return table
 
-    metrics = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))
+
+def run_mcnemar_pairs(y: np.ndarray, preds: dict[str, np.ndarray], best_lr: str) -> dict:
+    """McNemar test for the three pairs we compare."""
+    return {"words_vs_tfidf": mcnemar_pair(y, preds[WORDS_FINAL], preds[TFIDF_FINAL], WORDS_FINAL, TFIDF_FINAL),
+            "tfidf_vs_features": mcnemar_pair(y, preds[TFIDF_FINAL], preds[FEATURES_FINAL], TFIDF_FINAL, FEATURES_FINAL),
+            "best_lr_vs_llm": mcnemar_pair(y, preds[best_lr], preds[LLM_ID], best_lr, LLM_ID)}
+
+
+def comparison_stage() -> dict:
+    """Compare the four final models on the same test documents, from the saved prediction files only."""
+    y, preds = align_predictions(*read_final_predictions())
+    table = write_comparison_tables(y, preds)
+    metrics = _metrics()
     best_lr = best_final_lr(metrics)
-    tests = {"words_vs_tfidf": mcnemar_pair(y, preds[WORDS_FINAL], preds[TFIDF_FINAL], WORDS_FINAL, TFIDF_FINAL),
-             "tfidf_vs_features": mcnemar_pair(y, preds[TFIDF_FINAL], preds[FEATURES_FINAL], TFIDF_FINAL, FEATURES_FINAL),
-             "best_lr_vs_llm": mcnemar_pair(y, preds[best_lr], preds[LLM_ID], best_lr, LLM_ID)}
     values = {"models": list(preds), "lr_best": best_lr, "test_documents": int(len(y)), "test_conspiracy": int(y.sum()),
               "bootstrap": {"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95},
-              "table": table.to_dict("records"), "mcnemar": tests, "llm_stability": metrics["llm"]["repeat_agreement"]}
+              "table": table.to_dict("records"), "mcnemar": run_mcnemar_pairs(y, preds, best_lr),
+              "llm_stability": metrics["llm"]["repeat_agreement"]}
     write_metrics("comparison", round_floats(values, 4))
     return values
 
 
 # ---------------------------------------------------------------- stage: errors
 
-def errors_stage() -> dict:
-    """Test articles where the best LR and the LLM disagree -> stance coding (cached) -> tables."""
-    cfg = errors.stance_config()
-    seed = project_config()["split"]["seed"]
-    lr_all, llm_p = read_final_predictions()
-    chosen = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))["comparison"]["lr_best"]
-    lr = lr_all[lr_all["model_id"] == chosen]
-    llm_p = llm_p[llm_p["pass"] == 1]
-    sets = errors.disagreement_sets(lr, llm_p)
-    frame = analysis_frame().set_index("doc_id")
-    sets["website"] = sets["doc_id"].map(frame["website"])
+def load_predictions() -> tuple[pd.DataFrame, pd.DataFrame, str]:
+    """Test predictions of the best logistic regression and of the LLM (first pass), plus the model id."""
+    lr_all, llm_all = read_final_predictions()
+    chosen = _metrics()["comparison"]["lr_best"]
+    return lr_all[lr_all["model_id"] == chosen], llm_all[llm_all["pass"] == 1], chosen
+
+
+def code_disagreements(sets: pd.DataFrame, frame: pd.DataFrame, cfg: dict, seed: int) -> pd.DataFrame:
+    """Ask for a stance on the chosen disagreement articles (cached) and drop unreadable answers."""
     to_code = errors.select_for_coding(sets, cfg["max_per_other_set"], seed)
     client = None
     if errors.missing_stances(to_code["doc_id"]):
         client = errors.stance_client(cfg)          # raises loudly: no key and no complete cache
     stance = errors.code_stances(to_code.assign(txt=to_code["doc_id"].map(frame["txt"])), client=client)
     coded = to_code.merge(stance, on="doc_id")
-
-    unreadable = int((coded["claude_stance"] == errors.UNREADABLE).sum())
-    coded = coded[coded["claude_stance"] != errors.UNREADABLE].reset_index(drop=True)   # footnote: these are dropped
+    coded = coded[coded["claude_stance"] != errors.UNREADABLE].reset_index(drop=True)
     coded["verdict"] = [errors.classify_error(bool(t), s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
-    usable = coded
-    write_table("error_classification", errors.error_classification_table(coded, sets))
-    sample = errors.stratified_sample(usable, cfg["human_sample_size"], seed)
-    written = errors.write_check_sample(sample, results_dir() / "tables" / "stance_check_sample.csv")
+    return coded
 
-    errors.write_claude_answers(sample, results_dir() / "tables" / "stance_claude_answers.csv")
 
-    both_right = lr[["doc_id", "label", "pred"]].merge(llm_p[["doc_id", "pred"]], on="doc_id", suffixes=("_lr", "_llm"))
-    both_right = both_right[(both_right["pred_lr"] == both_right["label"]) & (both_right["pred_llm"] == both_right["label"])]
+def pick_examples(lr: pd.DataFrame, llm: pd.DataFrame, sets: pd.DataFrame, frame: pd.DataFrame) -> pd.DataFrame:
+    """One short excerpt for each kind of case, including articles both models got right."""
+    both = lr[["doc_id", "label", "pred"]].merge(llm[["doc_id", "pred"]], on="doc_id", suffixes=("_lr", "_llm"))
+    both_right = both[(both["pred_lr"] == both["label"]) & (both["pred_llm"] == both["label"])]
     ex = errors.pick_examples(sets, both_right.rename(columns={"label": "true_label"}))
     ex["website"] = ex["doc_id"].map(frame["website"])
     ex["excerpt"] = [" ".join(frame.loc[d, "txt"].split()[:errors.EXCERPT_WORDS]) + " ..." for d in ex["doc_id"]]
     ex["true_label"] = ex["true_label"].map(CLASS_NAMES)
-    write_table("error_examples", ex[["cell", "doc_id", "website", "true_label", "excerpt"]])
+    return ex
 
-    from . import llm as llm_mod
-    split = load_split().set_index("doc_id")["split"]
-    val = frame.reset_index()
-    val = val[val["doc_id"].map(split) == "validation"]
-    try:
-        probe = llm_mod.website_probe(llm_mod.probe_sample(val, seed))
-    except RuntimeError as exc:             # no key and no cached probe: say so, never invent a share
-        probe = {"status": "not run", "reason": str(exc)}
+
+def write_error_tables(coded: pd.DataFrame, sets: pd.DataFrame, examples: pd.DataFrame, cfg: dict, seed: int) -> tuple[pd.DataFrame, bool]:
+    """Write the error tables and the stance check sample; return the sample and whether the file was rewritten."""
+    tables = results_dir() / "tables"
+    write_table("error_classification", errors.error_classification_table(coded, sets))
+    sample = errors.stratified_sample(coded, cfg["human_sample_size"], seed)
+    written = errors.write_check_sample(sample, tables / "stance_check_sample.csv")
+    errors.write_claude_answers(sample, tables / "stance_claude_answers.csv")
+    write_table("error_examples", examples[["cell", "doc_id", "website", "true_label", "excerpt"]])
+    return sample, written
+
+
+def error_counts(sets: pd.DataFrame, coded: pd.DataFrame) -> dict:
+    """Per disagreement set: sizes, label split, error types and how many were coded."""
     totals = sets.groupby(["set", "error_type"]).size()
+    return {s: {"total": int((sets["set"] == s).sum()),
+                "conspiracy": int(((sets["set"] == s) & sets["true_label"]).sum()),
+                "mainstream": int(((sets["set"] == s) & ~sets["true_label"]).sum()),
+                "false_positive": int(totals.get((s, "false positive"), 0)),
+                "false_negative": int(totals.get((s, "false negative"), 0)),
+                "coded": int((coded["set"] == s).sum())} for s in errors.SETS}
+
+
+def errors_stage() -> dict:
+    """Test articles where the best LR and the LLM disagree -> stance coding (cached) -> tables."""
+    cfg = errors.stance_config()
+    seed = project_config()["split"]["seed"]
+    lr, llm, chosen = load_predictions()
+    frame = analysis_frame().set_index("doc_id")
+    sets = errors.disagreement_sets(lr, llm)
+    sets["website"] = sets["doc_id"].map(frame["website"])
+    coded = code_disagreements(sets, frame, cfg, seed)
+    examples = pick_examples(lr, llm, sets, frame)
+    sample, written = write_error_tables(coded, sets, examples, cfg, seed)
     values = {"data": "TEST rows, filtered documents; predictions from evaluate_final files only",
-              "prior_knowledge_probe": probe,
               "lr_model": chosen, "stance_model": cfg["model"],
-              "counts": {s: {"total": int((sets["set"] == s).sum()),
-                             "conspiracy": int(((sets["set"] == s) & sets["true_label"]).sum()),
-                             "mainstream": int(((sets["set"] == s) & ~sets["true_label"]).sum()),
-                             "false_positive": int(totals.get((s, "false positive"), 0)),
-                             "false_negative": int(totals.get((s, "false negative"), 0)),
-                             "coded": int((coded["set"] == s).sum())} for s in errors.SETS},
+              "counts": error_counts(sets, coded),
               "coded_documents": int(len(coded)),
-              "footnote_unreadable_codes": unreadable,
-              "stance_counts": usable["claude_stance"].value_counts().to_dict(),
-              "verdict_counts": usable["verdict"].value_counts().to_dict(),
+              "stance_counts": coded["claude_stance"].value_counts().to_dict(),
+              "verdict_counts": coded["verdict"].value_counts().to_dict(),
               "label_problem_share": {"label_problems": int((coded["verdict"] == errors.LABEL_PROBLEM).sum()),
                                       "of_coded": int(len(coded)),
                                       "source": "Claude stance coding only, not checked by people"},

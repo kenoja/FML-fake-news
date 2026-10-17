@@ -46,20 +46,26 @@ def mean_sentence_length(text: str, n_words: int) -> float:
     return n_words / len(sentences) if sentences else 0.0
 
 
-def mattr(tokens: list[str], window: int) -> float:
-    """Share of distinct words, averaged over every `window`-word span (so length does not matter)."""
-    toks = [t.lower() for t in tokens]
-    if not toks:
-        return 0.0
-    if len(toks) <= window:
-        return len(set(toks)) / len(toks)
-    # a word counts once per window if its previous occurrence lies before the window starts
-    n = len(toks)
-    ids = np.unique(np.asarray(toks), return_inverse=True)[1].ravel()
+def previous_positions(ids: np.ndarray) -> np.ndarray:
+    """For each word, the position of its previous occurrence (-1 if it is new)."""
     order = np.argsort(ids, kind="stable")
-    prev = np.full(n, -1)
+    prev = np.full(len(ids), -1)
     same = ids[order][1:] == ids[order][:-1]
     prev[order[1:][same]] = order[:-1][same]
+    return prev
+
+
+def mattr(tokens: list[str], window: int) -> float:
+    """Share of distinct words, averaged over every `window`-word span (so length does not matter)."""
+    words_lower = [t.lower() for t in tokens]
+    n = len(words_lower)
+    if n == 0:
+        return 0.0
+    if n <= window:
+        return len(set(words_lower)) / n
+    ids = np.unique(np.asarray(words_lower), return_inverse=True)[1].ravel()
+    prev = previous_positions(ids)
+    # a word counts once per window if its previous occurrence lies before the window starts
     pos = np.arange(n)
     first = np.maximum(np.maximum(pos - window + 1, prev + 1), 0)
     last = np.minimum(pos, n - window)
@@ -67,22 +73,38 @@ def mattr(tokens: list[str], window: int) -> float:
     return distinct_sum / ((n - window + 1) * window)
 
 
+def count_quotes(text: str) -> int:
+    """Number of quotation marks in the text."""
+    text = normalise_quotes(text)
+    return sum(text.count(q) for q in QUOTE_CHARS)
+
+
+def style_row(text: str, window: int) -> list[float]:
+    """The six style numbers for one article."""
+    tokens = words(text)
+    n_words = len(tokens)
+    return [allcaps_share(tokens),
+            per_n_words(text.count("!"), n_words),
+            per_n_words(text.count("?"), n_words),
+            per_n_words(count_quotes(text), n_words),
+            mean_sentence_length(text, n_words),
+            mattr(tokens, window)]
+
+
+def style_matrix(texts, window: int) -> np.ndarray:
+    """One row of six style numbers per article."""
+    rows = [style_row(text, window) for text in as_texts(texts)]
+    return np.asarray(rows, dtype=float).reshape(-1, len(COLUMNS))
+
+
 class StyleFeatures(BaseEstimator, TransformerMixin):
-    """Text -> 6 style columns. Nothing is learned."""
+    """Thin scikit-learn wrapper around style_matrix. Nothing is learned."""
 
     def fit(self, X, y=None):
         return self
 
     def transform(self, X) -> np.ndarray:
-        window = int(project_config()["features"]["mattr_window"])
-        rows = []
-        for text in as_texts(X):
-            toks = words(text)
-            n = len(toks)
-            quotes = sum(normalise_quotes(text).count(q) for q in QUOTE_CHARS)
-            rows.append([allcaps_share(toks), per_n_words(text.count("!"), n), per_n_words(text.count("?"), n),
-                         per_n_words(quotes, n), mean_sentence_length(text, n), mattr(toks, window)])
-        return np.asarray(rows, dtype=float).reshape(-1, len(COLUMNS))
+        return style_matrix(X, int(project_config()["features"]["mattr_window"]))
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:
         return np.asarray(COLUMNS)

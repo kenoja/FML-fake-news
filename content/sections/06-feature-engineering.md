@@ -40,7 +40,11 @@ Certainty words are counted per 1,000 words, so a long article does not look mor
 
 Style features are computed from the text alone.
 
-<!-- cell: src/fml/features/style.py#StyleFeatures -->
+<!-- cell: src/fml/features/style.py#style_row -->
+
+Repetition is measured with a sliding window over the words.
+
+<!-- cell: src/fml/features/style.py#mattr -->
 
 Each model is tuned on validation, then the rows are compared with plain TF-IDF.
 

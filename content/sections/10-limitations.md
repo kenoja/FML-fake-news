@@ -11,7 +11,7 @@ hypothesis: Our results are real but narrow, because the labels describe website
 
 **Few websites.** We have only 39 conspiracy and 79 mainstream websites, and the validation and test sets contain only a handful of conspiracy websites each. Articles from one website resemble each other, so one unusual website can move a score. That is why we give a range (a confidence interval) with every score and do not read small differences as real.
 
-**The language model may know too much.** The LLM was trained on a huge amount of web text. It may have seen these articles or may know a website's reputation from its name or tone. A human reader or our own models cannot use such knowledge. We checked a small sample on validation and the model named the true website for 30% of it. That does not prove it never uses such knowledge, so its good score may be partly due to prior knowledge.
+**The language model may know too much.** The LLM was trained on a huge amount of web text. It may have seen these articles or may know a website's reputation from its name or tone. A human reader or our own models cannot use such knowledge. We cannot rule out that its good score is partly due to such prior knowledge.
 
 **Hand-made word lists are crude.** They count words and ignore context: "no evidence of a cover-up" counts like "it was a cover-up".
 
@@ -29,8 +29,6 @@ This section describes limits of the study, so it has no code of its own. The te
 
 <!-- output: results/metrics.json#llm.repeat_agreement -->
 <!-- output: results/metrics.json#llm.truncated_docs -->
-<!-- output: results/metrics.json#errors.prior_knowledge_probe.identified -->
-<!-- output: results/metrics.json#errors.prior_knowledge_probe.n -->
 
 ## Report
 
@@ -40,7 +38,7 @@ Second, the number of websites is small: the validation and test sets each conta
 
 <!-- output: results/metrics.json#llm.repeat_agreement | Share of identical answers in a repeated validation run -->
 
-Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites. This cannot be excluded. In a probe, the model named the true website for 12 of 40 validation articles (30%), so a part of its performance may rest on prior knowledge that the trained models do not have. Moreover, the LLM saw only the first 3,000 words of each article, and 30 validation articles were longer and were cut, so it may have missed later passages that the logistic regressions, which read the full text, could use.
+Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites. This cannot be excluded. A part of its performance may therefore rest on prior knowledge that the trained models do not have. Moreover, the LLM saw only the first 3,000 words of each article, and 30 validation articles were longer and were cut, so it may have missed later passages that the logistic regressions, which read the full text, could use.
 
 Fourth, the certainty and doubt features are counts of words from a hand-made list and ignore negation: "no evidence of a cover-up" counts like "a cover-up". Fifth, although names, addresses and repeated lines of the websites were removed, the typical style of a website can remain and can serve as a shortcut for the models. The split by website prevents a model from profiting from sites it has seen, but not from style habits that websites of the same kind share. Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer. The test set was used during development; every final model was chosen on validation and scored on test once.
 

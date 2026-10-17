@@ -29,6 +29,10 @@ The McNemar test counts who is right where the other is wrong.
 
 The stage reads the saved test predictions, builds the table and the figures, and runs the three tests.
 
+<!-- cell: src/fml/pipeline.py#align_predictions -->
+
+<!-- cell: src/fml/pipeline.py#run_mcnemar_pairs -->
+
 <!-- cell: src/fml/pipeline.py#comparison_stage -->
 
 <!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals -->

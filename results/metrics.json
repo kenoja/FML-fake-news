@@ -564,15 +564,6 @@
   },
   "errors": {
     "data": "TEST rows, filtered documents; predictions from evaluate_final files only",
-    "prior_knowledge_probe": {
-      "status": "run",
-      "n": 40,
-      "identified": 12,
-      "share_identified": 0.3,
-      "prompt_hash": "917507913b9719fc",
-      "model": "claude-haiku-5-5",
-      "split": "validation"
-    },
     "lr_model": "final_tfidf_features",
     "stance_model": "claude-sonnet-5-5",
     "counts": {
@@ -602,7 +593,6 @@
       }
     },
     "coded_documents": 65,
-    "footnote_unreadable_codes": 2,
     "stance_counts": {
       "no_claim": 55,
       "reports_neutrally": 5,

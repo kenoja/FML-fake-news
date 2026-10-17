@@ -20,9 +20,9 @@ Treating an article as a pile of words and ignoring their order. Like tipping a 
 A simple method we compare other methods against. If a fancy model cannot beat the baseline, the extra effort did not help. Like walking as the baseline against which a bicycle is judged.
 
 ### Bootstrap
-Also: Bootstrap resampling, website bootstrap
+Also: Bootstrap resampling
 
-Redrawing articles (or whole websites) at random with replacement, many times, and recomputing the score each time. The spread shows how shaky the score is. Like asking what a score would be on other, similar test sets.
+Redrawing articles at random with replacement, many times, and recomputing the score each time. The spread shows how shaky the score is. Like asking what a score would be on other, similar test sets.
 
 ### C (regularisation strength)
 Also: C, C value
