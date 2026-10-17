@@ -37,7 +37,8 @@ def problems(sections_dir: Path, repo: Path = REPO, slugs: list[str] = SLUGS,
         out += [f"{slug}: front matter key '{k}' missing" for k in KEYS if not (meta or {}).get(k)]
         body = text[front.end():] if front else text
         out += [f"{slug}: heading '{h}' missing" for h in HEADINGS
-                if not re.search(rf"^{re.escape(h)}\b", body, re.M)]
+                if not (h == "## Report" and slug in NO_CODE)   # how-to-use and glossary have no report part
+                and not re.search(rf"^{re.escape(h)}\b", body, re.M)]
         cells = sitegen.MARKER.findall(body)
         if slug not in NO_CODE and not any(kind == "cell" for kind, _ in cells):
             out.append(f"{slug}: no code cell")

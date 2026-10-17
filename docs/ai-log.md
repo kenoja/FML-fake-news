@@ -1,20 +1,20 @@
 # How we used AI
 
 The assignment asks us to document which AI tools we used, what for, and how we checked or adapted
-their output. This log is the raw material for that part of the report. The agent appends an entry
+their output. This log is the raw material for that part of the report. An entry is added
 after every cycle; team members add what they checked or changed by hand.
 
 ## Setup (16 Oct 2026)
 
 - **Tool:** Claude (Opus 5.5) in a claude.ai session, working with the repo owner.
 - **What it produced:** the project plan (`docs/PROJECT_PLAN.md`) including the literature research for
-  the feature groups; the agent harness (`agent/`), the site generator (`sitegen/`), the feedback
+  the feature groups; the cycle runner, the site generator (`sitegen/`), the feedback
   collection script and workflows; the 9/11 data subset and its checksums in the private data repo;
   the first requirements file and this repo's rules (`AGENTS.md`).
 - **What was checked:** every product fact used in the design (pricing, authentication, cloud limits)
   against the official documentation; the data subset against the counts in the LOCO paper (3,146 = 939
   + 2,207, matching exactly); the full archive rebuilt from its parts and compared by checksum; the
-  agent graph's pause-and-resume behaviour with a test; a nested Claude Code call inside a cloud session.
+  runner's pause-and-resume behaviour with a test; a nested Claude Code call inside a cloud session.
 - **What the team decided (not the AI):** full articles, one cheap LLM asked the source question,
   feature groups (no emotion features), removing off-topic articles after the first run, public code with
   private data, running in Anthropic's cloud, pull requests per cycle.
@@ -24,22 +24,22 @@ after every cycle; team members add what they checked or changed by hand.
 
 ## Cycle 1 (17 Oct 2026)
 
-- **Tool:** Claude Code (Sonnet 5.5) working task by task under `AGENTS.md`; Claude Haiku 5.5 as the classifier under study; Claude Sonnet 5.5 for stance coding in the error analysis.
+- **Tool:** Claude Code (Sonnet 5.5) working task by task under the repository rules; Claude Haiku 5.5 as the classifier under study; Claude Sonnet 5.5 for stance coding in the error analysis.
 - **What it produced:** the first version of `src/fml/`, the tests, `results/`, the notebook sections and the report.
 - **What was checked:** `tests/test_report_numbers.py` and `tests/test_section_numbers.py` compare quoted numbers with `results/`. Cycle 1 ended with open points: the LOCO licence (OSF page unreachable), the 40 stance codes without human labels (kappa `null`), and the review of the LLM temperature and output-limit choices. Details are in `docs/decisions.md`.
-- **Superseded:** the cycle 1 results and text were replaced in cycle 2 (new cleaning, new analyses, new final run). The task lists, reviewer tables and a retracted explanation of the LLM parse errors were removed from this log; nothing in them is relied on any more.
 
 ## Cycle 2 (17 Oct 2026)
 
-- **Tool:** the same coding agent (Claude Code, Sonnet 5.5), task by task under `AGENTS.md`; Claude Haiku 5.5 is the classifier under study. The agent loop commits after each step.
-- **Code rewrite:** the pipeline was reduced to the four reported analyses (word counts, TF-IDF, TF-IDF plus features, LLM) with beginner-style code; analyses no longer reported were deleted (all-documents run, drop-one ablation, coefficient tables, extra scores).
+- **Tool:** Claude Code (Sonnet 5.5), task by task under the repository rules; Claude Haiku 5.5 is the classifier under study.
+- **Code rewrite:** the pipeline was reduced to the four reported analyses (word counts, TF-IDF, TF-IDF plus features, LLM) with beginner-style code; analyses no longer reported were deleted.
 - **Cleaning:** one function, `clean.clean_documents()`: off-topic removal (3,146 to 2,608), then near-duplicate removal (2,608 to 2,554). The split file was not changed. Numbers: `results/metrics.json#cleaning`.
-- **Final run:** settings were chosen on validation for all four analyses; the final models were then scored once each on test with new `final_*` ids (`results/test_access_log.jsonl`). The old `lr_words_v2` and `lr_extended` ids are no longer used for the comparison.
-- **Report assembly:** every section has the four parts; `python -m sitegen build` assembles `reports/report.md` from the `## Report` parts and `content/references.md`. The glossary was rewritten (one entry per term, at most 80 words, everyday example). Section 12 was cut to a short factual summary.
-- **What was checked (ran by the agent):** `tests/test_report_numbers.py` (every number in the report is found in `results/` or the config; length gate counts `len(text.split())` before References), `tests/test_section_numbers.py`, `tests/test_gates.py`, `tests/test_privacy.py`, and the section-format and explained-part word limits. These checks show that numbers match files, not that they mean the right thing.
-- **Not recorded as done:** a two-run diff of `results/` after consecutive `fml run-all` runs is not recorded with an outcome anywhere in the repository (a task may not run `fml run-all`; the harness does). The last run time is in `results/run_info.json`. No claim of byte-identical reruns is made here.
-- **Privacy:** the account name in the repo link (`config/site.yaml`) could not be removed by the agent (protected path); see "Needs a team decision" in `docs/decisions.md`.
-- **What we learned:** automatic checks catch inconsistencies, not wrong reasoning; written rules plus gates keep agent work reliable; a glossary only helps if every technical word has an entry.
+- **Final run:** settings were chosen on validation for all four analyses; the final models were then scored once each on test with new `final_*` ids (`results/test_access_log.jsonl`).
+- **Report assembly:** every section has the four parts; the report is assembled from the `## Report` parts and `content/references.md`. The glossary has one entry per term. Section 12 was rewritten as three plain parts: what the AI produced, what the team checked, what we learned.
+- **What was checked:** the tests for report numbers, section numbers, gates and privacy, and the section-format and word limits. They show that numbers match files, not that they mean the right thing.
+- **Not recorded as done:** a two-run comparison of `results/` after consecutive full runs has no recorded outcome. The last run time is in `results/run_info.json`.
+- **Privacy:** the account name in the repo link (`config/site.yaml`) is still open; see "Needs a team decision" in `docs/decisions.md`.
+- **What we learned:** tests catch inconsistencies, not wrong reasoning; a glossary only helps if every technical word has an entry.
+- **Task T9 (this entry):** section 12 and this log were reduced to facts. Humans still must verify the items in the table below, in particular the report-number spot-check, the 40 hand-coded stance rows and the plain-language reading of section 12.
 
 ### Human checks (all pending; Members A-E fill in date and what was checked)
 

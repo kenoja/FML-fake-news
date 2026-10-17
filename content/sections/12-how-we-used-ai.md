@@ -14,13 +14,9 @@ hypothesis: An AI assistant can write most of the code quickly, but a person sti
 
 **What the AI did not decide.** The team decided the question, the use of full articles, the four ways of sorting, the feature groups, and the rule that the final test articles are scored only once.
 
-**How output was checked.** Three kinds of checks worked together.
+**How output was checked.** Small test programs fail when a rule is broken, for example if the split of articles changes or if a number in the report is not found in the result files. The article counts were compared with the counts published for the corpus. Some checks need a person, such as whether an explanation is understandable. These are still open.
 
-- *Automatic checks.* Small programs that fail loudly when a rule is broken. For example, they fail if the split of articles changes, if private names appear in public text, or if a number in the report is not found in the result files.
-- *Comparing with outside facts.* The article counts were compared with the counts published for the corpus, and every figure in the text was copied from the result files rather than typed.
-- *Reading by people.* Some checks cannot be automatic, such as whether an explanation is understandable or whether a result makes sense. These are listed as open in the AI log; none is recorded as done yet.
-
-**What an automatic check cannot do.** It can confirm that a number matches a file. It cannot confirm that the number answers the right question. That judgement stays with people.
+**What a test program cannot do.** It can confirm that a number matches a file. It cannot confirm that the number answers the right question. That judgement stays with people.
 
 **Saving answers.** The language model costs money for every answer, so each answer is saved the first time. Running the study again reads the saved answers instead of asking again. The saved file holds only article ids and answers, never article text.
 
@@ -32,21 +28,22 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 ## Report
 
-**Use of AI tools.** We used an AI assistant (Claude, in the form of a coding agent) to draft the project plan, write the analysis code and tests, produce tables and figures, and draft the course text and this report. A separate language model, Claude Haiku 5.5, is the fourth classifier under study and a second model (Claude Sonnet 5.5) coded how disagreement articles treat conspiracy claims for the error analysis. The log of what was produced, checked and changed is kept in the repository.
+**What the AI produced.** The AI assistant Claude drafted the project plan, wrote the analysis code and the tests, produced the tables and figures, and drafted the text of the course site and of this report. A separate language model, Claude Haiku 5.5, classified the articles as the fourth method under study. A second model, Claude Sonnet 5.5, coded how the articles in which the methods disagree treat conspiracy claims, for the error analysis.
 
-The study design was fixed by the team and not by the assistant: the research question, full articles as input, the four ways of sorting, the feature groups, and the rule that each final model is scored on the test articles once. The assistant followed written rules in the repository and was bound by automatic checks, among them a lock on the test set, a frozen split, a privacy check on public text and a comparison of every number in the report with the result files.
+**What the team checked or changed.** The team fixed the research question, full articles as input, the four methods, the feature groups, and the rule that each final model is scored on the test articles once. The article counts were compared with those published for the corpus. Tests were written that fail when a rule is broken, such as fitting on training articles only, a changed split, or a number in the report that is missing from the result files. Human checks are pending: reading the text, spot-checking numbers, and coding 40 articles by hand. None of them is recorded as done.
 
-We checked the output in three ways. First, the article counts were compared with those published for the corpus. Second, automatic tests were written to fail whenever a rule such as fitting on training articles only is broken. Third, human checks are planned (reading the text, spot-checking numbers, coding 40 articles by hand), but none is recorded in the log yet, so we claim none.
-
-We learned that written rules plus automatic checks keep assistant-written work reliable, that automatic checks verify consistency rather than meaning, and that the stance codes produced by a language model need a human check before they are relied on. The language model answers are cached so that every figure can be reproduced without new cost.
+**What we learned about the work.** Tests confirm that numbers match files, not that they mean the right thing, so a person must still judge the reasoning. The stance codes produced by a language model need a human check before they are relied on. Saving the language model answers makes every figure reproducible without new cost.
 
 ## Check yourself
 
 Q: Why is the language model in this study not described as a helper?
 A: Because it is one of the four classifiers being tested. Its answers are results to be judged, not help with the work.
 
-Q: An automatic check confirms that every number in the report matches a result file. What does it not confirm?
-A: It does not confirm that the number measures the right thing or that the conclusion drawn from it makes sense. A person must judge that.
+Q: Why is a test that says "every number matches a result file" not enough to trust the conclusions?
+A: A number can match its file and still measure the wrong thing. A person must judge whether the conclusion makes sense.
 
-Q: Why do we save every answer of the language model?
-A: Each answer costs money and can vary, so saving it makes a rerun free and gives the same numbers again.
+Q: What would happen if the language model answers were not saved?
+A: Every rerun would ask again, cost money, and could give slightly different answers, so the numbers might change.
+
+Q: What would happen if a stance code from the language model were used without a human check?
+A: Errors in the code would pass unseen into the error analysis, and we could not say how far to trust it.

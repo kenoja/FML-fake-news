@@ -12,7 +12,7 @@ hypothesis: Giving rare, telling words more weight than everyday words improves 
 **What stays the same.** Everything else is identical to the word-count analysis, so that any difference comes from the weighting alone:
 - The same articles, the same split, the same list of words (words in at least two training articles).
 - The same model, logistic regression, with class weight "balanced" so the smaller conspiracy group is not ignored.
-- The same three regularisation values (0.1, 1, 10), and the one with the best validation F1 for the conspiracy class wins.
+- The same three values (0.1, 1, 10) of the cautiousness setting (regularisation), and the one with the best validation F1 for the conspiracy class wins.
 
 **Why we do it this way.** The rarity part (IDF) is learned from the articles, so it must be computed on the training articles only. If validation or test articles shaped it, the model would have peeked at the exam. We also use a gentle version of the term frequency (the logarithm of the count), so that a word repeated fifty times does not count fifty times as much as a word used once. And TF-IDF scales every article to the same length, so long articles do not win just because they have more words.
 
@@ -55,5 +55,5 @@ A: The second part of TF-IDF measures rarity across articles. "The" occurs in ne
 Q: Why is the rarity of words computed on the training articles only?
 A: If validation or test articles shaped the weights, information from the exam would leak into the model and the scores would look better than they are.
 
-Q: TF-IDF scored higher than word counts on validation. Does that prove the model understands the articles better?
-A: No. It only shows that the weighted words separate these websites better. The model still sees only words, not meaning.
+Q: Why does a higher TF-IDF score on validation not prove that the model understands the articles better?
+A: It only shows that the weighted words separate these websites better. The model still sees only words, not meaning.

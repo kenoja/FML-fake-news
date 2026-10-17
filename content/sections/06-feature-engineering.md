@@ -8,12 +8,12 @@ hypothesis: Adding features about certainty and writing style improves the TF-ID
 **The idea.** TF-IDF only sees single words. The course feedback asked whether a few hand-made clues help on top. A clue is called a **feature**: one number that describes an article. We tried three families of clues, each backed by earlier research.
 
 1. **Phrases (n-grams of one to three words).** "Inside job" or "no evidence of" mean more than their single words (Wang and Manning, 2012).
-2. **Certainty and doubt words (epistemic markers).** "Epistemic" means "about knowing". Our short lists hold doubt words ("perhaps"), certainty words ("clearly"), hidden-truth words ("cover-up") and debunking words ("no evidence"). Research links conspiracy writing to certainty and hidden truths, but the evidence is mixed (Marini and Jezek, 2024; Fong et al., 2021).
+2. **Certainty and doubt words.** Writers show how sure they are through their words, as in "I know" against "I guess". Our short lists hold doubt words ("perhaps"), certainty words ("clearly"), hidden-truth words ("cover-up") and debunking words ("no evidence"). Research links conspiracy writing to certainty and hidden truths, but the evidence is mixed (Marini and Jezek, 2024; Fong et al., 2021).
 3. **Style.** Share of CAPITAL words, exclamation and question marks, quotation marks, sentence length and repetition (Horne and Adali, 2017; Perez-Rosas et al., 2018).
 
-**A fair test.** We compare five models on the same articles and split: TF-IDF alone, TF-IDF plus each family, and TF-IDF plus all three. Each family is built from the training articles only. Numbers such as "capital words per article" are **standardised** (put on one common scale) with a scale learned on the training articles only. We judge by F1 on the validation articles.
+**A fair test.** We compare five models on the same articles and split: TF-IDF alone, TF-IDF plus each family, and TF-IDF plus all three. Each family is built from the training articles only. Numbers such as "capital words per article" are put on one common scale (this is called **standardising**, like converting miles and kilometres to one unit) with a scale learned on the training articles only. We judge by F1 on the validation articles.
 
-**How we read it.** A family counts as helping only if F1 rises by at least 0.01. A smaller change could be luck, because one or two articles can move F1 that much. Otherwise we keep plain TF-IDF.
+**How we read it.** We set a minimum gain before the test: a family counts as helping only if F1 rises by at least 0.01. A smaller change could be luck, because one or two articles can move F1 that much. Otherwise we keep plain TF-IDF.
 
 **Why extra clues can add little.** The words already carry the information: if "cover-up" is telling, TF-IDF has it. Our short lists ignore meaning, so "there was no cover-up" still counts "cover-up". And a style habit can belong to one website, not to a belief.
 
@@ -82,11 +82,11 @@ Three reasons explain why the groups add so little. First, the information is al
 Q: Why can a new feature fail to improve a model that already uses TF-IDF?
 A: The information may already be in the words. If "cover-up" matters, TF-IDF has it as a word, so a count of the same word adds almost nothing new.
 
-Q: Why do we keep plain TF-IDF unless a group raises F1 by at least 0.01?
+Q: What would go wrong if we accepted a feature group for any gain at all, however small?
 A: With a few hundred validation articles, one or two articles can move F1 by that much by chance. A rule with a margin stops us from calling luck an improvement.
 
-Q: Why are the numbers for the style features put on one scale using the training articles only?
+Q: What would go wrong if the common scale for the style numbers were worked out from validation or test articles too?
 A: If the scale used validation or test articles, information about them would leak into training and the scores would look better than they are.
 
-Q: Hidden-truth words differ a lot between the classes in training. Does that guarantee they help the classifier?
-A: No. A difference in averages only describes the data. The words may already be in TF-IDF, and the list covers only some articles.
+Q: Why does a clear difference in hidden-truth words between the two kinds of website not guarantee that they help the classifier?
+A: A difference in averages only describes the data. The words may already be in TF-IDF, and the list covers only some articles.

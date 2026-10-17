@@ -68,8 +68,8 @@ These numbers describe validation articles only. Whether the model keeps this le
 
 ## Check yourself
 
-Q: What does "zero-shot" mean?
-A: The model gets no solved examples and no training from us. It only receives an instruction and the article.
+Q: Why is a zero-shot model a fair test of what a cheap, ready-made model can do?
+A: It gets no solved examples and no training from us, only an instruction and the article, so its score shows what it can do alone.
 
 Q: Why do we ask about the website and not about whether the article believes a conspiracy theory?
 A: The dataset labels describe the website. To compare the LLM and the logistic regressions fairly, both must be judged against those same labels.

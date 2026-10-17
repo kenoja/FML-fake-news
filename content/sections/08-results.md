@@ -76,8 +76,8 @@ Three McNemar tests (exact, two-sided) compare pairs of models. Word counts agai
 **Summary.** On the test set the ranking by F1 is LLM, TF-IDF with features, TF-IDF, word counts. Only the first place is clearly separated from the rest. Better weighting and extra features move the logistic regression in the expected direction, but the gain is small compared with the uncertainty of the estimate.
 
 ## Check yourself
-Q: A model flags 10 articles as conspiracy and 8 of them really are. It misses 12 other conspiracy articles. What are its precision and recall?
-A: Precision is 8 of 10, so 0.8. Recall is 8 of the 20 real conspiracy articles (8 caught plus 12 missed), so 0.4.
+Q: What would happen to precision and recall if a model flagged every single article as conspiracy?
+A: Recall would be perfect, because no conspiracy article is missed. Precision would be poor, because most flagged articles are mainstream. This is why we need both numbers.
 
 Q: Why can the LLM have a precision of 0.985 but a recall of only 0.667?
 A: It almost never calls a mainstream article conspiracy (1 false alarm), so what it flags is nearly always right. But it misses 32 of the 96 conspiracy articles, so it finds only two thirds of them.
@@ -88,5 +88,5 @@ A: The test set is just one sample of articles. The interval shows how much the 
 Q: TF-IDF with features has a higher F1 than TF-IDF alone, yet the McNemar test gives p = 0.332. What does that mean?
 A: A split as uneven as 11 against 6 happens quite often by chance when two models are equally good. The extra features may help, but this test cannot show it.
 
-Q: The LLM has precision 0.985 but recall 0.667. Describe in your own words what kind of mistake it makes.
-A: It is very careful: when it says "conspiracy" it is nearly always right, but it lets about one in three conspiracy articles pass as mainstream.
+Q: Why would a reader who wants to catch every conspiracy article still be unhappy with a model that has high precision?
+A: High precision only says that its alarms are right. If recall is low, many conspiracy articles still pass as mainstream, as with the LLM, which lets about one in three through.
