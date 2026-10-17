@@ -20,6 +20,24 @@ def test_write_metrics_merges_and_keeps_required_keys(tmp_path):
     assert got["data"] == {"n": 1} and got["split"] == {"train": 2}
 
 
+def test_metrics_top_level_keys_are_exactly_the_agreed_ones():
+    assert results.METRIC_KEYS == ("data", "cleaning", "split", "word_counts", "tfidf", "tfidf_features",
+                                   "llm", "comparison", "errors")
+
+
+def test_top_coefficients_break_ties_by_word(tmp_path):
+    """Why: equal weights in a different order would change a table between two identical runs."""
+    import pandas as pd
+    from fml.models import build_pipeline, top_coefficients
+
+    pipe = build_pipeline({"min_df": 1})
+    pipe.fit(pd.DataFrame({"txt": ["bb aa", "dd cc", "bb aa", "dd cc"], "label": [True, False, True, False]}), [True, False, True, False])
+    pipe.named_steps["clf"].coef_ = pipe.named_steps["clf"].coef_ * 0 + 1.0     # make every weight equal
+    table = top_coefficients(pipe, k=4)
+    assert table[table["direction"] == "conspiracy"]["feature"].tolist() == ["aa", "bb", "cc", "dd"]
+    assert table[table["direction"] == "mainstream"]["feature"].tolist() == ["aa", "bb", "cc", "dd"]
+
+
 def test_write_metrics_rejects_unknown_key(tmp_path):
     with pytest.raises(KeyError):
         results.write_metrics("typo", {}, path=tmp_path / "m.json")

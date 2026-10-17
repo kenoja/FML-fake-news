@@ -154,14 +154,10 @@ def test_bootstrap_ci_contains_point_estimate_and_is_reproducible():
     rng = np.random.default_rng(3)
     y = rng.random(300) < 0.3
     p = np.where(rng.random(300) < 0.85, y, ~y)
-    sites = np.repeat(np.arange(30), 10)
-    for groups in (None, sites):
-        ci = bootstrap_ci(y, p, groups=groups, n=300)
-        for name, v in ci.items():
-            assert v["ci_low"] <= v["estimate"] <= v["ci_high"], name
-        assert ci == bootstrap_ci(y, p, groups=groups, n=300)
-    wide, narrow = bootstrap_ci(y, p, groups=sites, n=300), bootstrap_ci(y, p, n=300)
-    assert wide["f1"]["ci_high"] - wide["f1"]["ci_low"] > 0.8 * (narrow["f1"]["ci_high"] - narrow["f1"]["ci_low"])
+    ci = bootstrap_ci(y, p, n=300)
+    for name, v in ci.items():
+        assert v["ci_low"] <= v["estimate"] <= v["ci_high"], name
+    assert ci == bootstrap_ci(y, p, n=300)
 
 
 def test_mcnemar_hand_computed():

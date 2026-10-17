@@ -120,7 +120,7 @@ def baseline_filtered() -> dict:
     pipe, grid = tune_on_validation(train, valid, M1_FEATURES)
     write_table(f"{M1_FILTERED_ID}_grid", grid)
     sel = grid[grid["selected"]].iloc[0]
-    y, pred, sites = valid["label"].to_numpy(), pipe.predict(valid), valid["website"].to_numpy()
+    y, pred = valid["label"].to_numpy(), pipe.predict(valid)
     c, ap = confusion(y, pred), float(average_precision_score(y, pipe.decision_function(valid)))
     savefig(plot_confusion(c, "Words-only LR (validation)"), "baseline_filtered_confusion")
     coefs = top_coefficients(pipe)
@@ -132,17 +132,16 @@ def baseline_filtered() -> dict:
         "selected": {"C": float(sel["C"]), "class_weight": sel["class_weight"], "selection_metric": "f1 (validation)"},
         "grid_values_tried": int(len(grid)),
         "documents": {"cleaned": int(len(df)), "train": int(len(train)), "validation": int(len(valid)),
-                      "validation_conspiracy": int(y.sum()), "validation_websites": int(len(set(sites)))},
+                      "validation_conspiracy": int(y.sum())},
         "confusion": c,
         "validation": bootstrap_ci(y, pred),
-        "validation_website_bootstrap": bootstrap_ci(y, pred, groups=sites),
         "bootstrap": {"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95},
         "average_precision": ap,
         "baselines": {"majority_class": majority_baseline(train["label"], y),
                       "stratified_random": stratified_random_baseline(train["label"], y, BOOTSTRAP_SEED)},
         "website_name_tokens_in_top_coefficients": sorted(set(coefs["feature"]) & website_name_tokens(df)),
     }
-    write_metrics("baseline", round_floats(values))
+    write_metrics("word_counts", round_floats(values))
     return values
 
 
@@ -242,8 +241,7 @@ def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] |
     y = test["label"].to_numpy()
     out = {"model_id": model_id, "config_hash": digest, "n_docs": int(len(test)),
            "confusion": confusion(y, pred),
-           "metrics_documents": bootstrap_ci(y, pred),
-           "metrics_websites": bootstrap_ci(y, pred, groups=test["website"].to_numpy()),
+           "metrics": bootstrap_ci(y, pred),
            "test_websites": int(test["website"].nunique()), "test_conspiracy": int(y.sum())}
     if proba is not None:       # per-document predictions: ids, label, prediction, probability; never text
         out["predictions"] = pd.DataFrame({"model_id": model_id, "doc_id": test["doc_id"], "label": y,
@@ -286,27 +284,25 @@ def ablation_variants() -> dict[str, dict]:
 
 
 def plot_ablation(table: pd.DataFrame, chosen: str):
-    """Horizontal bars of validation F1 with both 95% CIs (thin = documents, thick = websites)."""
+    """Horizontal bars of validation F1 with the 95% interval."""
     t = table.iloc[::-1].reset_index(drop=True)
     fig, ax = plt.subplots(figsize=(8, 4.6))
     colours = ["#3b5b8c" if m == chosen else "#9a9a9a" for m in t["model_id"]]
     ax.barh(t.index, t["f1"], color=colours, height=0.6)
     for i, r in t.iterrows():
-        ax.plot([r["f1_ci_doc_low"], r["f1_ci_doc_high"]], [i, i], color="black", lw=1)
-        ax.plot([r["f1_ci_site_low"], r["f1_ci_site_high"]], [i + 0.2, i + 0.2], color="#b5651d", lw=2.5)
+        ax.plot([r["f1_ci_low"], r["f1_ci_high"]], [i, i], color="black", lw=1)
         ax.text(r["f1"], i - 0.38, f"{r['f1']:.3f}", ha="center", va="center", fontsize=8)
     ax.axvline(float(table.loc[table["kind"] == "reference", "f1"].iloc[0]), color="black", ls="--", lw=0.8)
     ax.set_yticks(t.index, t["label"])
-    ax.set_xlim(max(0.0, float(t["f1_ci_site_low"].min()) - 0.03), 1.0)
+    ax.set_xlim(max(0.0, float(t["f1_ci_low"].min()) - 0.03), 1.0)
     ax.set_xlabel("Validation F1 (conspiracy class)")
-    ax.set_title("Ablation: black = 95% CI by documents, orange = 95% CI by websites\n(dashed = M1; blue = preferred model)",
-                 fontsize=9)
+    ax.set_title("Ablation: black line = 95% confidence interval\n(dashed = M1; blue = preferred model)", fontsize=9)
     fig.tight_layout()
     return fig
 
 
 def _ablation_selected() -> dict:
-    sel = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))["ablation"].get("selected")
+    sel = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))["tfidf_features"].get("selected")
     if not sel:
         raise RuntimeError("run the ablation stage first: the tuned settings come from validation")
     return sel
@@ -371,12 +367,7 @@ def ablation() -> dict:
     groups = {g: {"added": a, "dropped": d} for g, (_, a, d) in ABLATION_GROUPS.items()}
     verdicts = group_verdicts(table, {g: groups[g] for g in groups})
     chosen = choose_between(table, LR_WORDS_ID, LR_EXTENDED_ID)
-    y, sites = valid["label"].to_numpy(), valid["website"].to_numpy()
-    preds = {m: p.predict(valid) for m, p in pipes.items()}
-    pair = lambda ref, new: paired_delta_ci(y, preds[ref], preds[new], groups=sites)   # noqa: E731
-    verdicts["H2"]["ngrams_minus_epistemic_added_f1_site_ci"] = pair("lr_plus_epistemic", "lr_plus_ngrams")
-    verdicts["H2"]["ngrams_minus_style_added_f1_site_ci"] = pair("lr_plus_style", "lr_plus_ngrams")
-    verdicts["H4"]["ngrams_minus_style_added_f1_site_ci"] = pair("lr_plus_style", "lr_plus_ngrams")
+    y = valid["label"].to_numpy()
     top, dense = [], []
     for m in ("lr_plus_ngrams", LR_EXTENDED_ID):
         t, d = coefficient_tables(pipes[m], m)
@@ -392,11 +383,11 @@ def ablation() -> dict:
               "protocol": "per model: C in C_GRID x class_weight in (none, balanced), best conspiracy-F1 on validation",
               "bootstrap": {"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95},
               "documents": {"train": int(len(train)), "validation": int(len(valid)),
-                            "validation_conspiracy": int(y.sum()), "validation_websites": int(len(set(sites)))},
+                            "validation_conspiracy": int(y.sum())},
               "selected": selected, "models": {r["model_id"]: _nan_to_none(r) for r in table.to_dict("records")},
               "verdicts": verdicts, "chosen_lr": chosen,
               "epistemic_negation": epistemic_negation_check(train, valid)}
-    write_metrics("ablation", round_floats(values, 4))
+    write_metrics("tfidf_features", round_floats(values, 4))
 
     for m in (LR_WORDS_ID, LR_EXTENDED_ID):
         freeze_model(m)                 # the validation choice is on disk before the first test look
@@ -404,16 +395,16 @@ def ablation() -> dict:
     rows, test_values = [], {}
     for m, out in tests.items():
         rows.append({"model_id": m, "config_hash": out["config_hash"], "documents": out["n_docs"],
-                     "conspiracy": out["test_conspiracy"], "websites": out["test_websites"], **out["confusion"],
-                     **metric_columns(out["metrics_documents"], out["metrics_websites"])})
+                     "conspiracy": out["test_conspiracy"], **out["confusion"],
+                     **metric_columns(out["metrics"])})
         test_values[m] = {k: v for k, v in out.items() if k != "predictions"}
     write_table("test_lr", pd.DataFrame(rows).round(4))
     pred_table = pd.concat([out["predictions"] for out in tests.values()]).round({"proba": 6})
     write_table("predictions_lr", pred_table)
 
     current = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))
-    write_metrics("ablation", {**current["ablation"], "test": round_floats(test_values, 4)})
-    write_metrics("baseline", {**current["baseline"], "test": round_floats(test_values[LR_WORDS_ID], 4)})
+    write_metrics("tfidf_features", {**current["tfidf_features"], "test": round_floats(test_values, 4)})
+    write_metrics("word_counts", {**current["word_counts"], "test": round_floats(test_values[LR_WORDS_ID], 4)})
     return values
 
 
@@ -470,25 +461,23 @@ def llm_validation(valid: pd.DataFrame, client) -> dict:
     missing = {f"validation {v} pass 1": llm.missing_count(valid, v) for v in variants}
     if client is None and any(missing.values()):
         raise _llm_missing_error(missing)
-    y, sites = valid["label"].to_numpy(), valid["website"].to_numpy()
+    y = valid["label"].to_numpy()
     rows, preds, details = [], {}, {}
     for v in variants:
         res = llm.classify(valid, v, 1, client=client)
         recs = llm.cached_records(valid, v, 1)
         pred = _llm_pred(res)
-        d, w = bootstrap_ci(y, pred), bootstrap_ci(y, pred, groups=sites)
+        d = bootstrap_ci(y, pred)
         s = llm.summarise(res)
         cost = _llm_cost(recs, cfg)
         preds[v] = pred
-        details[v] = {"prompt_words": len(llm.PROMPTS[v].split()), "confusion": confusion(y, pred), "validation": d,
-                      "validation_website_bootstrap": w, **s, **cost}
+        details[v] = {"prompt_words": len(llm.PROMPTS[v].split()), "confusion": confusion(y, pred), "validation": d, **s, **cost}
         rows.append({"variant": v, "documents": len(y), "conspiracy": int(y.sum()),
                      **{k: d[k]["estimate"] for k in ("precision", "recall", "f1")},
-                     "f1_ci_doc_low": d["f1"]["ci_low"], "f1_ci_doc_high": d["f1"]["ci_high"],
-                     "f1_ci_site_low": w["f1"]["ci_low"], "f1_ci_site_high": w["f1"]["ci_high"],
-                     "precision_ci_doc_low": d["precision"]["ci_low"], "precision_ci_doc_high": d["precision"]["ci_high"],
-                     "recall_ci_doc_low": d["recall"]["ci_low"], "recall_ci_doc_high": d["recall"]["ci_high"],
-                     "parse_errors": s["parse_errors"], "truncated_docs": s["truncated_docs"],
+                     "f1_ci_low": d["f1"]["ci_low"], "f1_ci_high": d["f1"]["ci_high"],
+                     "precision_ci_low": d["precision"]["ci_low"], "precision_ci_high": d["precision"]["ci_high"],
+                     "recall_ci_low": d["recall"]["ci_low"], "recall_ci_high": d["recall"]["ci_high"],
+                     "unreadable": s["unreadable"], "truncated_docs": s["truncated_docs"],
                      "input_tokens": cost["input_tokens"], "output_tokens": cost["output_tokens"],
                      "cost_usd": cost["cost_usd"]})
     table = pd.DataFrame(rows)
@@ -496,8 +485,7 @@ def llm_validation(valid: pd.DataFrame, client) -> dict:
     chosen = str(ranked.iloc[0]["variant"])
     write_table("llm_prompt_variants", table.round(4))
     return {"variants": details, "chosen": chosen, "selection_rule": LLM_SELECTION_RULE,
-            "validation_documents": int(len(y)), "validation_conspiracy": int(y.sum()),
-            "validation_websites": int(len(set(sites)))}
+            "validation_documents": int(len(y)), "validation_conspiracy": int(y.sum())}
 
 
 def _llm_spec(holder: dict) -> ModelSpec:
@@ -529,9 +517,7 @@ def _llm_spec(holder: dict) -> ModelSpec:
 
 
 def llm_stage() -> dict:
-    """LLM: variants on validation -> choose -> ONE test scoring of pass 1 (official) + pass 2 (stability)."""
-    from sklearn.metrics import cohen_kappa_score
-
+    """LLM: variants on validation -> choose -> ONE test scoring of pass 1, pass 2 only for the repeat check."""
     from . import llm
 
     cfg = llm.llm_config()
@@ -541,9 +527,6 @@ def llm_stage() -> dict:
     values.update(model_id=LLM_ID, question="source: conspiracy-oriented or mainstream website",
                   model=cfg["model"], max_input_words=cfg["max_input_words"],
                   bootstrap={"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95})
-    report = llm.parse_error_report()
-    write_table("llm_parse_errors", report)
-    values["parse_error_causes"] = llm.parse_error_causes(report)
     write_metrics("llm", round_floats(values, 4))      # the rule and the choice are on disk before test is touched
 
     holder: dict = {}
@@ -553,24 +536,18 @@ def llm_stage() -> dict:
     for r in holder["recs1"] + holder["recs2"] + llm.cached_records(f["validation"], values["chosen"], 1):
         if len(r["reason"].split()) > llm.REASON_MAX_WORDS:
             raise RuntimeError("cached reason longer than 25 words: it could quote the article")
-    y, sites = test["label"].to_numpy(), test["website"].to_numpy()
-    pred2 = _llm_pred(p2)
+    y = test["label"].to_numpy()
     a, b = p1["label"].to_numpy(), p2["label"].to_numpy()
-    flipped = int((a != b).sum())
-    stability = {"documents": int(len(a)), "agreement": float((a == b).mean()), "flipped_docs": flipped,
-                 "cohen_kappa": float(cohen_kappa_score(a, b)), "parse_errors_pass1": int((a == llm.PARSE_ERROR).sum()),
-                 "parse_errors_pass2": int((b == llm.PARSE_ERROR).sum())}
-    pass2 = {"confusion": confusion(y, pred2), "metrics_documents": bootstrap_ci(y, pred2),
-             "metrics_websites": bootstrap_ci(y, pred2, groups=sites), **_llm_cost(holder["recs2"], cfg)}
+    stability = {"documents": int(len(a)), "agreement": float((a == b).mean())}   # share of equal answers
     test_vals = {k: v for k, v in out.items() if k != "predictions"}
-    test_vals.update(pass_scored="pass 1 (official; pass 2 is a sensitivity check)", **llm.summarise(p1),
+    test_vals.update(pass_scored="pass 1 (pass 2 only checks stability)", **llm.summarise(p1),
                      **_llm_cost(holder["recs1"], cfg))
     preds = pd.concat([
         pd.DataFrame({"model_id": LLM_ID, "doc_id": test["doc_id"], "label": y, "pred": _llm_pred(pr),
                       "llm_label": pr["label"], "confidence": pr["confidence"], "pass": n, "variant": values["chosen"]})
         for n, pr in ((1, p1), (2, p2))])
     write_table("predictions_llm", preds.round({"confidence": 4}))
-    write_metrics("llm", round_floats({**values, "test": test_vals, "test_pass2": pass2, "stability": stability}, 4))
+    write_metrics("llm", round_floats({**values, "test": test_vals, "stability": stability}, 4))
     llm.usage_table()
     return values
 
@@ -597,18 +574,15 @@ def plot_comparison_f1(table: pd.DataFrame):
     fig, ax = plt.subplots(figsize=(7, 4))
     x = np.arange(len(table))
     f1 = table["f1"].to_numpy()
-    doc = table[["f1_ci_doc_low", "f1_ci_doc_high"]].to_numpy()
-    site = table[["f1_ci_site_low", "f1_ci_site_high"]].to_numpy()
+    ci = table[["f1_ci_low", "f1_ci_high"]].to_numpy()
     ax.bar(x, f1, color=CONSPIRACY_COLOUR, width=0.55)
-    ax.errorbar(x - 0.08, f1, yerr=[f1 - doc[:, 0], doc[:, 1] - f1], fmt="none", ecolor="black", capsize=4,
-                label="95% CI, documents resampled")
-    ax.errorbar(x + 0.08, f1, yerr=[f1 - site[:, 0], site[:, 1] - f1], fmt="none", ecolor=MAINSTREAM_COLOUR,
-                capsize=4, label="95% CI, websites resampled")
+    ax.errorbar(x, f1, yerr=[f1 - ci[:, 0], ci[:, 1] - f1], fmt="none", ecolor="black", capsize=4,
+                label="95% confidence interval")
     ax.set_xticks(x, table["model"])
     ax.set_ylabel("Conspiracy-class F1 (test)")
     ax.set_ylim(0, 1.05)
     ax.legend(loc="upper left", fontsize=8)
-    ax.set_title("Test F1 with two kinds of confidence interval")
+    ax.set_title("Test F1 with 95% confidence interval")
     return fig
 
 
@@ -642,40 +616,13 @@ def plot_comparison_pr(curves: dict[str, tuple[dict, float]], base_rate: float):
     return fig
 
 
-def _lr_config_validation_sensitivity() -> dict:
-    """Does the words-only LR configuration change (the second test look) matter? Validation answer.
-
-    The first test look (`lr_words`) used the stale setting C=100 without class weights; its test numbers
-    are not stored and are not used. Both settings are rows of the validation grid in
-    `m1_words_filtered_grid.csv`, so we compare them there, next to the LLM's chosen-prompt validation
-    row, without scoring anything on test.
-    """
-    tables = results_dir() / "tables"
-    grid = pd.read_csv(tables / "m1_words_filtered_grid.csv")
-    v1 = grid[(grid["C"] == 100.0) & (grid["class_weight"] == "none")].iloc[0]
-    v2 = grid[grid["selected"].astype(bool)].iloc[0]
-    chosen = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))["llm"]["chosen"]
-    llm = pd.read_csv(tables / "llm_prompt_variants.csv").set_index("variant").loc[chosen]
-    keys = ("precision", "recall", "f1")
-    out = {"data": "validation split only; the stale lr_words test result is not stored and not used",
-           "lr_words_v1_stale": {"setting": f"C={v1['C']:g}, {v1['class_weight']}", **{k: float(v1[k]) for k in keys}},
-           "lr_words_v2": {"setting": f"C={v2['C']:g}, {v2['class_weight']}", **{k: float(v2[k]) for k in keys}},
-           "llm_haiku": {"setting": f"prompt {chosen}", **{k: float(llm[k]) for k in keys}}}
-    out["f1_v2_minus_v1"] = out["lr_words_v2"]["f1"] - out["lr_words_v1_stale"]["f1"]
-    write_table("comparison_lr_config_validation", pd.DataFrame(
-        [{"model": n, **d} for n, d in out.items() if isinstance(d, dict)]).round(4))
-    return out
-
-
 def comparison_stage() -> dict:
     """Compare majority, lr_words, lr_extended and llm_haiku (pass 1) on the same test documents.
 
     Reads only the prediction files written by `evaluate_final` (plus website and length metadata of
     the same documents). No model is fitted or scored here, so this stage cannot select anything on test.
     """
-    from .clean import find_near_duplicates
-    from .comparison import (duplicate_test_ids, length_bucket_f1, model_row, no_duplicate_sensitivity, pairwise,
-                             per_website_table)
+    from .comparison import length_bucket_f1, model_row, pairwise
 
     frame = analysis_frame()
     split = load_split().set_index("doc_id")["split"]
@@ -688,18 +635,18 @@ def comparison_stage() -> dict:
         if set(lr.loc[lr["model_id"] == m, "doc_id"]) != set(ids):
             raise RuntimeError(f"{m} and the LLM were not scored on the same test documents")
     meta = frame.set_index("doc_id").loc[ids]
-    y, sites = p1["label"].to_numpy(dtype=bool), meta["website"].to_numpy()
+    y = p1["label"].to_numpy(dtype=bool)
     if not (meta["label"].to_numpy(dtype=bool) == y).all() or (split.loc[ids] != "test").any():
         raise RuntimeError("prediction files disagree with split_v1 / dataset labels")
     words = meta["txt"].str.split().map(len).to_numpy()
 
     metrics = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))
-    chosen_lr = metrics["ablation"]["chosen_lr"]["chosen"]
+    chosen_lr = metrics["tfidf_features"]["chosen_lr"]["chosen"]
     lr_by = {m: lr[lr["model_id"] == m].set_index("doc_id").loc[ids] for m in (LR_WORDS_ID, LR_EXTENDED_ID)}
     majority = bool(np.mean(train_y) >= 0.5)
     preds = {"majority": np.full(len(y), majority), LR_WORDS_ID: lr_by[LR_WORDS_ID]["pred"].to_numpy(dtype=bool),
              LR_EXTENDED_ID: lr_by[LR_EXTENDED_ID]["pred"].to_numpy(dtype=bool), LLM_ID: p1["pred"].to_numpy(dtype=bool)}
-    table = pd.DataFrame([model_row(n, y, p, sites) for n, p in preds.items()])
+    table = pd.DataFrame([model_row(n, y, p) for n, p in preds.items()])
     write_table("comparison_test", table.round(4))
     savefig(plot_comparison_f1(table), "comparison_f1")
     savefig(plot_comparison_confusion(table), "comparison_confusion")
@@ -711,42 +658,28 @@ def comparison_stage() -> dict:
     model_preds = {k: v for k, v in preds.items() if k != "majority"}
     lengths = length_bucket_f1(words, y, model_preds, LENGTH_BUCKETS)
     write_table("comparison_length_buckets", lengths.round(4))
-    write_table("per_website_test", per_website_table(sites, y, model_preds).round(4))
 
-    tests = {"lr_best_vs_llm": pairwise(y, preds[chosen_lr], preds[LLM_ID], sites, chosen_lr, LLM_ID),
-             "lr_words_vs_lr_extended": pairwise(y, preds[LR_WORDS_ID], preds[LR_EXTENDED_ID], sites,
+    tests = {"lr_best_vs_llm": pairwise(y, preds[chosen_lr], preds[LLM_ID], chosen_lr, LLM_ID),
+             "lr_words_vs_lr_extended": pairwise(y, preds[LR_WORDS_ID], preds[LR_EXTENDED_ID],
                                                  LR_WORDS_ID, LR_EXTENDED_ID)}
-    conspiracy_sites = int(len(set(sites[y])))
     f1_of = {r["model"]: r for r in table.to_dict("records")}
     h1 = {}
     for m in (chosen_lr, LLM_ID):
         h1[m] = {"f1": f1_of[m]["f1"], "majority_f1": f1_of["majority"]["f1"],
-                 "delta_f1_vs_majority_sites": paired_delta_ci(y, preds["majority"], preds[m], groups=sites),
+                 "delta_f1_vs_majority": paired_delta_ci(y, preds["majority"], preds[m]),
                  "beats_majority": bool(f1_of[m]["f1"] > f1_of["majority"]["f1"]),
-                 "site_ci_excludes_majority": bool(f1_of[m]["f1_ci_site_low"] > f1_of["majority"]["f1"])}
+                 "ci_excludes_majority": bool(f1_of[m]["f1_ci_low"] > f1_of["majority"]["f1"])}
     pair = (chosen_lr, LLM_ID)
-    # the cleaned documents should have no near-duplicate partner across splits left
-    dup_pairs = find_near_duplicates(analysis_frame())
-    excluded = duplicate_test_ids(dup_pairs, split)
-    dup_table, dup_summary = no_duplicate_sensitivity(ids, y, {m: preds[m] for m in pair}, excluded, chosen_lr, LLM_ID,
-                                                 sites=sites)
-    lr_config = _lr_config_validation_sensitivity()
-    write_table("comparison_test_no_dups", dup_table.round(4))
     wins = {k: max(pair, key=lambda m: f1_of[m][k]) for k in ("precision", "recall", "f1")}
     values = {"data": "filtered documents, split_v1, TEST rows; predictions from evaluate_final files only",
               "models": list(preds), "lr_best": chosen_lr,
-              "lr_best_rule": "chosen on validation (ablation.chosen_lr)", "llm_pass_scored": 1,
+              "lr_best_rule": "chosen on validation (tfidf_features.chosen_lr)", "llm_pass_scored": 1,
               "bootstrap": {"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95},
-              "test_documents": int(len(y)), "test_conspiracy": int(y.sum()), "test_websites": int(len(set(sites))),
-              "test_conspiracy_websites": conspiracy_sites, "few_conspiracy_websites": conspiracy_sites < 3,
+              "test_documents": int(len(y)), "test_conspiracy": int(y.sum()),
               "table": table.to_dict("records"), "mcnemar": tests, "h1": h1, "winner_by_metric": wins,
               "mainstream_accuracy": {m: float((preds[m][~y] == y[~y]).mean()) for m in pair},
               "average_precision": {n: c[1] for n, c in curves.items()},
-              "length_buckets": lengths.to_dict("records"), "llm_stability": metrics["llm"]["stability"],
-              "lr_config_validation_sensitivity": lr_config,
-              "no_duplicate_sensitivity": {**dup_summary, "compared": list(pair),
-                                           "pairs_across_splits_in_data":
-                                               metrics["cleaning"]["near_duplicate_pairs_across_splits"]}}
+              "length_buckets": lengths.to_dict("records"), "llm_stability": metrics["llm"]["stability"]}
     write_metrics("comparison", round_floats(_nan_to_none_deep(values), 4))
     return values
 
@@ -801,11 +734,10 @@ def errors_stage() -> dict:
     table = errors.error_classification_table(coded, sets)
     write_table("error_classification", table)
 
-    usable = coded[coded["claude_stance"] != errors.PARSE_ERROR]
+    usable = coded[coded["claude_stance"] != errors.UNREADABLE]
     sample = errors.stratified_sample(usable, cfg["human_sample_size"], seed)
     sample_path = results_dir() / "tables" / "stance_check_sample.csv"
     written = errors.write_check_sample(sample, sample_path)
-    human = errors.human_agreement(sample_path)
 
     sel = _ablation_selected()[chosen]
     split = load_split().set_index("doc_id")["split"]
@@ -839,12 +771,6 @@ def errors_stage() -> dict:
           "fn_conspiracy_no_claim": share(fn, fn & (usable["claude_stance"] == "no_claim")),
           "fn_conspiracy_not_endorsing": share(fn, fn & nonendorse),
           "label_problem_overall": share(usable["verdict"].notna(), usable["verdict"] == errors.LABEL_PROBLEM)}
-    lp_range = errors.label_problem_range(coded)
-    write_table("label_problem_range", lp_range)
-    shares = lp_range["share"].dropna()
-    label_problem_range = {"variants": lp_range.set_index("variant").to_dict("index"),
-                           "min_share": float(shares.min()), "max_share": float(shares.max()),
-                           "basis": "Claude-coded stance, not yet checked by humans"}
     totals = sets.groupby(["set", "error_type"]).size()
     val = f[f["doc_id"].map(split) == "validation"]
     try:
@@ -860,19 +786,19 @@ def errors_stage() -> dict:
                              "false_positive": int(totals.get((s, "false positive"), 0)),
                              "false_negative": int(totals.get((s, "false negative"), 0)),
                              "coded": int((coded["set"] == s).sum())} for s in errors.SETS},
-              "coded_documents": int(len(coded)), "stance_parse_errors": int((coded["claude_stance"] == errors.PARSE_ERROR).sum()),
+              "coded_documents": int(len(coded)), "stance_unreadable": int((coded["claude_stance"] == errors.UNREADABLE).sum()),
               "stance_counts": usable["claude_stance"].value_counts().to_dict(),
               "verdict_counts": usable["verdict"].value_counts().to_dict(),
               "rule": "conspiracy site + (rejects|neutral|no_claim) -> label problem; mainstream site + endorses -> label problem; else model wrong",
-              "h6": h6, "label_problem_range": label_problem_range, "human_check": {**human, "sample_file": "results/tables/stance_check_sample.csv",
+              "h6": h6, "human_check": {"sample_file": "results/tables/stance_check_sample.csv",
                                         "file_rewritten_this_run": written}}
     write_metrics("errors", round_floats(values, 4))
     return values
 
 
 STAGES: list[tuple[str, Callable[[], object]]] = [("cleaning", cleaning_stage),
-                                                  ("baseline", baseline_filtered), ("features", feature_summary_stage),
-                                                  ("ablation", ablation), ("llm", llm_stage),
+                                                  ("word_counts", baseline_filtered), ("features", feature_summary_stage),
+                                                  ("tfidf_features", ablation), ("llm", llm_stage),
                                                   ("comparison", comparison_stage),
                                                   ("errors", errors_stage)]
 PENDING_STAGES: list[str] = []

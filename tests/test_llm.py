@@ -50,10 +50,10 @@ def test_wrong_env_var_name_is_rejected():
 
 @pytest.mark.parametrize("raw", ["not json", '{"label": "maybe", "confidence": 0.5}',
                                  '{"label": "conspiracy", "confidence": 3}', '{"label": "conspiracy"}'])
-def test_parse_error_is_recorded_and_counted(tmp_path, raw):
+def test_unreadable_answer_is_recorded_and_counted(tmp_path, raw):
     out = llm.classify(frame("a b"), client=llm.FakeClient(fixed=raw), cache_file=tmp_path / "c.jsonl", cfg=CFG)
-    assert out["label"].tolist() == [llm.PARSE_ERROR]
-    assert llm.summarise(out)["parse_errors"] == 1
+    assert out["label"].tolist() == [llm.UNREADABLE]
+    assert llm.summarise(out)["unreadable"] == 1
 
 
 def test_fenced_json_is_parsed():
@@ -122,21 +122,3 @@ def test_stage_error_names_exact_missing_counts():
 
     err = pipeline._llm_missing_error({"validation v1 pass 1": 7, "test pass 2": 0})
     assert "validation v1 pass 1: 7" in str(err) and "test pass 2" not in str(err)
-
-
-def test_parse_error_causes_from_tiny_fake_cache(tmp_path):
-    """Why: a parse error that used the whole output budget was cut off by the limit; zero tokens is empty."""
-    path = tmp_path / "cache.jsonl"
-    base = {"prompt_hash": "h", "label": "parse_error", "confidence": None, "reason": "", "pass": 1, "variant": "v1"}
-    recs = [{**base, "doc_id": "a", "output_tokens": 150}, {**base, "doc_id": "b", "output_tokens": 0},
-            {**base, "doc_id": "c", "output_tokens": 40},
-            {**base, "doc_id": "d", "output_tokens": 20, "reply": "I cannot help"},
-            {**base, "doc_id": "e", "output_tokens": 20, "reply": "conspiracy " + "w " * 80},
-            {**base, "doc_id": "f", "label": "mainstream", "confidence": 0.9, "output_tokens": 30}]
-    for r in recs:
-        llm.append_cache(path, r)
-    rep = llm.parse_error_report(path, max_tokens=150)
-    assert dict(zip(rep["doc_id"], rep["cause"])) == {
-        "a": "truncated_at_max_tokens", "b": "empty", "c": "other", "d": "refusal_or_hedging", "e": "wrong_format"}
-    assert rep["reply_start"].map(lambda t: len(t.split())).max() <= 50
-    assert llm.parse_error_causes(rep, path)["counts"]["empty"] == 1

@@ -1,11 +1,5 @@
-"""Evaluation toolkit: metrics, baselines, bootstrap confidence intervals, McNemar test.
-
-Labels are booleans, True = conspiracy-oriented website (the positive class). Everything here is
-pure: it takes arrays in and gives numbers out, so it can be tested on tiny hand-made examples.
-"""
+"""Scoring tools: metrics, baselines, bootstrap confidence intervals and the McNemar test."""
 from __future__ import annotations
-
-from typing import Callable
 
 import numpy as np
 from scipy.stats import binomtest
@@ -17,122 +11,114 @@ BOOTSTRAP_SEED = 20261016
 
 
 def confusion(y_true, y_pred) -> dict[str, int]:
-    """Counts of true/false positives/negatives; "positive" means conspiracy."""
-    t, p = np.asarray(y_true, dtype=bool), np.asarray(y_pred, dtype=bool)
-    return {"tp": int((t & p).sum()), "fn": int((t & ~p).sum()),
-            "fp": int((~t & p).sum()), "tn": int((~t & ~p).sum())}
+    """Count true/false positives/negatives; "positive" means conspiracy."""
+    true = np.asarray(y_true, dtype=bool)
+    pred = np.asarray(y_pred, dtype=bool)
+    return {"tp": int((true & pred).sum()), "fn": int((true & ~pred).sum()),
+            "fp": int((~true & pred).sum()), "tn": int((~true & ~pred).sum())}
 
 
-def _div(a: float, b: float) -> float:
-    """a / b, with 0 when b is 0 (a class that is never predicted has precision 0, not an error)."""
+def divide(a: float, b: float) -> float:
+    """Divide, but give 0 when the divisor is 0."""
     return a / b if b else 0.0
 
 
-def _f1(tp: float, fp: float, fn: float) -> float:
-    return _div(2 * tp, 2 * tp + fp + fn)
+def f1_score(tp: float, fp: float, fn: float) -> float:
+    """F1 from the three counts that matter."""
+    return divide(2 * tp, 2 * tp + fp + fn)
 
 
 def metrics_from_confusion(c: dict[str, int]) -> dict[str, float]:
-    """Conspiracy-class precision/recall/F1 plus macro-F1 (both classes) and balanced accuracy."""
+    """Precision, recall and F1 of the conspiracy class, plus two overall scores."""
     tp, fp, fn, tn = c["tp"], c["fp"], c["fn"], c["tn"]
-    recall, specificity = _div(tp, tp + fn), _div(tn, tn + fp)
-    f1_pos, f1_neg = _f1(tp, fp, fn), _f1(tn, fn, fp)
-    return {"precision": _div(tp, tp + fp), "recall": recall, "f1": f1_pos,
-            "macro_f1": (f1_pos + f1_neg) / 2, "balanced_accuracy": (recall + specificity) / 2}
+    recall = divide(tp, tp + fn)
+    specificity = divide(tn, tn + fp)
+    f1_conspiracy = f1_score(tp, fp, fn)
+    f1_mainstream = f1_score(tn, fn, fp)
+    return {"precision": divide(tp, tp + fp), "recall": recall, "f1": f1_conspiracy,
+            "macro_f1": (f1_conspiracy + f1_mainstream) / 2,
+            "balanced_accuracy": (recall + specificity) / 2}
 
 
 def classification_metrics(y_true, y_pred) -> dict[str, float]:
+    """All metrics for one set of predictions."""
     return metrics_from_confusion(confusion(y_true, y_pred))
 
 
 def pr_curve_data(y_true, scores) -> dict[str, list[float]]:
-    """Precision-recall curve points for the conspiracy class (higher score = more conspiracy)."""
+    """Points of the precision-recall curve (higher score = more conspiracy)."""
     precision, recall, thresholds = precision_recall_curve(np.asarray(y_true, dtype=bool), scores)
     return {"precision": precision.tolist(), "recall": recall.tolist(), "thresholds": thresholds.tolist()}
 
 
 def majority_baseline(y_train, y_eval) -> dict[str, float]:
-    """Always predict the majority class of the TRAINING labels."""
+    """Always guess the majority class of the training labels."""
     majority = bool(np.mean(np.asarray(y_train, dtype=bool)) >= 0.5)
-    return classification_metrics(y_eval, np.full(len(y_eval), majority))
+    guesses = np.full(len(y_eval), majority)
+    return classification_metrics(y_eval, guesses)
 
 
 def stratified_random_baseline(y_train, y_eval, seed: int, repeats: int = 200) -> dict[str, float]:
-    """Guess at random with the training class shares; metrics averaged over `repeats` guesses."""
+    """Guess at random with the training class shares, averaged over many guesses."""
     rng = np.random.default_rng(seed)
     share = float(np.mean(np.asarray(y_train, dtype=bool)))
-    runs = [classification_metrics(y_eval, rng.random(len(y_eval)) < share) for _ in range(repeats)]
-    return {k: float(np.mean([r[k] for r in runs])) for k in METRIC_NAMES}
+    runs = []
+    for _ in range(repeats):
+        guesses = rng.random(len(y_eval)) < share
+        runs.append(classification_metrics(y_eval, guesses))
+    return {name: float(np.mean([run[name] for run in runs])) for name in METRIC_NAMES}
 
 
-def _percentile_ci(values: np.ndarray, level: float) -> tuple[float, float]:
-    alpha = (1 - level) / 2
-    lo, hi = np.quantile(values, [alpha, 1 - alpha])
-    return float(lo), float(hi)
+def percentile_interval(values, level: float) -> tuple[float, float]:
+    """Lower and upper end that cover `level` of the values."""
+    tail = (1 - level) / 2
+    low, high = np.quantile(values, [tail, 1 - tail])
+    return float(low), float(high)
 
 
-def bootstrap_ci(y_true, y_pred, groups=None, n: int = N_BOOTSTRAP, seed: int = BOOTSTRAP_SEED,
-                 level: float = 0.95, metric_fn: Callable[[np.ndarray, np.ndarray], dict[str, float]]
-                 = classification_metrics) -> dict[str, dict[str, float]]:
-    """Percentile bootstrap CI for every metric.
-
-    Without `groups` documents are resampled one by one. With `groups` (website per document) whole
-    websites are resampled with all their documents, which is the honest version here: documents of
-    one site are not independent, and a split has only a few conspiracy sites.
-    """
-    t, p = np.asarray(y_true, dtype=bool), np.asarray(y_pred, dtype=bool)
+def bootstrap_ci(y_true, y_pred, n: int = N_BOOTSTRAP, seed: int = BOOTSTRAP_SEED,
+                 level: float = 0.95) -> dict[str, dict[str, float]]:
+    """95% bootstrap interval for every metric, resampling documents."""
+    true = np.asarray(y_true, dtype=bool)
+    pred = np.asarray(y_pred, dtype=bool)
     rng = np.random.default_rng(seed)
-    if groups is None:
-        draws = [rng.integers(0, len(t), len(t)) for _ in range(n)]
-    else:
-        g = np.asarray(groups)
-        sites = np.unique(g)
-        members = [np.flatnonzero(g == s) for s in sites]
-        draws = [np.concatenate([members[k] for k in rng.integers(0, len(sites), len(sites))]) for _ in range(n)]
-    samples = [metric_fn(t[i], p[i]) for i in draws]
-    point = metric_fn(t, p)
-    out = {}
+    samples = []
+    for _ in range(n):
+        pick = rng.integers(0, len(true), len(true))      # draw documents with replacement
+        samples.append(classification_metrics(true[pick], pred[pick]))
+    point = classification_metrics(true, pred)
+    result = {}
     for name in point:
-        lo, hi = _percentile_ci(np.array([s[name] for s in samples]), level)
-        out[name] = {"estimate": float(point[name]), "ci_low": lo, "ci_high": hi}
-    return out
+        low, high = percentile_interval([s[name] for s in samples], level)
+        result[name] = {"estimate": float(point[name]), "ci_low": low, "ci_high": high}
+    return result
 
 
-def paired_delta_ci(y_true, pred_ref, pred_new, groups=None, n: int = N_BOOTSTRAP, seed: int = BOOTSTRAP_SEED,
+def paired_delta_ci(y_true, pred_ref, pred_new, n: int = N_BOOTSTRAP, seed: int = BOOTSTRAP_SEED,
                     level: float = 0.95, metric: str = "f1") -> dict[str, float]:
-    """Paired bootstrap CI of metric(new) - metric(ref) on the same documents.
-
-    Both models are scored on the SAME resampled documents (or websites, if `groups` is given), so
-    the difference is not blurred by sampling noise that hits both models alike. A CI that contains 0
-    means the data cannot tell the two models apart; it must not be read as an improvement.
-    """
-    t, a, b = (np.asarray(v, dtype=bool) for v in (y_true, pred_ref, pred_new))
+    """Bootstrap interval of the score difference (new minus reference) on the same documents."""
+    true, ref, new = (np.asarray(v, dtype=bool) for v in (y_true, pred_ref, pred_new))
     rng = np.random.default_rng(seed)
-    if groups is None:
-        draws = [rng.integers(0, len(t), len(t)) for _ in range(n)]
-    else:
-        g = np.asarray(groups)
-        sites = np.unique(g)
-        members = [np.flatnonzero(g == s) for s in sites]
-        draws = [np.concatenate([members[k] for k in rng.integers(0, len(sites), len(sites))]) for _ in range(n)]
-    deltas = np.array([classification_metrics(t[i], b[i])[metric] - classification_metrics(t[i], a[i])[metric]
-                       for i in draws])
-    lo, hi = _percentile_ci(deltas, level)
-    return {"estimate": float(classification_metrics(t, b)[metric] - classification_metrics(t, a)[metric]),
-            "ci_low": lo, "ci_high": hi}
+    deltas = []
+    for _ in range(n):
+        pick = rng.integers(0, len(true), len(true))
+        score_new = classification_metrics(true[pick], new[pick])[metric]
+        score_ref = classification_metrics(true[pick], ref[pick])[metric]
+        deltas.append(score_new - score_ref)
+    low, high = percentile_interval(deltas, level)
+    estimate = classification_metrics(true, new)[metric] - classification_metrics(true, ref)[metric]
+    return {"estimate": float(estimate), "ci_low": low, "ci_high": high}
 
 
 def mcnemar_exact(y_true, pred_a, pred_b) -> dict[str, float]:
-    """Exact McNemar test on paired predictions.
-
-    Only documents where exactly one model is right carry information: `a_only` (A right, B wrong)
-    and `b_only`. If the models were equally good these discordant pairs split 50/50, so the p-value
-    is a two-sided exact binomial test on them.
-    """
-    t = np.asarray(y_true, dtype=bool)
-    a_ok, b_ok = np.asarray(pred_a, dtype=bool) == t, np.asarray(pred_b, dtype=bool) == t
-    a_only, b_only = int((a_ok & ~b_ok).sum()), int((~a_ok & b_ok).sum())
-    n = a_only + b_only
-    p = 1.0 if n == 0 else float(binomtest(min(a_only, b_only), n, 0.5).pvalue)
-    return {"a_only_correct": a_only, "b_only_correct": b_only, "both_correct": int((a_ok & b_ok).sum()),
-            "both_wrong": int((~a_ok & ~b_ok).sum()), "p_value": p}
+    """Exact McNemar test: do two models make different mistakes more often than chance?"""
+    true = np.asarray(y_true, dtype=bool)
+    a_right = np.asarray(pred_a, dtype=bool) == true
+    b_right = np.asarray(pred_b, dtype=bool) == true
+    a_only = int((a_right & ~b_right).sum())          # only model A is right
+    b_only = int((~a_right & b_right).sum())          # only model B is right
+    disagreements = a_only + b_only
+    p_value = 1.0 if disagreements == 0 else float(binomtest(min(a_only, b_only), disagreements, 0.5).pvalue)
+    return {"a_only_correct": a_only, "b_only_correct": b_only,
+            "both_correct": int((a_right & b_right).sum()),
+            "both_wrong": int((~a_right & ~b_right).sum()), "p_value": p_value}

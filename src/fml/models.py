@@ -1,8 +1,7 @@
-"""Logistic-regression pipelines and validation-only tuning.
+"""Logistic-regression pipelines, tuned on the validation split only.
 
-Everything that learns from data (TF-IDF vocabulary and IDF weights, scaler means, coefficients) lives
-inside one sklearn Pipeline, so `fit()` on the training rows is the only place it is learned. Fitting a
-vectoriser on train+validation+test first would leak the other splits' vocabulary into training.
+Everything that is learned from text (vocabulary, IDF weights, scaler means, coefficients) sits inside
+one sklearn Pipeline, so `fit()` on the training rows is the only place it is learned.
 """
 from __future__ import annotations
 
@@ -27,133 +26,118 @@ SELECTION_METRIC = "f1"          # conspiracy-class F1 on validation
 DEFAULT_FEATURES = {"ngram_range": (1, 1), "min_df": 2, "max_features": None, "sublinear_tf": True,
                     "numeric_columns": [], "dense_groups": []}
 
+_BLOCK_CACHE: dict[tuple, object] = {}      # fitted feature blocks, reused inside one run
+_BLOCK_CACHE_MAX = 24
 
-_PART_CACHE: dict[tuple, object] = {}
-_PART_CACHE_MAX = 24
+
+def remember(key: tuple, make):
+    """Return the cached value for `key`, or make it once and keep it."""
+    if key not in _BLOCK_CACHE:
+        if len(_BLOCK_CACHE) >= _BLOCK_CACHE_MAX:
+            _BLOCK_CACHE.clear()                # keep memory small
+        _BLOCK_CACHE[key] = make()
+    return _BLOCK_CACHE[key]
 
 
 class SharedPart(BaseEstimator, TransformerMixin):
-    """Wraps one feature block so identical blocks are fitted and applied once per process.
-
-    The ablation trains 8 models whose blocks overlap (the same 1-3-gram TF-IDF sits in four of them) and
-    `evaluate_final` refits the winners on the same training rows. The cache key holds the block's settings
-    and the exact texts it is fitted on, so a block can only be reused on the same training rows: nothing
-    learned on one split is ever applied to a differently fitted block.
-    """
+    """One feature block that is fitted once per set of training texts and then reused."""
 
     def __init__(self, inner):
         self.inner = inner
 
     @staticmethod
-    def _texts_key(X) -> int:
+    def texts_key(X) -> int:
+        """A short fingerprint of the texts a block is fitted on."""
         return hash(tuple(np.asarray(X).ravel().tolist()))
 
     def fit(self, X, y=None):
-        key = ("fit", repr(self.inner), self._texts_key(X))
-        if key not in _PART_CACHE:
-            if len(_PART_CACHE) >= _PART_CACHE_MAX:
-                _PART_CACHE.clear()
-            _PART_CACHE[key] = clone(self.inner).fit(X, y)
-        self.fitted_ = _PART_CACHE[key]
+        """Fit the block on the training texts (or reuse the same fit)."""
+        key = ("fit", repr(self.inner), self.texts_key(X))
+        self.fitted_ = remember(key, lambda: clone(self.inner).fit(X, y))
         self.fit_key_ = key
         return self
 
     def transform(self, X):
-        key = ("transform", self.fit_key_, self._texts_key(X))
-        if key not in _PART_CACHE:
-            if len(_PART_CACHE) >= _PART_CACHE_MAX:
-                _PART_CACHE.clear()
-            _PART_CACHE[key] = self.fitted_.transform(X)
-        return _PART_CACHE[key]
+        """Apply the fitted block to any texts."""
+        key = ("transform", self.fit_key_, self.texts_key(X))
+        return remember(key, lambda: self.fitted_.transform(X))
 
     def __getattr__(self, name: str):
-        """Expose the fitted block's learned attributes (`vocabulary_`, `idf_`) for inspection and tests."""
+        """Give access to what the block learned (`vocabulary_`, `idf_`)."""
         if name.startswith("__") or name in ("fitted_", "inner"):
             raise AttributeError(name)
         return getattr(self.fitted_, name)
 
     def get_feature_names_out(self, input_features=None):
+        """Names of the columns this block makes."""
         return self.fitted_.get_feature_names_out(input_features)
 
 
-def build_pipeline(feature_cfg: dict | None = None, C: float = 1.0, class_weight=None,
-                   random_state: int | None = None) -> Pipeline:
-    """TF-IDF on the text column (+ optional standardised numeric columns) -> L2 logistic regression.
+def make_classifier(C: float, class_weight) -> LogisticRegression:
+    """The logistic regression used everywhere (L2 penalty is sklearn's default)."""
+    seed = project_config()["split"]["seed"]
+    return LogisticRegression(C=C, class_weight=class_weight, solver="liblinear", max_iter=2000, random_state=seed)
 
-    sklearn's default penalty is L2 (ridge), which is what we want; it is not set explicitly because
-    newer sklearn versions deprecate the `penalty` argument.
 
-    Input X is a DataFrame with a `txt` column and any `numeric_columns` named in `feature_cfg`.
-    `dense_groups` names feature groups from `fml.features.NUMERIC_GROUPS` ("epistemic", "style"); they are
-    computed from `txt` and scaled inside the pipeline, so their scaler is fitted on the training rows only.
-    """
+def build_pipeline(feature_cfg: dict | None = None, C: float = 1.0, class_weight=None) -> Pipeline:
+    """TF-IDF (plus optional scaled extra features) followed by logistic regression."""
     from .features import scaled
 
     cfg = {**DEFAULT_FEATURES, **(feature_cfg or {})}
     tfidf = TfidfVectorizer(ngram_range=tuple(cfg["ngram_range"]), min_df=cfg["min_df"],
                             sublinear_tf=cfg["sublinear_tf"], lowercase=True, max_features=cfg["max_features"])
     parts = [("tfidf", SharedPart(tfidf), TEXT_COLUMN)]
-    parts += [(group, SharedPart(scaled(group)), TEXT_COLUMN) for group in cfg["dense_groups"]]
+    for group in cfg["dense_groups"]:
+        parts.append((group, SharedPart(scaled(group)), TEXT_COLUMN))     # scaler is fitted on train only
     if cfg["numeric_columns"]:
         parts.append(("scale", StandardScaler(), list(cfg["numeric_columns"])))
-    seed = project_config()["split"]["seed"] if random_state is None else random_state
-    clf = LogisticRegression(C=C, class_weight=class_weight, solver="liblinear", max_iter=2000, random_state=seed)
-    return Pipeline([("features", ColumnTransformer(parts)), ("clf", clf)])
+    features = ColumnTransformer(parts)
+    return Pipeline([("features", features), ("clf", make_classifier(C, class_weight))])
 
 
 def split_frames(df: pd.DataFrame, which: tuple[str, ...] = ("train", "validation")) -> dict[str, pd.DataFrame]:
-    """Rows of `df` per requested split. Asking for "test" here is an error: only evaluate_final may."""
+    """Rows of `df` for each requested split; the test split is refused here."""
     if "test" in which:
         raise PermissionError("the test split may only be read by fml.pipeline.evaluate_final")
     split = load_split()
-    out = {}
+    frames = {}
     for name in which:
         ids = set(split.loc[split["split"] == name, "doc_id"])
-        out[name] = df[df["doc_id"].isin(ids)].reset_index(drop=True)
-    return out
+        frames[name] = df[df["doc_id"].isin(ids)].reset_index(drop=True)
+    return frames
 
 
 def tune_on_validation(train: pd.DataFrame, valid: pd.DataFrame, feature_cfg: dict | None = None,
                        c_grid=C_GRID, class_weights=CLASS_WEIGHTS) -> tuple[Pipeline, pd.DataFrame]:
-    """Try every (C, class_weight) on train, score on validation, return the best fitted pipeline.
-
-    The returned grid lists every value tried (also the losers), so the choice can be audited. Ties go
-    to the first row, i.e. the smaller C, i.e. the simpler model. Only train and validation rows are
-    passed in: this function cannot see the test split.
-    """
-    # The feature block (vocabulary, IDF, scalers) depends only on the training rows, so it is fitted
-    # once and reused for every (C, class_weight); only the cheap classifier is refitted.
-    base = build_pipeline(feature_cfg)
-    features = base.named_steps["features"].fit(train, train["label"])
-    X_train, X_valid = features.transform(train), features.transform(valid)
+    """Try every (C, class weight) on train, score on validation, return the best pipeline and the grid."""
+    features = build_pipeline(feature_cfg).named_steps["features"]
+    features.fit(train, train["label"])             # vocabulary and scalers: training rows only
+    X_train = features.transform(train)
+    X_valid = features.transform(valid)
     y_train = train["label"]
-    seed = project_config()["split"]["seed"]
 
-    def classifier(C, cw) -> LogisticRegression:
-        return LogisticRegression(C=C, class_weight=cw, solver="liblinear", max_iter=2000, random_state=seed)
+    def score(C, class_weight) -> dict:
+        model = make_classifier(C, class_weight).fit(X_train, y_train)
+        metrics = classification_metrics(valid["label"], model.predict(X_valid))
+        return {"C": C, "class_weight": "none" if class_weight is None else class_weight, **metrics}
 
-    def score(C, cw) -> dict:
-        m = classification_metrics(valid["label"], classifier(C, cw).fit(X_train, y_train).predict(X_valid))
-        return {"C": C, "class_weight": "none" if cw is None else cw, **m}
-
-    # The fits are independent and the large-C ones on n-gram + dense features take seconds each, so they
-    # run on all CPUs; the result order (and so the tie-break to the smaller C) is unchanged.
     rows = Parallel(n_jobs=-1)(delayed(score)(C, cw) for cw in class_weights for C in c_grid)
     grid = pd.DataFrame(rows)
-    best = grid.iloc[int(grid[SELECTION_METRIC].to_numpy().argmax())]
-    grid["selected"] = grid.index == best.name
-    cw = None if best["class_weight"] == "none" else best["class_weight"]
-    clf = classifier(float(best["C"]), cw).fit(X_train, y_train)
-    final = Pipeline([("features", features), ("clf", clf)])
-    return final, grid
+    best_row = int(grid[SELECTION_METRIC].to_numpy().argmax())      # ties go to the first (smaller C)
+    grid["selected"] = grid.index == best_row
+    best = grid.iloc[best_row]
+    class_weight = None if best["class_weight"] == "none" else best["class_weight"]
+    classifier = make_classifier(float(best["C"]), class_weight).fit(X_train, y_train)
+    return Pipeline([("features", features), ("clf", classifier)]), grid
 
 
 def top_coefficients(pipe: Pipeline, k: int = 25) -> pd.DataFrame:
-    """The k words pushing most towards conspiracy (positive) and mainstream (negative)."""
+    """The k words pushing most towards conspiracy and the k most towards mainstream."""
     names = pipe.named_steps["features"].get_feature_names_out()
-    coef = pipe.named_steps["clf"].coef_[0]
-    order = np.argsort(coef)
-    pick = [("conspiracy", i) for i in order[::-1][:k]] + [("mainstream", i) for i in order[:k]]
-    return pd.DataFrame({"direction": [d for d, _ in pick],
-                         "feature": [str(names[i]).split("__", 1)[-1] for _, i in pick],
-                         "coefficient": [float(coef[i]) for _, i in pick]})
+    table = pd.DataFrame({"feature": [str(n).split("__", 1)[-1] for n in names],
+                          "coefficient": pipe.named_steps["clf"].coef_[0]})
+    # sort by coefficient, then by word, so ties always come out in the same order
+    conspiracy = table.sort_values(["coefficient", "feature"], ascending=[False, True]).head(k)
+    mainstream = table.sort_values(["coefficient", "feature"], ascending=[True, True]).head(k)
+    both = [conspiracy.assign(direction="conspiracy"), mainstream.assign(direction="mainstream")]
+    return pd.concat(both)[["direction", "feature", "coefficient"]].reset_index(drop=True)

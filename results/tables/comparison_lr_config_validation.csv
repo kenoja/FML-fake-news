@@ -1,4 +1,0 @@
-model,setting,precision,recall,f1
-lr_words_v1_stale,"C=100, none",0.965,0.867,0.914
-lr_words_v2,"C=10, balanced",0.914,0.914,0.914
-llm_haiku,prompt v2,1.0,0.906,0.951

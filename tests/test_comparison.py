@@ -12,14 +12,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from fml.comparison import length_bucket_f1, model_row, pairwise, per_website_table
+from fml.comparison import length_bucket_f1, model_row, pairwise
 from fml.results import results_dir
 
 # 12 documents, 6 per class. A is wrong on docs 5 and 10, B on docs 0, 1 and 11.
 Y = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0], dtype=bool)
 A = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0], dtype=bool)   # wrong on docs 5 and 10
 B = np.array([0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1], dtype=bool)   # wrong on docs 0, 1 and 11
-SITES = np.array(list("aabbccddeeff"))
 
 
 def hand_mcnemar_p(k: int, n: int) -> float:
@@ -28,7 +27,7 @@ def hand_mcnemar_p(k: int, n: int) -> float:
 
 
 def test_discordant_counts_and_p_value_match_hand_computation():
-    r = pairwise(Y, A, B, SITES, "a", "b")
+    r = pairwise(Y, A, B, "a", "b")
     # A-only right = {0, 1, 11} (B wrong, A right); B-only right = {5, 10} (A wrong, B right).
     assert (r["a_only_correct"], r["b_only_correct"]) == (3, 2)
     assert r["both_correct"] + r["both_wrong"] + 5 == len(Y)
@@ -39,33 +38,26 @@ def test_discordant_counts_and_p_value_match_hand_computation():
 def test_clear_difference_gives_small_p():
     y = np.ones(30, dtype=bool)
     a, b = np.ones(30, dtype=bool), np.zeros(30, dtype=bool)
-    r = pairwise(y, a, b, np.arange(30) % 5, "a", "b")
+    r = pairwise(y, a, b, "a", "b")
     assert (r["a_only_correct"], r["b_only_correct"]) == (30, 0)
     assert r["mcnemar_p"] == pytest.approx(hand_mcnemar_p(0, 30))
     assert r["mcnemar_p"] < 1e-6
 
 
 def test_delta_f1_sign_and_estimate():
-    r = pairwise(Y, A, B, SITES, "a", "b")
+    r = pairwise(Y, A, B, "a", "b")
     f1 = lambda p: 2 * (Y & p).sum() / (2 * (Y & p).sum() + (~Y & p).sum() + (Y & ~p).sum())  # noqa: E731
-    assert r["delta_f1_b_minus_a"]["documents"]["estimate"] == pytest.approx(f1(B) - f1(A))
-    lo, hi = r["delta_f1_b_minus_a"]["websites"]["ci_low"], r["delta_f1_b_minus_a"]["websites"]["ci_high"]
-    assert lo <= r["delta_f1_b_minus_a"]["websites"]["estimate"] <= hi
+    assert r["delta_f1_b_minus_a"]["estimate"] == pytest.approx(f1(B) - f1(A))
+    lo, hi = r["delta_f1_b_minus_a"]["ci_low"], r["delta_f1_b_minus_a"]["ci_high"]
+    assert lo <= r["delta_f1_b_minus_a"]["estimate"] <= hi
 
 
-def test_model_row_counts_and_both_cis_present():
-    row = model_row("m", Y, A, SITES)
+def test_model_row_counts_and_interval_present():
+    row = model_row("m", Y, A)
     assert (row["tp"], row["fn"], row["fp"], row["tn"]) == (5, 1, 1, 5)
     assert row["precision"] == pytest.approx(5 / 6) and row["recall"] == pytest.approx(5 / 6)
-    for key in ("f1_ci_doc_low", "f1_ci_site_high", "macro_f1_ci_site_low", "balanced_accuracy_ci_doc_high"):
+    for key in ("f1_ci_low", "f1_ci_high", "macro_f1_ci_low", "balanced_accuracy_ci_high"):
         assert key in row
-
-
-def test_per_website_table_has_n_docs_and_accuracy():
-    t = per_website_table(SITES, Y, {"a": A})
-    assert t["documents"].sum() == len(Y)
-    # site "f" holds docs 10 (label 0, A says 1 -> wrong) and 11 (label 0, A says 0 -> right)
-    assert t.loc[t["website"] == "f", "accuracy_a"].iloc[0] == pytest.approx(0.5)
 
 
 def test_length_bucket_is_nan_without_conspiracy_documents():
@@ -91,37 +83,3 @@ def test_stage_output_matches_prediction_files():
     assert (m["a_only_correct"], m["b_only_correct"]) == (int((a_ok & ~b_ok).sum()), int((~a_ok & b_ok).sum()))
     n = m["a_only_correct"] + m["b_only_correct"]
     assert m["mcnemar_p"] == pytest.approx(hand_mcnemar_p(min(m["a_only_correct"], m["b_only_correct"]), n), abs=1e-4)
-
-
-def test_near_duplicate_exclusion_removes_only_test_docs_with_train_or_validation_partner():
-    """Why: a test text copied from training is 'seen'; only those documents may be dropped, and
-    a duplicate pair inside test must stay, otherwise the sensitivity check shrinks the test set wrongly."""
-    from fml.comparison import duplicate_test_ids, no_duplicate_sensitivity
-
-    split = pd.Series({"a": "train", "b": "test", "c": "validation", "d": "test", "e": "test", "f": "test"})
-    pairs = pd.DataFrame({"doc_id_a": ["a", "d", "e"], "doc_id_b": ["b", "c", "f"]})
-    assert duplicate_test_ids(pairs, split) == {"b", "d"}
-
-    ids = np.array(["b", "d", "e", "f"])
-    y = np.array([1, 1, 0, 0], dtype=bool)
-    lr = np.array([1, 1, 1, 0], dtype=bool)
-    llm = np.array([0, 1, 0, 0], dtype=bool)
-    _, s = no_duplicate_sensitivity(ids, y, {"lr": lr, "llm": llm}, {"b", "d"}, "lr", "llm")
-    assert s["n_excluded"] == 2 and s["n_remaining"] == 2 and s["n_remaining_conspiracy"] == 0
-    assert s["f1_all_test"]["lr"] == pytest.approx(0.8) and s["f1_all_test"]["llm"] == pytest.approx(2 / 3)
-    assert s["f1_without_duplicates"]["lr"] == 0.0
-    assert s["delta_f1_without_minus_all"]["lr"] == pytest.approx(-0.8)
-    assert s["gap_f1_b_minus_a_all_test"] == pytest.approx(2 / 3 - 0.8)
-
-
-def test_no_duplicate_rows_carry_bootstrap_intervals_when_sites_given():
-    """Why: a sensitivity row without an interval cannot be compared with the headline rows."""
-    from fml.comparison import no_duplicate_sensitivity
-
-    ids = np.array(list("abcdefgh"))
-    y = np.array([1, 1, 1, 1, 0, 0, 0, 0], dtype=bool)
-    p = np.array([1, 1, 0, 1, 0, 0, 1, 0], dtype=bool)
-    sites = np.array(["s1", "s1", "s2", "s2", "s3", "s3", "s4", "s4"])
-    t, _ = no_duplicate_sensitivity(ids, y, {"m": p}, set(["a"]), "m", "m", sites=sites)
-    assert t[["f1_ci_doc_low", "f1_ci_site_high"]].notna().all().all()
-    assert (t["f1_ci_site_low"] <= t["f1_ci_site_high"]).all()

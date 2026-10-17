@@ -22,7 +22,7 @@ from . import llm
 from .paths import REPO_ROOT, project_config
 
 STANCES = ("endorses", "rejects_or_debunks", "reports_neutrally", "no_claim")
-PARSE_ERROR = llm.PARSE_ERROR
+UNREADABLE = llm.UNREADABLE
 SETS = ("lr_only_wrong", "llm_only_wrong", "both_wrong")
 MODEL_WRONG, LABEL_PROBLEM, UNCODED = "model wrong", "label does not describe the text", "unparsed"
 JUSTIFICATION_MAX_WORDS = 25
@@ -142,10 +142,10 @@ def stratified_sample(df: pd.DataFrame, n: int, seed: int, by: str = "set") -> p
 # ---------------------------------------------------------------- stance coding
 
 def parse_stance(raw: str) -> dict:
-    """Strict JSON -> {stance, justification}. Anything else is stance 'parse_error', never guessed."""
+    """Strict JSON -> {stance, justification}. Anything else is stance 'unreadable', never guessed."""
     import re
 
-    bad = {"stance": PARSE_ERROR, "justification": ""}
+    bad = {"stance": UNREADABLE, "justification": ""}
     text = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
     if not text.startswith("{") and "{" in text:      # tolerate reasoning before the JSON, but only a full object
         text = text[text.index("{"):]
@@ -244,25 +244,6 @@ def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.
     return pd.DataFrame(rows)
 
 
-def label_problem_range(coded: pd.DataFrame) -> pd.DataFrame:
-    """Share of coded errors that are label problems under three readings of the stance codes.
-
-    Why: the headline share rests on Claude's stance codes, which no human has checked, and on a rule that
-    also counts the vague codes (`reports_neutrally`, `no_claim`) as "label does not describe the text".
-    One number would look more certain than it is, so we report the spread:
-    (a) current rule, every coded error in the denominator (unparsed replies count as not a label problem);
-    (b) only decisive stance codes (`endorses`, `rejects_or_debunks`) are counted;
-    (c) current rule, unparsed replies left out of the denominator.
-    """
-    decisive = coded[coded["claude_stance"].isin(["endorses", "rejects_or_debunks"])]
-    parsed = coded[coded["claude_stance"].isin(STANCES)]
-    variants = [("a_current_rule_all_coded", coded, coded["verdict"] == LABEL_PROBLEM),
-                ("b_endorse_reject_only", decisive, decisive["verdict"] == LABEL_PROBLEM),
-                ("c_current_rule_excluding_unparsed", parsed, parsed["verdict"] == LABEL_PROBLEM)]
-    return pd.DataFrame([{"variant": name, "n": len(d), "label_problems": int(hit.sum()),
-                          "share": float(hit.sum() / len(d)) if len(d) else None} for name, d, hit in variants])
-
-
 # ---------------------------------------------------------------- LR explanation
 
 def top_contributions(pipe, df: pd.DataFrame, k: int = 5) -> list[dict]:
@@ -281,30 +262,6 @@ def top_contributions(pipe, df: pd.DataFrame, k: int = 5) -> list[dict]:
 
 
 # ---------------------------------------------------------------- human check
-
-def human_agreement(path: Path) -> dict:
-    """Cohen's kappa between human_stance and claude_stance on the rows a human has filled in.
-
-    Never fakes a number: with no filled rows (or a single category on both sides, where kappa is undefined)
-    the status says so and kappa is None.
-    """
-    from sklearn.metrics import cohen_kappa_score
-
-    df = pd.read_csv(path, dtype=str, keep_default_na=False)
-    filled = df[df["human_stance"].str.strip() != ""].copy()
-    n_rows = len(df)
-    if filled.empty:
-        return {"status": f"pending: 0/{n_rows} filled", "rows": n_rows, "human_filled": 0, "kappa": None,
-                "agreement": None}
-    filled["human_stance"] = filled["human_stance"].str.strip().str.lower()
-    bad = sorted(set(filled["human_stance"]) - set(STANCES))
-    if bad:
-        raise ValueError(f"human_stance has values outside {STANCES}: {bad}")
-    h, c = filled["human_stance"], filled["claude_stance"]
-    kappa = float(cohen_kappa_score(h, c)) if len(set(h) | set(c)) > 1 else None
-    return {"status": "verified" if len(filled) == n_rows else "partly verified", "rows": n_rows,
-            "human_filled": int(len(filled)), "kappa": kappa, "agreement": float((h == c).mean())}
-
 
 def scrub_public_csv(path: Path, columns: list[str]) -> int:
     """Rewrite free-text `columns` of an existing public CSV through `scrub_justification`; returns cells changed.

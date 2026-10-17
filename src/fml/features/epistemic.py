@@ -53,7 +53,7 @@ COLUMNS = [f"epistemic_{cat}" for cat in LEXICON]
 
 
 def count_markers(text: str) -> dict[str, int]:
-    """Raw number of lexicon hits per category (case-insensitive, no negation handling)."""
+    """Raw number of lexicon hits per category (capital letters ignored, no negation handling)."""
     low = normalise_quotes(text).lower()
     return {cat: len(p.findall(low)) for cat, p in _PATTERNS.items()}
 
