@@ -55,6 +55,14 @@ Every technical word in this walkthrough is defined here in one or two sentences
 
 **Type-token ratio.** Number of different words divided by the number of words in a text. A measure of vocabulary variety; we use a moving-window version so it does not depend on article length.
 
+**Negation-aware count.** A lexicon count that skips a listed word when a negating word ("no", "not", "never", "without") comes just before it. "No evidence of cover-up" then does not count "cover-up". Our plain lexicon counts ignore negation, which is a known weakness.
+
+**Cohen's kappa.** A measure of how much two raters agree beyond what chance would give. 1 means perfect agreement, 0 means no more than chance. We use it for the LLM's two passes (stability) and, once people fill the 40-row sample, for Claude's stance codes against a human's. Until then it is `null`, not 0.
+
+**Parse error (unreadable answer).** An LLM reply that is not valid JSON with a label, often because the 150-token output limit cut it off. We count it as "mainstream" in the main score, which lowers recall, and report how many there were.
+
+**Cluster bootstrap (website bootstrap).** A bootstrap that redraws whole websites instead of single documents. Articles from one site resemble each other, so the document bootstrap is too optimistic; the website interval is wider and is the one to trust when only a few conspiracy websites are in the test set.
+
 ## What could go wrong
 
 - Using a word from the glossary loosely in another section. If a definition here and a section disagree, the section should be fixed.

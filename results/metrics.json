@@ -1249,6 +1249,115 @@
         0.073
       ]
     },
+    "epistemic_negation": {
+      "data": "filtered documents, split_v1, validation rows only (test never read)",
+      "negation_window_tokens": 3,
+      "negators": [
+        "not",
+        "no",
+        "never",
+        "*n't"
+      ],
+      "f1_plain": 0.9328,
+      "f1_negation_aware": 0.9328,
+      "delta_f1": 0.0,
+      "ci_site": [
+        0.0,
+        0.0
+      ],
+      "ci_doc": [
+        0.0,
+        0.0
+      ],
+      "mcnemar_p": 1.0,
+      "verdict": "no clear gain",
+      "selected_C": {
+        "epistemic_plain": 10.0,
+        "epistemic_negation_aware": 10.0
+      },
+      "coverage": [
+        {
+          "category": "hedges",
+          "list_size": 13,
+          "class": "conspiracy",
+          "train_documents": 551,
+          "share_plain": 0.7024,
+          "share_negation_aware": 0.6951,
+          "share_any_negated": 0.049,
+          "negated_hit_share": 0.0204
+        },
+        {
+          "category": "hedges",
+          "list_size": 13,
+          "class": "mainstream",
+          "train_documents": 1236,
+          "share_plain": 0.4563,
+          "share_negation_aware": 0.4555,
+          "share_any_negated": 0.0129,
+          "negated_hit_share": 0.013
+        },
+        {
+          "category": "boosters",
+          "list_size": 12,
+          "class": "conspiracy",
+          "train_documents": 551,
+          "share_plain": 0.4991,
+          "share_negation_aware": 0.4973,
+          "share_any_negated": 0.0254,
+          "negated_hit_share": 0.0238
+        },
+        {
+          "category": "boosters",
+          "list_size": 12,
+          "class": "mainstream",
+          "train_documents": 1236,
+          "share_plain": 0.1756,
+          "share_negation_aware": 0.1707,
+          "share_any_negated": 0.0113,
+          "negated_hit_share": 0.0455
+        },
+        {
+          "category": "hidden_truth",
+          "list_size": 11,
+          "class": "conspiracy",
+          "train_documents": 551,
+          "share_plain": 0.4555,
+          "share_negation_aware": 0.4501,
+          "share_any_negated": 0.0327,
+          "negated_hit_share": 0.0241
+        },
+        {
+          "category": "hidden_truth",
+          "list_size": 11,
+          "class": "mainstream",
+          "train_documents": 1236,
+          "share_plain": 0.0324,
+          "share_negation_aware": 0.0307,
+          "share_any_negated": 0.0024,
+          "negated_hit_share": 0.06
+        },
+        {
+          "category": "debunking",
+          "list_size": 11,
+          "class": "conspiracy",
+          "train_documents": 551,
+          "share_plain": 0.2777,
+          "share_negation_aware": 0.2722,
+          "share_any_negated": 0.0236,
+          "negated_hit_share": 0.0394
+        },
+        {
+          "category": "debunking",
+          "list_size": 11,
+          "class": "mainstream",
+          "train_documents": 1236,
+          "share_plain": 0.0987,
+          "share_negation_aware": 0.0987,
+          "share_any_negated": 0.0032,
+          "negated_hit_share": 0.0146
+        }
+      ]
+    },
     "test": {
       "lr_words_v2": {
         "model_id": "lr_words_v2",
@@ -1636,6 +1745,20 @@
       "label_flips": 4,
       "pass": 3
     },
+    "parse_error_causes": {
+      "counts": {
+        "empty": 0,
+        "truncated_at_max_tokens": 344,
+        "refusal_or_hedging": 0,
+        "wrong_format": 0,
+        "other": 0
+      },
+      "parse_errors": 344,
+      "replies": 2190,
+      "share_of_replies": 0.1571,
+      "max_output_tokens": 150,
+      "raw_replies_stored": false
+    },
     "test": {
       "model_id": "llm_haiku",
       "config_hash": "56d18291d053bf3a",
@@ -1782,20 +1905,6 @@
       "cohen_kappa": 0.8871,
       "parse_errors_pass1": 61,
       "parse_errors_pass2": 66
-    },
-    "parse_error_causes": {
-      "counts": {
-        "empty": 0,
-        "truncated_at_max_tokens": 344,
-        "refusal_or_hedging": 0,
-        "wrong_format": 0,
-        "other": 0
-      },
-      "parse_errors": 344,
-      "replies": 2190,
-      "share_of_replies": 0.15707762557077626,
-      "max_output_tokens": 150,
-      "raw_replies_stored": false
     }
   },
   "comparison": {

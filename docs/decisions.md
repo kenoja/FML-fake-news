@@ -275,3 +275,8 @@ No requirement is declined.
 
 - Needs a team decision: AGENTS.md says "no GitHub usernames", but the repo link (`config/site.yaml`, `docs/SETUP.md`, `docs/PROJECT_PLAN.md`, and so `site/index.html`) contains the owner's account name. Most conservative workable reading: kept, because the site's comment tool and links need the repo address. If the team wants it gone, move the repo to an organisation or neutral account and change `config/site.yaml`.
 - `tests/test_privacy.py` treats bold call-out blocks and "(invented)" examples as non-excerpts when counting quote blocks.
+
+## Final consistency (cycle 1)
+
+- Report trimmed to 4,903 body words (limit 5,000); count recorded in `docs/ai-log.md`.
+- Not done by this task (left to the harness or humans): `fml run-all`, full test suite and site build run; the double-run reproducibility diff; human stance check (40 rows, kappa still `null`); human checks in the `docs/ai-log.md` table; licence confirmation; decisions on near-duplicates, default sampling for the LLM and a larger LLM output limit.

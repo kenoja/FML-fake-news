@@ -114,3 +114,10 @@ Only checks recorded in this repository are entered. The agent does not fill in 
 - **One remaining hit:** the repository owner's GitHub account name appears in the repo link (`config/site.yaml`, rendered into `site/index.html`, plus `docs/SETUP.md`, `docs/PROJECT_PLAN.md`). It is the address of this repo and needed for the comment tool and "edit" links, so it was not removed; it is listed in `docs/decisions.md` as a team decision.
 - **Excerpt check:** no cell in `results/tables/*.csv` (including `stance_check_sample.csv` and `error_examples.csv` justifications) exceeds 50 words, and no quote block in the sections or report does. Bold call-out boxes and "(invented)" teaching examples are not counted as article excerpts.
 - **New test:** `tests/test_privacy.py` (e-mail regex plus the 50-word / 6-block limits; includes tests proving it fails on an injected e-mail, a 60-word quote block and a 60-word CSV cell). Ran it: 4 passed. Not run: the full suite and `fml run-all` (left to the harness). The private-terms gate (`FML_PRIVACY_TERMS`) was not run because the real terms are not available here.
+
+### Final consistency task (17 Oct 2026)
+
+- **Tool:** Claude Code (Sonnet 5.5).
+- **Word count (body): 4,903** words of `reports/report.md` before the References heading (whitespace-separated, tables and markup included). It was 5,524 before trimming; the cuts were repeated detail, not results.
+- **Glossary:** added negation-aware count, Cohen's kappa, parse error and cluster bootstrap to `content/sections/99-glossary.md`.
+- **Not run here:** `fml run-all`, the full test suite and `python -m sitegen`. The task rules forbid running `run-all` and the whole suite inside a task; the harness runs them afterwards. Skips (`needs_data`) therefore cannot be reported by this task.
