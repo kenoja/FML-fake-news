@@ -359,135 +359,45 @@ def feature_summary_stage() -> dict:
 # ---------------------------------------------------------------- stage: llm
 
 LLM_ID = "llm_haiku"
-LLM_SELECTION_RULE = ("chosen prompt = highest conspiracy-F1 on filtered VALIDATION documents (rounded to 4 digits); "
-                      "tie -> fewer input tokens (cheaper). Fixed and written to metrics.json before any test document is classified.")
 
 
-def _llm_pred(result: pd.DataFrame) -> np.ndarray:
-    """True = conspiracy. A parse error counts as 'not conspiracy' (never guessed), and is reported separately."""
-    return (result["label"] == "conspiracy").to_numpy()
-
-
-def _llm_cost(recs: list[dict], cfg: dict) -> dict:
-    tin, tout = sum(r["input_tokens"] for r in recs), sum(r["output_tokens"] for r in recs)
-    usd = tin / 1e6 * cfg["price_input_per_mtok_usd"] + tout / 1e6 * cfg["price_output_per_mtok_usd"]
-    return {"input_tokens": int(tin), "output_tokens": int(tout), "cost_usd": float(usd)}
-
-
-def _llm_missing_error(counts: dict[str, int]) -> RuntimeError:
+def llm_scores(valid: pd.DataFrame, variant: str, pass_id: int = 1) -> dict:
+    """Ask the LLM about every validation article and score its answers against the dataset labels."""
     from . import llm
 
-    env = llm.api_key_env_name()
-    detail = ", ".join(f"{k}: {v}" for k, v in counts.items() if v)
-    return RuntimeError(f"llm stage: cache {llm.llm_config()['cache_file']} is incomplete and {env} is not set. "
-                        f"Missing answers (documents) -> {detail}. Set {env} and rerun, or commit a complete cache.")
-
-
-def _llm_client_or_none():
-    import os
-
-    from . import llm
-
-    return llm.make_client() if os.environ.get(llm.api_key_env_name()) else None
-
-
-def llm_validation(valid: pd.DataFrame, client) -> dict:
-    """Run the (at most 3) prompt variants on filtered validation documents; choose by conspiracy-F1."""
-    from . import llm
-
-    cfg = llm.llm_config()
-    variants = llm.check_variants(list(llm.PROMPTS))
-    missing = {f"validation {v} pass 1": llm.missing_count(valid, v) for v in variants}
-    if client is None and any(missing.values()):
-        raise _llm_missing_error(missing)
-    y = valid["label"].to_numpy()
-    rows, preds, details = [], {}, {}
-    for v in variants:
-        res = llm.classify(valid, v, 1, client=client)
-        recs = llm.cached_records(valid, v, 1)
-        pred = _llm_pred(res)
-        d = bootstrap_ci(y, pred)
-        s = llm.summarise(res)
-        cost = _llm_cost(recs, cfg)
-        preds[v] = pred
-        details[v] = {"prompt_words": len(llm.PROMPTS[v].split()), "confusion": confusion(y, pred), "validation": d, **s, **cost}
-        rows.append({"variant": v, "documents": len(y), "conspiracy": int(y.sum()),
-                     **{k: d[k]["estimate"] for k in ("precision", "recall", "f1")},
-                     "f1_ci_low": d["f1"]["ci_low"], "f1_ci_high": d["f1"]["ci_high"],
-                     "precision_ci_low": d["precision"]["ci_low"], "precision_ci_high": d["precision"]["ci_high"],
-                     "recall_ci_low": d["recall"]["ci_low"], "recall_ci_high": d["recall"]["ci_high"],
-                     "unreadable": s["unreadable"], "truncated_docs": s["truncated_docs"],
-                     "input_tokens": cost["input_tokens"], "output_tokens": cost["output_tokens"],
-                     "cost_usd": cost["cost_usd"]})
-    table = pd.DataFrame(rows)
-    ranked = table.assign(f1_r=table["f1"].round(4)).sort_values(["f1_r", "input_tokens"], ascending=[False, True])
-    chosen = str(ranked.iloc[0]["variant"])
-    write_table("llm_prompt_variants", table.round(4))
-    return {"variants": details, "chosen": chosen, "selection_rule": LLM_SELECTION_RULE,
-            "validation_documents": int(len(y)), "validation_conspiracy": int(y.sum())}
-
-
-def _llm_spec(holder: dict) -> ModelSpec:
-    """Test-time spec of the LLM: nothing is trained; `fit_predict_proba` classifies the test rows (pass 1)."""
-    from . import llm
-
-    cfg = llm.llm_config()
-    chosen = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8")).get("llm", {}).get("chosen")
-    if not chosen:
-        raise RuntimeError("run the llm validation first: the prompt is chosen on validation before test is touched")
-    config = {"model_id": LLM_ID, "variant": chosen, "prompt_hash": llm.cache_key(chosen, 1, cfg),
-              "model": cfg["model"], "max_input_words": cfg["max_input_words"],
-              "data": "filtered_documents_cleaned", "split": project_config()["split"]["file"]}
-
-    def fit_predict_proba(train: pd.DataFrame, test: pd.DataFrame):
-        missing = {"test pass 1": llm.missing_count(test, chosen, 1), "test pass 2": llm.missing_count(test, chosen, 2)}
-        client = _llm_client_or_none()
-        if client is None and any(missing.values()):
-            raise _llm_missing_error(missing)
-        res = llm.classify(test, chosen, 1, client=client)
-        res2 = llm.classify(test, chosen, 2, client=client)
-        holder.update(test=test[["doc_id", "label", "website"]].reset_index(drop=True), pass1=res, pass2=res2,
-                      recs1=llm.cached_records(test, chosen, 1), recs2=llm.cached_records(test, chosen, 2))
-        conf = res["confidence"].astype(float).fillna(0.0).to_numpy()
-        pred = _llm_pred(res)
-        return pred, np.where(pred, conf, 1 - conf)
-
-    return ModelSpec(config, lambda train, test: fit_predict_proba(train, test)[0], fit_predict_proba)
+    answers = llm.classify(valid, variant, pass_id)
+    said_conspiracy = (answers["label"] == "conspiracy").to_numpy()      # unreadable answers count as wrong
+    scores = classification_metrics(valid["label"], said_conspiracy)
+    return {"labels": answers["label"].to_numpy(), "confusion": confusion(valid["label"], said_conspiracy),
+            "unreadable": int((answers["label"] == llm.UNREADABLE).sum()),
+            "truncated_docs": int(answers["truncated"].sum()),
+            **{name: scores[name] for name in ("precision", "recall", "f1")}}
 
 
 def llm_stage() -> dict:
-    """LLM: variants on validation -> choose -> ONE test scoring of pass 1, pass 2 only for the repeat check."""
+    """Analysis 4: try each prompt on validation, keep the best by F1, repeat it once to check stability."""
     from . import llm
 
     cfg = llm.llm_config()
-    f = split_frames(analysis_frame(), ("train", "validation"))
-    client = _llm_client_or_none()
-    values = llm_validation(f["validation"], client)
-    values.update(model_id=LLM_ID, question="source: conspiracy-oriented or mainstream website",
-                  model=cfg["model"], max_input_words=cfg["max_input_words"],
-                  bootstrap={"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95})
-    write_metrics("llm", round_floats(values, 4))      # the rule and the choice are on disk before test is touched
-
-    holder: dict = {}
-    freeze_model(LLM_ID, builders={LLM_ID: lambda: _llm_spec({})})   # prompt chosen on validation, on disk above
-    out = evaluate_final(LLM_ID, builders={LLM_ID: lambda: _llm_spec(holder)})
-    test, p1, p2 = holder["test"], holder["pass1"], holder["pass2"]
-    for r in holder["recs1"] + holder["recs2"] + llm.cached_records(f["validation"], values["chosen"], 1):
-        if len(r["reason"].split()) > llm.REASON_MAX_WORDS:
-            raise RuntimeError("cached reason longer than 25 words: it could quote the article")
-    y = test["label"].to_numpy()
-    a, b = p1["label"].to_numpy(), p2["label"].to_numpy()
-    stability = {"documents": int(len(a)), "agreement": float((a == b).mean())}   # share of equal answers
-    test_vals = {k: v for k, v in out.items() if k != "predictions"}
-    test_vals.update(pass_scored="pass 1 (pass 2 only checks stability)", **llm.summarise(p1),
-                     **_llm_cost(holder["recs1"], cfg))
-    preds = pd.concat([
-        pd.DataFrame({"model_id": LLM_ID, "doc_id": test["doc_id"], "label": y, "pred": _llm_pred(pr),
-                      "llm_label": pr["label"], "confidence": pr["confidence"], "pass": n, "variant": values["chosen"]})
-        for n, pr in ((1, p1), (2, p2))])
-    write_table("predictions_llm", preds.round({"confidence": 4}))
-    write_metrics("llm", round_floats({**values, "test": test_vals, "stability": stability}, 4))
-    llm.usage_table()
+    valid = split_frames(analysis_frame(), ("validation",))["validation"]
+    variants = llm.check_variants(list(llm.PROMPTS))
+    runs = {variant: llm_scores(valid, variant) for variant in variants}      # prompts are tried on validation only
+    table = pd.DataFrame([{"variant": v, "documents": len(valid), "precision": r["precision"],
+                           "recall": r["recall"], "f1": r["f1"]} for v, r in runs.items()])
+    write_table("llm_prompt_variants", table.round(4))
+    chosen = max(variants, key=lambda v: round(runs[v]["f1"], 4))             # best F1 wins; a tie keeps the first prompt
+    first, second = runs[chosen], llm_scores(valid, chosen, pass_id=2)
+    repeat_agreement = float((first["labels"] == second["labels"]).mean())     # share of equal answers
+    savefig(plot_confusion(first["confusion"], f"LLM, prompt {chosen} (validation)"), "llm_validation_confusion")
+    keys = ("precision", "recall", "f1", "confusion")
+    values = {"model": cfg["model"], "question": "source: conspiracy-oriented or mainstream website",
+              "max_input_words": cfg["max_input_words"], "max_output_tokens": cfg["max_output_tokens"],
+              "documents": int(len(valid)),
+              "variants": {v: {k: r[k] for k in keys} for v, r in runs.items()},
+              "chosen_prompt": chosen, "validation": {k: first[k] for k in keys},
+              "unreadable": first["unreadable"], "truncated_docs": first["truncated_docs"],
+              "repeat_agreement": repeat_agreement}
+    write_metrics("llm", round_floats(values, 4))
     return values
 
 
@@ -618,7 +528,7 @@ def comparison_stage() -> dict:
               "table": table.to_dict("records"), "mcnemar": tests, "h1": h1, "winner_by_metric": wins,
               "mainstream_accuracy": {m: float((preds[m][~y] == y[~y]).mean()) for m in pair},
               "average_precision": {n: c[1] for n, c in curves.items()},
-              "length_buckets": lengths.to_dict("records"), "llm_stability": metrics["llm"]["stability"]}
+              "length_buckets": lengths.to_dict("records"), "llm_stability": metrics["llm"]["repeat_agreement"]}
     write_metrics("comparison", round_floats(_nan_to_none_deep(values), 4))
     return values
 

@@ -1,4 +1,4 @@
-variant,documents,conspiracy,precision,recall,f1,f1_ci_low,f1_ci_high,precision_ci_low,precision_ci_high,recall_ci_low,recall_ci_high,unreadable,truncated_docs,input_tokens,output_tokens,cost_usd
-v1,398,128,1.0,0.758,0.862,0.81,0.906,1.0,1.0,0.681,0.829,64,36,873180,38573,0.107
-v2,398,128,1.0,0.906,0.951,0.922,0.976,1.0,1.0,0.855,0.953,44,36,922532,35521,0.11
-v3,398,128,1.0,0.688,0.815,0.755,0.866,1.0,1.0,0.607,0.764,91,36,922930,43533,0.114
+variant,documents,precision,recall,f1
+v1,376,1.0,0.974,0.987
+v2,376,1.0,0.966,0.983
+v3,376,1.0,0.974,0.987
