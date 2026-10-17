@@ -85,7 +85,7 @@ The third analysis asks whether hand-made features improve the TF-IDF model. We 
 
 We compared five logistic regressions on the same cleaned articles and split: TF-IDF alone, with each group, and with all three. Each feature matrix was built once on the training articles, numeric groups were standardised with training statistics only, and every model chose the regularisation strength (C) and the class weight from the same grid by validation F1 of the conspiracy class. A group passes the threshold if it raises validation F1 by at least 0.01; otherwise plain TF-IDF is kept. With 376 validation articles, smaller differences cannot be told from chance.
 
-Validation F1 was 0.914 for TF-IDF alone and 0.916 with n-grams, a gain of 0.002. Adding the certainty words gave 0.930, a gain of 0.017, the only change that reaches our threshold. Style features gave 0.894, a change of -0.020, and all three groups together scored 0.887, which is 0.027 lower than plain TF-IDF. The table lists every change.
+The table lists the validation F1 of every model and its change against TF-IDF alone. Only the certainty words reach our threshold.
 
 | Model | Validation F1 | Change against TF-IDF alone |
 |---|---|---|
@@ -95,7 +95,7 @@ Validation F1 was 0.914 for TF-IDF alone and 0.916 with n-grams, a gain of 0.002
 | + style | 0.894 | -0.020 |
 | + all three groups | 0.887 | -0.027 |
 
-On validation, only the certainty words passed the 0.01 threshold, so the final tested model contains them alone; whether it helps on test is answered in the results section. Style and the full combination made the model worse, probably because many weak clues add noise.
+The final tested model therefore contains the certainty words alone; whether it helps on test is answered in the results section. Style and the full combination made the model worse, probably because many weak clues add noise.
 
 
 
@@ -103,7 +103,7 @@ On validation, only the certainty words passed the 0.01 threshold, so the final 
 
 
 
-Three reasons explain why the groups add so little. First, the information is already in the words: "cover-up" is a TF-IDF feature as soon as it is a word, and trigrams largely repeat single words while adding many rare columns. Second, the lists reach only part of the data. The hidden-truth list has 11 entries and occurs in 45% of training conspiracy articles against 3% of mainstream ones, a sharp clue that is absent from more than half of the conspiracy articles; the debunking list appears in only 28% of them. Third, the lists count words and ignore meaning, so an article that denies a cover-up still scores as hidden-truth vocabulary, and style habits can belong to one website rather than to a belief.
+Three reasons explain why the groups add so little. First, the information is already in the words: "cover-up" is a TF-IDF feature as soon as it is a word. Second, the lists reach only part of the data: the hidden-truth list has 11 entries and occurs in 45% of training conspiracy articles against 3% of mainstream ones, but it is absent from more than half of the conspiracy articles. Third, the lists count words and ignore meaning, so an article that denies a cover-up still scores as hidden-truth vocabulary.
 
 ## The LLM classifier
 
@@ -160,13 +160,15 @@ Three McNemar tests (exact, two-sided) compare pairs of models. Word counts agai
 
 **H2: Adding certainty and style features improves the TF-IDF model.** Not confirmed on test. F1 rises from 0.582 to 0.610, mainly through fewer false alarms (precision 0.735 against 0.696), but the difference is within chance (p = 0.332).
 
+**Do the hand-made features help on test?** Slightly, and not provably. The model with the certainty features, the only group that passed the validation threshold, scores a little higher than TF-IDF alone. The intervals overlap and the McNemar test does not separate the two models (p = 0.332), so we cannot say that the features help.
+
 **H3: The LLM beats the best logistic regression.** Confirmed. F1 is 0.795 against 0.610, the intervals do not overlap, and the test is clearly significant (p < 0.0001). The gain comes from precision, not from recall.
 
-**How to read these verdicts.** The test set contains few websites, and articles from one website resemble each other, so the intervals are probably still somewhat optimistic. A "not confirmed" verdict means that the data do not show the effect; it does not show that the effect is absent. With 410 articles, differences of two or three F1 points between the logistic regressions cannot be told apart from chance. Only the gap to the LLM is large enough to be clearly visible.
+**How to read these verdicts.** The test set contains few websites, and articles from one website resemble each other, so the intervals are probably still somewhat optimistic. "Not confirmed" means that the data do not show the effect, not that it is absent. Only the gap to the LLM is large enough to be clearly visible.
 
-**What the numbers say about the models.** The logistic regressions behave alike: they find about half of the conspiracy articles and raise a moderate number of false alarms. Of the 314 mainstream test articles, word counts flag 33, TF-IDF flags 21 and TF-IDF with features flags 18, so the features mainly make the model more careful rather than more sensitive. The LLM works differently. It reads the article as a whole and hardly ever flags a mainstream article, but it also lets one third of the conspiracy articles pass. It therefore has the better balance, though it is not a perfect detector either. The question why each model misses the articles it misses is taken up in the section on where the models fail, together with the question of how many errors are caused by labels that describe the website rather than the article.
+**What the numbers say about the models.** The logistic regressions behave alike: they find about half of the conspiracy articles and raise a moderate number of false alarms. Of the 314 mainstream test articles, word counts flag 33, TF-IDF flags 21 and TF-IDF with features flags 18, so the features mainly make the model more careful rather than more sensitive. The LLM hardly ever flags a mainstream article, but it lets one third of the conspiracy articles pass. Why each model misses the articles it misses is taken up in the section on where the models fail.
 
-**Summary.** On the test set the ranking by F1 is LLM, TF-IDF with features, TF-IDF, word counts. Only the first place is clearly separated from the rest. Better weighting and extra features move the logistic regression in the expected direction, but the gain is small compared with the uncertainty of the estimate.
+**Summary.** The ranking by F1 is LLM, TF-IDF with features, TF-IDF, word counts. Only the first place is clearly separated from the rest.
 
 ## Where they fail
 
@@ -195,21 +197,33 @@ The labels describe websites, not articles. To separate model errors from label 
 
 By this rule most of the errors are label problems, especially missed conspiracy-site articles. Many of them are ordinary news or commentary with no conspiracy claim, so a model that reads only the text has little to find. Mistakes on mainstream articles are mostly model errors: the models react to the topic words and not to the stance of the article. These shares depend on the automatic coding. Of the 67 coded articles, 2 received an answer that could not be read and are left out of the shares.
 
-Short excerpts of five articles (missed by one model, by both, and two correct ones for contrast) are quoted in this part, never full texts.
 
-The automatic stance coding is not presented as verified. It was produced by a language model and no person has checked it yet. The team therefore carries out a human check on a sample of 40 of these articles. The label-problem share (47 of 65 readable codings) comes from one unchecked source, the Claude stance coding, so it is an estimate. Until this check is done, the split between model errors and label problems is an estimate from one unchecked source and should be read as such.
+
+| cell | doc_id | website | true_label | excerpt |
+|---|---|---|---|---|
+| lr_only_wrong | C0007c | conspiracydailyupdate.com | conspiracy | Lt Col Tony Shaffer (retired) is highly experienced intelligence officer, and recipient of the Bronze Star, with 30 years of field and operational experience. Tony ... |
+| llm_only_wrong | C024ca | neonnettle.com | conspiracy | Soleimani’s Daughter Warns US Soldiers Await Death as Revenge Against 'Crazy Trump' The daughter of slain Iranian terrorist Gen. Qasem Soleimani has issued a threat ... |
+| both_wrong | C00459 | neonnettle.com | conspiracy | Ilhan Omar Gets New 2020 Challenger: Iraq War Hero and Veteran Police Officer Radical Democrat Rep. Ilhan Omar (D-MN) has a new challenger for her ... |
+| correct_mainstream | M07849 | foxnews.com | mainstream | The former mayor of New York City, Rudy Giuliani, appeared on "Fox & Friends" Wednesday to commemorate the anniversary of the 9/11 terror attacks, and ... |
+| correct_conspiracy | C0013c | needtoknow.news | conspiracy | Click on headlines to see full articles If original sources are missing, click on Cached. Star indicates article worth printing for future reference. Camera indicates ... |
+
+
+
+The 40 articles of the human check come from 19 websites, 6 conspiracy-oriented and 13 mainstream, with at most 4 articles from any one website.
+
+The automatic stance coding is not verified: no person has checked it yet, and the team plans a human check of 40 of these articles. The label-problem share (47 of 65 readable codings) is therefore an estimate from one unchecked source.
 
 ## Limitations
 
 Several limitations qualify the results. First, the label describes the website that published a document, not its content. Conspiracy-oriented websites publish many neutral articles, and mainstream websites sometimes discuss conspiracy theories, so a prediction that disagrees with the label is not necessarily an error of the model. The scores measure how well each method recovers the type of website, not whether a text contains conspiracy claims. This label noise limits the recall of every method and can only be reduced by manual coding of the texts.
 
-Second, the number of websites is small: the validation and test sets each contain only a handful of conspiracy websites. Documents from one website resemble each other, so the confidence intervals, which resample documents, are probably somewhat too narrow, and a different assignment of websites to sets could change the ranking of close methods. The size of this effect is visible in the LLM, whose F1 score on validation was 0.987 and on test 0.795. We also repeated the validation run of the LLM once and report the share of identical answers.
+Second, the number of websites is small: the validation and test sets each contain only a handful of conspiracy websites. Documents from one website resemble each other, so the confidence intervals, which resample documents, are probably somewhat too narrow, and a different assignment of websites to sets could change the ranking of close methods. The size of this effect is visible in the LLM, whose F1 score on validation was 0.987 and on test 0.795, almost all of it lost in recall (0.974 on validation, 0.667 on test). We did not test the reasons; likely ones are different websites in the two sets and label noise. We also repeated the validation run of the LLM once and report the share of identical answers.
 
 
 
 Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites. This cannot be excluded. A part of its performance may therefore rest on prior knowledge that the trained models do not have. Moreover, the LLM saw only the first 3,000 words of each article, and 30 validation articles were longer and were cut, so it may have missed later passages that the logistic regressions, which read the full text, could use.
 
-Fourth, the certainty and doubt features are counts of words from a hand-made list and ignore negation: "no evidence of a cover-up" counts like "a cover-up". Fifth, although names, addresses and repeated lines of the websites were removed, the typical style of a website can remain and can serve as a shortcut for the models. The split by website prevents a model from profiting from sites it has seen, but not from style habits that websites of the same kind share. Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer. The test set was used during development; every final model was chosen on validation and scored on test once.
+Fourth, the certainty and doubt features are counts of words from a hand-made list and ignore negation: "no evidence of a cover-up" counts like "a cover-up". Fifth, although names, addresses and repeated lines of the websites were removed, the typical style of a website can remain and can serve as a shortcut for the models. Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer. The test set was used during development; every final model was chosen on validation and scored on test once.
 
 ## Conclusion
 
@@ -225,13 +239,11 @@ We did not fine-tune a language model or use other classifiers or emotion featur
 
 ## How we used AI
 
-**Use of AI tools.** We used an AI assistant (Claude, in the form of a coding agent) to draft the project plan, write the analysis code and tests, produce tables and figures, and draft the course text and this report. A separate language model, Claude Haiku 5.5, is the fourth classifier under study and a second model (Claude Sonnet 5.5) coded how disagreement articles treat conspiracy claims for the error analysis. The log of what was produced, checked and changed is kept in the repository.
+**What the AI produced.** The AI assistant Claude drafted the project plan, wrote the analysis code and the tests, produced the tables and figures, and drafted the text of the course site and of this report. A separate language model, Claude Haiku 5.5, classified the articles as the fourth method under study. A second model, Claude Sonnet 5.5, coded how the articles in which the methods disagree treat conspiracy claims, for the error analysis.
 
-The study design was fixed by the team and not by the assistant: the research question, full articles as input, the four ways of sorting, the feature groups, and the rule that each final model is scored on the test articles once. The assistant followed written rules in the repository and was bound by automatic checks, among them a lock on the test set, a frozen split, a privacy check on public text and a comparison of every number in the report with the result files.
+**What the team checked or changed.** The team fixed the research question, full articles as input, the four methods, the feature groups, and the rule that each final model is scored on the test articles once. The article counts were compared with those published for the corpus. Tests were written that fail when a rule is broken, such as fitting on training articles only, a changed split, or a number in the report that is missing from the result files. Human checks are pending: reading the text, spot-checking numbers, and coding 40 articles by hand. None of them is recorded as done.
 
-We checked the output in three ways. First, the article counts were compared with those published for the corpus. Second, automatic tests were written to fail whenever a rule such as fitting on training articles only is broken. Third, human checks are planned (reading the text, spot-checking numbers, coding 40 articles by hand), but none is recorded in the log yet, so we claim none.
-
-We learned that written rules plus automatic checks keep assistant-written work reliable, that automatic checks verify consistency rather than meaning, and that the stance codes produced by a language model need a human check before they are relied on. The language model answers are cached so that every figure can be reproduced without new cost.
+**What we learned about the work.** Tests confirm that numbers match files, not that they mean the right thing, so a person must still judge the reasoning. The stance codes produced by a language model need a human check before they are relied on. Saving the language model answers makes every figure reproducible without new cost.
 
 ## References
 

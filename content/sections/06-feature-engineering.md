@@ -61,7 +61,7 @@ The third analysis asks whether hand-made features improve the TF-IDF model. We 
 
 We compared five logistic regressions on the same cleaned articles and split: TF-IDF alone, with each group, and with all three. Each feature matrix was built once on the training articles, numeric groups were standardised with training statistics only, and every model chose the regularisation strength (C) and the class weight from the same grid by validation F1 of the conspiracy class. A group passes the threshold if it raises validation F1 by at least 0.01; otherwise plain TF-IDF is kept. With 376 validation articles, smaller differences cannot be told from chance.
 
-Validation F1 was 0.914 for TF-IDF alone and 0.916 with n-grams, a gain of 0.002. Adding the certainty words gave 0.930, a gain of 0.017, the only change that reaches our threshold. Style features gave 0.894, a change of -0.020, and all three groups together scored 0.887, which is 0.027 lower than plain TF-IDF. The table lists every change.
+The table lists the validation F1 of every model and its change against TF-IDF alone. Only the certainty words reach our threshold.
 
 | Model | Validation F1 | Change against TF-IDF alone |
 |---|---|---|
@@ -71,11 +71,11 @@ Validation F1 was 0.914 for TF-IDF alone and 0.916 with n-grams, a gain of 0.002
 | + style | 0.894 | -0.020 |
 | + all three groups | 0.887 | -0.027 |
 
-On validation, only the certainty words passed the 0.01 threshold, so the final tested model contains them alone; whether it helps on test is answered in the results section. Style and the full combination made the model worse, probably because many weak clues add noise.
+The final tested model therefore contains the certainty words alone; whether it helps on test is answered in the results section. Style and the full combination made the model worse, probably because many weak clues add noise.
 
 <!-- output: results/figures/ablation_f1.png | Validation F1 of the five models -->
 
-Three reasons explain why the groups add so little. First, the information is already in the words: "cover-up" is a TF-IDF feature as soon as it is a word, and trigrams largely repeat single words while adding many rare columns. Second, the lists reach only part of the data. The hidden-truth list has 11 entries and occurs in 45% of training conspiracy articles against 3% of mainstream ones, a sharp clue that is absent from more than half of the conspiracy articles; the debunking list appears in only 28% of them. Third, the lists count words and ignore meaning, so an article that denies a cover-up still scores as hidden-truth vocabulary, and style habits can belong to one website rather than to a belief.
+Three reasons explain why the groups add so little. First, the information is already in the words: "cover-up" is a TF-IDF feature as soon as it is a word. Second, the lists reach only part of the data: the hidden-truth list has 11 entries and occurs in 45% of training conspiracy articles against 3% of mainstream ones, but it is absent from more than half of the conspiracy articles. Third, the lists count words and ignore meaning, so an article that denies a cover-up still scores as hidden-truth vocabulary.
 
 ## Check yourself
 

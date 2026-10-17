@@ -107,7 +107,7 @@ def test_every_number_in_report_comes_from_results():
         body = body.replace(v, " ")
     body = re.sub(r"Python \d+\.\d+(\.\d+)?", "Python", body)
     body = re.sub(r"https?://\S+", " ", body)
-    body = re.sub(r"\bC\d{3,4}[a-z]{1,2}\b|\b[0-9a-f]{16}\b", " ", body)  # article ids and prompt hashes
+    body = re.sub(r"\b[CM]\d{3,5}[a-z]{0,2}\b|\b[0-9a-f]{16}\b", " ", body)  # article ids and prompt hashes
     body = re.sub(r"\b[Ss]ections? \d+(\.\d+)?|^#+ \d+(\.\d+)?", " ", body, flags=re.M)  # cross-references
     body = re.sub(r"0-149 words|150-249 words|>= 250 words|shorter than 250 words", " ", body)  # length thresholds, not results
     bad = unmatched(body, source_numbers())

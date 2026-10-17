@@ -72,13 +72,11 @@ The labels describe websites, not articles. To separate model errors from label 
 
 By this rule most of the errors are label problems, especially missed conspiracy-site articles. Many of them are ordinary news or commentary with no conspiracy claim, so a model that reads only the text has little to find. Mistakes on mainstream articles are mostly model errors: the models react to the topic words and not to the stance of the article. These shares depend on the automatic coding. Of the 67 coded articles, 2 received an answer that could not be read and are left out of the shares.
 
-Short excerpts of five articles (missed by one model, by both, and two correct ones for contrast) are quoted here, never full texts.
-
 <!-- output: results/tables/error_examples.csv -->
 
 The 40 articles of the human check come from 19 websites, 6 conspiracy-oriented and 13 mainstream, with at most 4 articles from any one website.
 
-The automatic stance coding is not presented as verified. It was produced by a language model and no person has checked it yet. The team therefore carries out a human check on a sample of 40 of these articles. The label-problem share (47 of 65 readable codings) comes from one unchecked source, the Claude stance coding, so it is an estimate. Until this check is done, the split between model errors and label problems is an estimate from one unchecked source and should be read as such.
+The automatic stance coding is not verified: no person has checked it yet, and the team plans a human check of 40 of these articles. The label-problem share (47 of 65 readable codings) is therefore an estimate from one unchecked source.
 
 ## Check yourself
 

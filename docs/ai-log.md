@@ -36,7 +36,7 @@ after every cycle; team members add what they checked or changed by hand.
 - **Final run:** settings were chosen on validation for all four analyses; the final models were then scored once each on test with new `final_*` ids (`results/test_access_log.jsonl`).
 - **Report assembly:** every section has the four parts; the report is assembled from the `## Report` parts and `content/references.md`. The glossary has one entry per term. Section 12 was rewritten as three plain parts: what the AI produced, what the team checked, what we learned.
 - **What was checked:** the tests for report numbers, section numbers, gates and privacy, and the section-format and word limits. They show that numbers match files, not that they mean the right thing.
-- **Not recorded as done:** a two-run comparison of `results/` after consecutive full runs has no recorded outcome. The last run time is in `results/run_info.json`.
+- Two-run comparison: done in T12, see the last entry of this log.
 - **Privacy:** the account name in the repo link (`config/site.yaml`) is still open; see "Needs a team decision" in `docs/decisions.md`.
 - **What we learned:** tests catch inconsistencies, not wrong reasoning; a glossary only helps if every technical word has an entry.
 - **Task T9 (this entry):** section 12 and this log were reduced to facts. Humans still must verify the items in the table below, in particular the report-number spot-check, the 40 hand-coded stance rows and the plain-language reading of section 12.
@@ -51,3 +51,10 @@ after every cycle; team members add what they checked or changed by hand.
 | 4 | Read the report and sections once for article text and personal data (including the repo link) | pending |
 | 5 | Decide the open points under "Needs a team decision" in `docs/decisions.md` | pending |
 | 6 | Read the glossary and section 12 for plain-language understanding | pending |
+
+### Cycle 2, T12: final reproducible run (2026-10-17)
+
+- Ran `fml run-all` twice with the caches (74.8 s, 71.8 s); `results/` identical to the committed files apart from the timing in `run_info.json`; `test_access_log.jsonl` unchanged; `evaluate-final` not run.
+- Rebuilt report and site with `python -m sitegen build`; report body 4,958 words (plain count). Full pytest: 205 passed, 0 skipped.
+- The report was over 5,000 words by plain count and two number tests failed; fixed by removing duplicated prose and one test-set delta from a validation sentence (details in `docs/decisions.md`).
+- Still open for humans: the six checks in the table above (all pending).

@@ -81,8 +81,15 @@ fml run-all && git add -A results && fml run-all && git diff --stat results   # 
 there, once per model id and configuration. `run_info.json` holds the timing, so it is the one file that
 may differ between runs.
 
-**Status:** the two-run comparison was not run by the agent that last edited this file (task rules forbid
-running `fml run-all` inside a task). It is listed in `docs/decisions.md` under "Cycle 2, T12".
+**Status:** two consecutive runs gave identical tables and metrics (74.8 s and 71.8 s); see `docs/decisions.md`, "Cycle 2, T12".
+
+### How to reproduce
+
+1. Install: `pip install -r requirements-lock.txt && pip install -e . --no-deps`.
+2. Point to the private data repo (the folder that contains `loco_911/`), either with `export FML_DATA_DIR=...` or by placing it where `fml.paths.data_dir()` looks (the candidates in `config/project.yaml`, then sibling folders of this repo).
+3. `fml run-all` rebuilds `results/` from the committed LLM cache, with no API calls and in under 8 minutes.
+4. `python -m sitegen build` rebuilds `reports/report.md` and the site from `content/` and `results/`.
+5. `python -m pytest -q` runs the tests (those marked `needs_data` skip without the data repo).
 
 Results are in `results/` (`metrics.json`, `tables/`, `figures/`); the written report is
 [`reports/report.md`](reports/report.md); `tests/test_report_numbers.py` checks that its numbers match `results/`.
