@@ -5,12 +5,12 @@ hypothesis: Both approaches beat the always-mainstream baseline on conspiracy F1
 ---
 ## Goal and hypothesis
 
-> **Read this first (four cautions about the test numbers).**
->
-> 1. **Wide intervals, website level first.** The test set has 423 documents (98 conspiracy) from 18 websites, but only **6 conspiracy websites**. Documents from one website resemble each other, so the website (cluster) bootstrap interval is the honest one; the document interval is shown second and is too narrow.
-> 2. **The words-only logistic regression was scored on test twice.** `results/test_access_log.jsonl` has `lr_words` at 2026-10-17T01:19:52+00:00 (config hash 4c7ae4b64bb07dc1) and later `lr_words_v2` at 2026-10-17T10:35:02+00:00 (hash 686c1de15756e287), after `lr_extended` (01:21:07) and `llm_haiku` (09:26:03) had been scored. Why: the first configuration was stale (validation tuning no longer picked it), and the lock forbids re-scoring one id with a new configuration, so the corrected model got a new id. **`lr_words_v2` is the reported words-only model; the `lr_words` result is not used for any number.** The log is unchanged, and the second look happened after other test results were known.
-> 3. **Six conspiracy websites.** One of them supplies 44 of the 98 conspiracy test documents, so the test set mostly measures how well each model recognises that site.
-> 4. **36 near-duplicate pairs across splits** (`data.near_duplicate_pairs_across_splits`). Nine test documents have a partner in train or validation. The "without near-duplicates" rows stay in the table below: the F1 changes by -0.005 (logistic regression) and -0.004 (LLM), and the gap stays about 0.1, so the duplicates do not explain the result.
+**Read this first (four cautions about the test numbers).**
+
+1. **Wide intervals, website level first.** The test set has 423 documents (98 conspiracy) from 18 websites, but only **6 conspiracy websites**. Documents from one website resemble each other, so the website (cluster) bootstrap interval is the honest one; the document interval is shown second and is too narrow.
+2. **The words-only logistic regression was scored on test twice.** `results/test_access_log.jsonl` has `lr_words` at 2026-10-17T01:19:52+00:00 (config hash 4c7ae4b64bb07dc1) and later `lr_words_v2` at 2026-10-17T10:35:02+00:00 (hash 686c1de15756e287), after `lr_extended` (01:21:07) and `llm_haiku` (09:26:03) had been scored. Why: the first configuration was stale (validation tuning no longer picked it), and the lock forbids re-scoring one id with a new configuration, so the corrected model got a new id. **`lr_words_v2` is the reported words-only model; the `lr_words` result is not used for any number.** The log is unchanged, and the second look happened after other test results were known.
+3. **Six conspiracy websites.** One of them supplies 44 of the 98 conspiracy test documents, so the test set mostly measures how well each model recognises that site.
+4. **36 near-duplicate pairs across splits** (`data.near_duplicate_pairs_across_splits`). Nine test documents have a partner in train or validation. The "without near-duplicates" rows stay in the table below: the F1 changes by -0.005 (logistic regression) and -0.004 (LLM), and the gap stays about 0.1, so the duplicates do not explain the result.
 
 **Headline comparison on test** (website intervals first, then document intervals; copied from `results/tables/comparison_test.csv`, `results/tables/comparison_test_no_dups.csv` and `results/metrics.json#comparison`):
 
