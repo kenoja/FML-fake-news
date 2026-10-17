@@ -246,3 +246,12 @@ Hard gates still failing:
 
 ### Reviewer summary
 Overall this is a solid, honest cycle-1 package, with limits I should name. I read the requirements, the first part of metrics.json, report §5.1–§6, decisions.md, the test-access log and word counts. I did not check every section file, figure or number. Numbers I spot-checked match metrics.json. The main gaps are the blank human stance verification (kappa null, H6 provisional) and the still-unconfirmed LOCO licence. The test set was looked at four times, including a stale lr_words and the second words-only look. The LLM ran at default sampling because the API refused temperature 0. The test split has few conspiracy websites, and one site holds 44 of 98 conspiracy test documents. The report is 5,051 words in total; I could not confirm the count before References. Privacy looks clean on the checks I ran. Every criterion below 10 has a must_fix item; the biggest gains are the human stance check, the licence check, an automated number check and the reproducibility diff.
+
+## Cycle 2 (17 Oct 2026)
+
+- **Tool:** the same AI coding agent (Claude Code, Sonnet 5.5) working task by task under `AGENTS.md`; Claude Haiku 5.5 is the classifier under study.
+- **What it produced:** the restructured notebook sections, the rewritten glossary (one `###` entry per technical term, each with an everyday example), the new section `12-how-we-used-ai` (the old section 13 was removed) and this entry.
+- **What was checked:** every glossary entry is at most 80 words and the list in requirement 15 is covered; a script compared technical words used in the sections with the glossary; `python -m sitegen build` links the first use of each term; section 12 follows the four-part format and its word limits.
+- **What was changed:** the AI-use section was cut to a short factual summary (what the AI produced, what was checked, what we learned) and no longer lists problems met while building.
+- **What we learned:** automatic checks show that numbers match files, not that they mean the right thing; written rules plus automatic gates keep agent work reliable; a glossary only helps if every technical word on the site has an entry.
+- **Human checks for cycle 2:** to be filled by team (glossary wording understandable without technical background; section 12 accurate; numbers spot-checked against `results/metrics.json`; privacy read). The human-check table of cycle 1 above is unchanged and still `pending`.
