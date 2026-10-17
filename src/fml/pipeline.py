@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from functools import lru_cache
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -50,6 +51,12 @@ def cleaned_frame(keep_all: bool = True) -> pd.DataFrame:
     `keep_all` keeps the two exact duplicates so the first run really covers all 3,146 documents
     that the frozen split lists; the split decides which part each one belongs to.
     """
+    return _cleaned_cached(keep_all).copy()
+
+
+@lru_cache(maxsize=2)
+def _cleaned_cached(keep_all: bool) -> pd.DataFrame:
+    """Cleaning takes ~20 s and every stage needs it; do it once per run (callers get copies)."""
     cleaned, _, _ = clean_corpus(load_corpus(), drop_exact=not keep_all)
     return cleaned.reset_index(drop=True)
 

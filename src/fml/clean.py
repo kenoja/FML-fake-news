@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
@@ -92,11 +93,16 @@ def strip_urls_and_emails(text: str) -> str:
     return EMAIL_RE.sub(" ", URL_RE.sub(" ", text))
 
 
+@lru_cache(maxsize=4)
+def _name_pattern(names: tuple[str, ...]) -> re.Pattern:
+    """Compiled once per name list: recompiling it for every document dominated the cleaning time."""
+    return re.compile(r"(?<![\w])(?:" + "|".join(re.escape(n) for n in names) + r")(?![\w])", re.IGNORECASE)
+
+
 def strip_website_names(text: str, names: list[str]) -> str:
     if not names:
         return text
-    pattern = re.compile(r"(?<![\w])(?:" + "|".join(re.escape(n) for n in names) + r")(?![\w])", re.IGNORECASE)
-    return pattern.sub(" ", text)
+    return _name_pattern(tuple(names)).sub(" ", text)
 
 
 def boilerplate_lines(df: pd.DataFrame, min_docs: int = BOILERPLATE_MIN_DOCS) -> dict[str, set[str]]:

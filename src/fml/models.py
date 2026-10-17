@@ -47,7 +47,7 @@ def build_pipeline(feature_cfg: dict | None = None, C: float = 1.0, class_weight
     if cfg["numeric_columns"]:
         parts.append(("scale", StandardScaler(), list(cfg["numeric_columns"])))
     seed = project_config()["split"]["seed"] if random_state is None else random_state
-    clf = LogisticRegression(C=C, class_weight=class_weight, max_iter=2000, random_state=seed)
+    clf = LogisticRegression(C=C, class_weight=class_weight, solver="liblinear", max_iter=2000, random_state=seed)
     return Pipeline([("features", ColumnTransformer(parts)), ("clf", clf)])
 
 
@@ -71,17 +71,28 @@ def tune_on_validation(train: pd.DataFrame, valid: pd.DataFrame, feature_cfg: di
     to the first row, i.e. the smaller C, i.e. the simpler model. Only train and validation rows are
     passed in: this function cannot see the test split.
     """
+    # The feature block (vocabulary, IDF, scalers) depends only on the training rows, so it is fitted
+    # once and reused for every (C, class_weight); only the cheap classifier is refitted.
+    base = build_pipeline(feature_cfg)
+    features = base.named_steps["features"].fit(train, train["label"])
+    X_train, X_valid = features.transform(train), features.transform(valid)
+    y_train = train["label"]
+    seed = project_config()["split"]["seed"]
+
+    def classifier(C, cw) -> LogisticRegression:
+        return LogisticRegression(C=C, class_weight=cw, solver="liblinear", max_iter=2000, random_state=seed)
+
     rows = []
     for cw in class_weights:
         for C in c_grid:
-            pipe = build_pipeline(feature_cfg, C=C, class_weight=cw).fit(train, train["label"])
-            m = classification_metrics(valid["label"], pipe.predict(valid))
+            m = classification_metrics(valid["label"], classifier(C, cw).fit(X_train, y_train).predict(X_valid))
             rows.append({"C": C, "class_weight": "none" if cw is None else cw, **m})
     grid = pd.DataFrame(rows)
     best = grid.iloc[int(grid[SELECTION_METRIC].to_numpy().argmax())]
     grid["selected"] = grid.index == best.name
     cw = None if best["class_weight"] == "none" else best["class_weight"]
-    final = build_pipeline(feature_cfg, C=float(best["C"]), class_weight=cw).fit(train, train["label"])
+    clf = classifier(float(best["C"]), cw).fit(X_train, y_train)
+    final = Pipeline([("features", features), ("clf", clf)])
     return final, grid
 
 

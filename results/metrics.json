@@ -89,62 +89,62 @@
       "validation_websites": 20
     },
     "confusion": {
-      "tp": 126,
-      "fn": 14,
-      "fp": 6,
-      "tn": 325
+      "tp": 125,
+      "fn": 15,
+      "fp": 5,
+      "tn": 326
     },
     "validation": {
       "precision": {
-        "estimate": 0.955,
-        "ci_low": 0.919,
-        "ci_high": 0.986
+        "estimate": 0.962,
+        "ci_low": 0.927,
+        "ci_high": 0.992
       },
       "recall": {
-        "estimate": 0.9,
-        "ci_low": 0.848,
-        "ci_high": 0.946
+        "estimate": 0.893,
+        "ci_low": 0.838,
+        "ci_high": 0.941
       },
       "f1": {
         "estimate": 0.926,
-        "ci_low": 0.894,
+        "ci_low": 0.892,
         "ci_high": 0.957
       },
       "macro_f1": {
         "estimate": 0.948,
-        "ci_low": 0.927,
-        "ci_high": 0.97
+        "ci_low": 0.925,
+        "ci_high": 0.969
       },
       "balanced_accuracy": {
-        "estimate": 0.941,
-        "ci_low": 0.915,
-        "ci_high": 0.965
+        "estimate": 0.939,
+        "ci_low": 0.912,
+        "ci_high": 0.964
       }
     },
     "validation_website_bootstrap": {
       "precision": {
-        "estimate": 0.955,
-        "ci_low": 0.806,
-        "ci_high": 0.988
+        "estimate": 0.962,
+        "ci_low": 0.83,
+        "ci_high": 0.991
       },
       "recall": {
-        "estimate": 0.9,
+        "estimate": 0.893,
         "ci_low": 0.75,
-        "ci_high": 0.946
+        "ci_high": 0.942
       },
       "f1": {
         "estimate": 0.926,
-        "ci_low": 0.784,
-        "ci_high": 0.958
+        "ci_low": 0.791,
+        "ci_high": 0.957
       },
       "macro_f1": {
         "estimate": 0.948,
-        "ci_low": 0.879,
+        "ci_low": 0.884,
         "ci_high": 0.966
       },
       "balanced_accuracy": {
-        "estimate": 0.941,
-        "ci_low": 0.867,
+        "estimate": 0.939,
+        "ci_low": 0.868,
         "ci_high": 0.964
       }
     },
@@ -339,8 +339,8 @@
     },
     "data": "filtered (documents matching data.topic_filter_pattern), same split_v1",
     "selected": {
-      "C": 100.0,
-      "class_weight": "none",
+      "C": 10.0,
+      "class_weight": "balanced",
       "selection_metric": "f1 (validation)"
     },
     "grid_values_tried": 18,
@@ -352,63 +352,63 @@
       "validation_websites": 19
     },
     "confusion": {
-      "tp": 114,
-      "fn": 14,
-      "fp": 4,
-      "tn": 266
+      "tp": 117,
+      "fn": 11,
+      "fp": 11,
+      "tn": 259
     },
     "validation": {
       "precision": {
-        "estimate": 0.966,
-        "ci_low": 0.931,
-        "ci_high": 0.992
+        "estimate": 0.914,
+        "ci_low": 0.865,
+        "ci_high": 0.96
       },
       "recall": {
-        "estimate": 0.891,
-        "ci_low": 0.836,
-        "ci_high": 0.939
+        "estimate": 0.914,
+        "ci_low": 0.865,
+        "ci_high": 0.958
       },
       "f1": {
-        "estimate": 0.927,
-        "ci_low": 0.891,
-        "ci_high": 0.959
+        "estimate": 0.914,
+        "ci_low": 0.877,
+        "ci_high": 0.946
       },
       "macro_f1": {
-        "estimate": 0.947,
-        "ci_low": 0.922,
-        "ci_high": 0.97
+        "estimate": 0.937,
+        "ci_low": 0.911,
+        "ci_high": 0.96
       },
       "balanced_accuracy": {
-        "estimate": 0.938,
+        "estimate": 0.937,
         "ci_low": 0.909,
-        "ci_high": 0.964
+        "ci_high": 0.961
       }
     },
     "validation_website_bootstrap": {
       "precision": {
-        "estimate": 0.966,
-        "ci_low": 0.848,
-        "ci_high": 0.995
+        "estimate": 0.914,
+        "ci_low": 0.702,
+        "ci_high": 0.981
       },
       "recall": {
-        "estimate": 0.891,
-        "ci_low": 0.734,
-        "ci_high": 0.95
+        "estimate": 0.914,
+        "ci_low": 0.783,
+        "ci_high": 0.955
       },
       "f1": {
-        "estimate": 0.927,
-        "ci_low": 0.796,
-        "ci_high": 0.963
+        "estimate": 0.914,
+        "ci_low": 0.742,
+        "ci_high": 0.957
       },
       "macro_f1": {
-        "estimate": 0.947,
-        "ci_low": 0.881,
-        "ci_high": 0.969
+        "estimate": 0.937,
+        "ci_low": 0.851,
+        "ci_high": 0.959
       },
       "balanced_accuracy": {
-        "estimate": 0.938,
-        "ci_low": 0.858,
-        "ci_high": 0.968
+        "estimate": 0.937,
+        "ci_low": 0.872,
+        "ci_high": 0.961
       }
     },
     "bootstrap": {
@@ -416,7 +416,7 @@
       "seed": 20261016,
       "level": 0.95
     },
-    "average_precision": 0.971,
+    "average_precision": 0.973,
     "baselines": {
       "majority_class": {
         "precision": 0.0,
@@ -444,15 +444,15 @@
           "documents": 471,
           "conspiracy": 140,
           "websites": 20,
-          "precision": 0.955,
-          "recall": 0.9,
+          "precision": 0.962,
+          "recall": 0.893,
           "f1": 0.926,
           "macro_f1": 0.948,
-          "balanced_accuracy": 0.941,
-          "f1_ci_doc_low": 0.894,
+          "balanced_accuracy": 0.939,
+          "f1_ci_doc_low": 0.892,
           "f1_ci_doc_high": 0.957,
-          "f1_ci_site_low": 0.784,
-          "f1_ci_site_high": 0.958
+          "f1_ci_site_low": 0.791,
+          "f1_ci_site_high": 0.957
         },
         {
           "setting": "B: all-docs model, filtered validation docs (like-for-like)",
@@ -462,14 +462,14 @@
           "conspiracy": 128,
           "websites": 19,
           "precision": 0.959,
-          "recall": 0.922,
-          "f1": 0.94,
-          "macro_f1": 0.956,
-          "balanced_accuracy": 0.952,
-          "f1_ci_doc_low": 0.908,
-          "f1_ci_doc_high": 0.968,
+          "recall": 0.914,
+          "f1": 0.936,
+          "macro_f1": 0.953,
+          "balanced_accuracy": 0.948,
+          "f1_ci_doc_low": 0.903,
+          "f1_ci_doc_high": 0.964,
           "f1_ci_site_low": 0.815,
-          "f1_ci_site_high": 0.97
+          "f1_ci_site_high": 0.965
         },
         {
           "setting": "C: filtered model, filtered validation docs",
@@ -478,92 +478,25 @@
           "documents": 398,
           "conspiracy": 128,
           "websites": 19,
-          "precision": 0.966,
-          "recall": 0.891,
-          "f1": 0.927,
-          "macro_f1": 0.947,
-          "balanced_accuracy": 0.938,
-          "f1_ci_doc_low": 0.891,
-          "f1_ci_doc_high": 0.959,
-          "f1_ci_site_low": 0.796,
-          "f1_ci_site_high": 0.963
+          "precision": 0.914,
+          "recall": 0.914,
+          "f1": 0.914,
+          "macro_f1": 0.937,
+          "balanced_accuracy": 0.937,
+          "f1_ci_doc_low": 0.877,
+          "f1_ci_doc_high": 0.946,
+          "f1_ci_site_low": 0.742,
+          "f1_ci_site_high": 0.957
         }
       ],
-      "f1_change_c_minus_b": -0.013,
-      "f1_change_c_minus_a": 0.0,
+      "f1_change_c_minus_b": -0.022,
+      "f1_change_c_minus_a": -0.012,
       "all_docs_model_on_removed_validation_docs": {
         "documents": 73,
         "conspiracy": 12,
-        "accuracy": 0.932,
-        "predicted_conspiracy": 9
+        "accuracy": 0.945,
+        "predicted_conspiracy": 8
       }
-    },
-    "test": {
-      "model_id": "lr_words",
-      "config_hash": "4c7ae4b64bb07dc1",
-      "n_docs": 423,
-      "confusion": {
-        "tp": 44,
-        "fn": 54,
-        "fp": 15,
-        "tn": 310
-      },
-      "metrics_documents": {
-        "precision": {
-          "estimate": 0.7458,
-          "ci_low": 0.6304,
-          "ci_high": 0.8508
-        },
-        "recall": {
-          "estimate": 0.449,
-          "ci_low": 0.35,
-          "ci_high": 0.5462
-        },
-        "f1": {
-          "estimate": 0.5605,
-          "ci_low": 0.464,
-          "ci_high": 0.6474
-        },
-        "macro_f1": {
-          "estimate": 0.7302,
-          "ci_low": 0.674,
-          "ci_high": 0.7814
-        },
-        "balanced_accuracy": {
-          "estimate": 0.7014,
-          "ci_low": 0.652,
-          "ci_high": 0.7515
-        }
-      },
-      "metrics_websites": {
-        "precision": {
-          "estimate": 0.7458,
-          "ci_low": 0.3703,
-          "ci_high": 0.9455
-        },
-        "recall": {
-          "estimate": 0.449,
-          "ci_low": 0.2302,
-          "ci_high": 0.8571
-        },
-        "f1": {
-          "estimate": 0.5605,
-          "ci_low": 0.3183,
-          "ci_high": 0.7925
-        },
-        "macro_f1": {
-          "estimate": 0.7302,
-          "ci_low": 0.5807,
-          "ci_high": 0.8711
-        },
-        "balanced_accuracy": {
-          "estimate": 0.7014,
-          "ci_low": 0.5907,
-          "ci_high": 0.9034
-        }
-      },
-      "test_websites": 18,
-      "test_conspiracy": 98
     }
   },
   "ablation": {
