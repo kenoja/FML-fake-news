@@ -45,3 +45,52 @@ def test_a_missing_reference_fails_the_strict_build(tmp_path):
         sitegen.build(cycle=1, strict=True, out=tmp_path / "site", content=content)
     page = (tmp_path / "site" / "index.html").read_text()
     assert "could not be built" in page
+
+
+def four_part_demo(content):
+    (content / "sections").mkdir(parents=True, exist_ok=True)
+    (content / "sections" / "99-glossary.md").write_text(
+        "---\ntitle: Glossary\n---\n### F1 score\nAlso: F1\nOne number that combines precision and recall. More.\n\n"
+        "### Precision\nOf the articles called conspiracy, the share that really are.\n")
+    write_section(content, "## Explained simply\nWe use the F1 score here, and F1 again.\n`F1` in code stays.\n"
+                           "## The code\n<!-- cell: src/fml/data.py#load_corpus -->\n"
+                           "## Report\nOur F1 score was good.\n"
+                           "## Check yourself\nQ: What does precision measure?\nA: The share of correct alarms.\n")
+    (content / "references.md").write_text("Miani, A. et al. (2022). LOCO.")
+
+
+def test_report_is_assembled_from_report_parts_only(tmp_path):
+    # Why: the report must say exactly what the site's report boxes say, and nothing from the
+    # teaching text, so teammates review the real report while they learn.
+    content = tmp_path / "content"
+    four_part_demo(content)
+    report = tmp_path / "report.md"
+    sitegen.build(cycle=2, strict=True, out=tmp_path / "site", content=content, report_out=report)
+    text = report.read_text()
+    assert "## Demo\n\nOur F1 score was good." in text and "## References" in text
+    assert "We use the F1 score" not in text and "precision measure" not in text and "load_corpus" not in text
+    assert sitegen.report_text(content).split("\n", 1)[1] in text  # gate sees the same words
+
+
+def test_glossary_terms_are_linked_once_and_never_inside_code(tmp_path):
+    # Why: non-technical readers must be able to jump to a definition, but links inside code would break it.
+    content = tmp_path / "content"
+    four_part_demo(content)
+    sitegen.build(cycle=2, strict=True, out=tmp_path / "site", content=content, report_out=tmp_path / "r.md")
+    page = (tmp_path / "site" / "index.html").read_text()
+    demo = page.split('id="01-demo"')[1].split('id="99-glossary"')[0]
+    explained = demo.split("part-explained")[1].split("part-code")[0]
+    assert explained.count('class="gl" href="#g-f1-score"') == 1          # first use only
+    assert '<code>F1</code>' in explained                                   # code untouched
+    assert 'title="One number that combines precision and recall."' in explained
+    assert 'id="g-f1-score"' in page and 'id="g-precision"' in page
+
+
+def test_check_yourself_answers_are_hidden_until_clicked(tmp_path):
+    # Why: the questions are for self-assessment; showing the answer next to the question defeats them.
+    content = tmp_path / "content"
+    four_part_demo(content)
+    sitegen.build(cycle=2, strict=True, out=tmp_path / "site", content=content, report_out=tmp_path / "r.md")
+    page = (tmp_path / "site" / "index.html").read_text()
+    assert re.search(r'<details class="check"><summary>What does <a [^>]+>precision</a> measure\?</summary>'
+                     r'<p>The share of correct alarms.</p></details>', page)

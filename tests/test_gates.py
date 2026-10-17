@@ -49,13 +49,34 @@ def test_private_terms_and_emails_are_caught(tmp_path, monkeypatch):
 
 
 def test_sections_without_required_parts_fail(tmp_path, monkeypatch):
-    # Teammates rely on every section having the same parts (code, explanation, pitfalls, infra).
+    # Teammates rely on every section having the same four parts, short explanations and self-checks.
     monkeypatch.setattr(tools, "REPO", tmp_path)
     sec = tmp_path / "content" / "sections"
     sec.mkdir(parents=True)
-    (sec / "03-split-by-website.md").write_text("## Goal and hypothesis\n## Explanation\n")
-    fails = tools.gate_sections()
-    assert any("missing headings" in f for f in fails) and any("no code cell" in f for f in fails)
+    good = ("## Explained simply\nshort\n## The code\n<!-- cell: a.py#f -->\n## Report\ntext\n"
+            "## Check yourself\nQ: one?\nA: yes\nQ: two?\nA: yes\n")
+    (sec / "03-split-by-website.md").write_text(good)
+    (sec / "99-glossary.md").write_text("### Term\nmeaning\n")
+    assert tools.gate_sections() == []
+    (sec / "03-split-by-website.md").write_text("## Explained simply\n" + "word " * 500 + "\n## Report\nx\n"
+                                               "## Check yourself\nQ: only one?\n")
+    fails = " | ".join(tools.gate_sections())
+    assert "missing headings: ## The code" in fails and "no code cell" in fails
+    assert "500 words" in fails and "1 question" in fails
+
+
+def test_report_length_counts_only_the_report_parts(tmp_path, monkeypatch):
+    # The course limit applies to the report; teaching text on the site must not count toward it.
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "project.yaml").write_text((tools.REPO / "config" / "project.yaml").read_text())
+    monkeypatch.setattr(tools, "REPO", tmp_path)
+    sec = tmp_path / "content" / "sections"
+    sec.mkdir(parents=True)
+    (sec / "01-a.md").write_text("---\ntitle: A\n---\n## Explained simply\n" + "teach " * 4000 +
+                                 "\n## Report\n" + "report " * 3500 + "\n")
+    assert tools.gate_report_length() == []
+    (sec / "02-b.md").write_text("---\ntitle: B\n---\n## Report\n" + "more " * 2000 + "\n")
+    assert "words" in tools.gate_report_length()[0]
 
 
 def test_copied_article_text_is_detected(tmp_path, monkeypatch):

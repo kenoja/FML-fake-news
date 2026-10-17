@@ -1,45 +1,51 @@
 # The "10/10" definition. The reviewer scores every criterion 0-10 and must cite evidence
 # (file path, section slug or number). Done = every criterion at target_score AND all hard gates pass.
-# Sources: the assignment brief (what the project must make clear; report 3,000-5,000 words;
-# document AI use) and the course feedback in requirements/cycle-01.md.
+# Sources: the assignment brief (report 3,000-5,000 words; document AI use), the course feedback in
+# requirements/cycle-01.md, and the owner's feedback in requirements/cycle-02.md.
+# Audience: five teammates with NO technical background, in a 2.5-ECTS fundamentals course.
+# Items the requirements explicitly hand to the team (the 40-article human check, confirming the
+# licence) count as done once they are prepared and recorded in docs/decisions.md.
 
 criteria:
   - id: question
     name: Question and hypotheses
-    check: The research questions are clear and feasible; every section states the hypothesis or goal it tests.
+    check: The research question and hypotheses are clear to a reader without machine-learning background, at academic level but high-level in content; hypotheses are numbered H1, H2, ... with no gaps, and each one is answered in the results and conclusion.
   - id: resources
     name: Data, models and tools described
-    check: LOCO, the label definition (website-based), the 9/11 subset, the off-topic filter, the LLM, the libraries and the licence status are described accurately.
+    check: LOCO, the website-based labels, the 9/11 subset, the cleaning (off-topic and near-duplicate removal, with the reason), the LLM and the libraries are described accurately; the licence status is stated with the safe default.
   - id: approach
     name: Approach, including what we did not do
-    check: The pipeline is explained step by step, including choices made and alternatives rejected (e.g. no fine-tuning, no multi-model benchmark, no emotion features) with reasons.
+    check: The four analyses (word counts, TF-IDF, TF-IDF with features, LLM) are explained step by step in plain words, with the design choices and the alternatives we did not take (no fine-tuning, no emotion features, ...) and why.
   - id: evaluation
-    name: Sound evaluation
-    check: One website-grouped split used everywhere; TF-IDF/vocabulary fitted on training data only; test set used once per model; baselines; confidence intervals; McNemar test.
+    name: Sound, simple evaluation
+    check: One website-grouped split everywhere; everything learned from training data only; settings chosen on validation; every final model scored on the test set exactly once in the final run (one honest sentence says the test set was used during development); only confusion matrix, precision, recall, F1, a 95% bootstrap confidence interval and McNemar tests for the planned pairs.
   - id: results
     name: Results shown correctly
-    check: Figures and tables exist, are readable, and every number in text, site and report matches results/*.json exactly.
+    check: All runs are done before any comparison; all four models' test results appear together in one section; figures and tables are readable; every number in the site and report matches results/*.json exactly.
   - id: interpretation
     name: Interpretation and limitations
-    check: Label-vs-content issue, label noise, number of websites, off-topic documents, LLM prior knowledge, lexicon weaknesses are discussed honestly.
+    check: Limitations of the study itself (labels describe websites not texts, few websites, LLM prior knowledge, lexicon limits) are discussed honestly; there is nothing about the agent's own process or failures.
   - id: features
     name: Feature engineering answered
-    check: The ablation answers "do the extra features help?" per group, with literature-based reasons for each group and an honest verdict.
+    check: Each feature group is explained with its reason from the literature, compared simply on validation, and the question "do the extra features help?" gets a clear verdict.
   - id: errors
     name: Error analysis
-    check: Real disagreement examples (short excerpts only), stance coding with human verification of a sample, and a clear split between model errors and label problems.
+    check: Real disagreement examples (short excerpts only), a clear split between model errors and label problems, and the 40-article human check sheet prepared for the team.
   - id: ai_use
     name: AI-use documentation
-    check: docs/ai-log.md and the report state what the AI produced, what was checked or changed (by gates, reviewer and team), and what was learned.
+    check: The AI-use section and docs/ai-log.md state factually what the AI produced, what was checked or changed, and what was learned, without a diary of failed runs.
   - id: teaching
-    name: Teaching quality of the site
-    check: Every section has goal/hypothesis, real code cells, outputs, plain-language explanation, "what could go wrong" and technical infrastructure; every open team question in the requirements is answered where it belongs.
+    name: Teaching quality for non-technical readers
+    check: Every section follows the four-part format; "Explained simply" stands alone, uses short sentences and everyday examples, explains design choices and why, and stays under the word limit; every technical term is in the glossary (plain words, an example) and linked; "Check yourself" questions test understanding, not memory; every open team question is answered.
+  - id: code_readability
+    name: Code a beginner can read
+    check: Code shown in cells uses short functions, plain names, short inline comments in plain English and no long docstrings; analyses that were dropped are removed from the code, not left unused.
   - id: reproducibility
     name: Reproducibility
-    check: "`fml run-all` reproduces every number from the data repo; dependencies pinned in pyproject; seeds fixed; README explains how."
+    check: "`fml run-all` reproduces every number from the data repo in under 8 minutes, twice in a row with identical results; dependencies pinned; seeds fixed; README explains how."
   - id: report
     name: Report
-    check: reports/report.md is 3,000-5,000 words and follows the assignment's six points (goal, resources, approach, evaluation, findings, interpretation/limitations) plus AI use.
+    check: The report assembled from the "## Report" parts is 3,000-5,000 words, reads as one coherent report on its own, and covers the assignment's points (goal, resources, approach, evaluation, findings, interpretation/limitations) plus AI use.
   - id: privacy
     name: Privacy and data protection
     check: No personal data, institution, course or team identifiers; no full article texts; excerpts within limits.
