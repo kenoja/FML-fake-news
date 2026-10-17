@@ -119,8 +119,10 @@ def implement(state: AgentState) -> dict:
 
 def run_pipeline(state: AgentState) -> dict:
     """Tests and the full pipeline. Pure code: if code can answer, code answers."""
-    t_code, t_out = tools.run_cmd(["python", "-m", "pytest", "-q", "-x"], timeout_s=1200)
-    p_code, p_out = tools.run_cmd(["python", "-m", "fml.cli", "run-all"], timeout_s=1800)
+    # Both together must fit inside limits.task_timeout_minutes (see LONG_NODES in agent.py).
+    budget = _limits()["task_timeout_minutes"] * 60
+    t_code, t_out = tools.run_cmd(["python", "-m", "pytest", "-q", "-x"], timeout_s=int(budget * 0.4))
+    p_code, p_out = tools.run_cmd(["python", "-m", "fml.cli", "run-all"], timeout_s=int(budget * 0.6))
     log = f"$ pytest -q -x (exit {t_code})\n{t_out[-3000:]}\n\n$ fml run-all (exit {p_code})\n{p_out[-3000:]}"
     return {"pipeline_log": log, "gate_failures": tools.run_gates(t_code == 0, p_code == 0),
             **_event("run_pipeline", f"pytest exit {t_code}, run-all exit {p_code}")}

@@ -70,6 +70,21 @@ def count_run(cycle: int) -> int:
     return mem["runs"][key]
 
 
+def count_timeout() -> int:
+    """Consecutive step timeouts (reset whenever a step finishes). Returns the new count."""
+    mem = load_memory()
+    mem["timeouts"] = mem.get("timeouts", 0) + 1
+    save_memory(mem)
+    return mem["timeouts"]
+
+
+def reset_timeouts() -> None:
+    mem = load_memory()
+    if mem.get("timeouts"):
+        mem["timeouts"] = 0
+        save_memory(mem)
+
+
 def record_cycle(cycle: int, **fields) -> None:
     mem = load_memory()
     mem["cycles"].setdefault(f"{cycle:02d}", {}).update(fields)
