@@ -25,9 +25,11 @@ Produce an ordered list of at most $max_tasks tasks that, once all done, would m
 criterion reach 10 and every hard gate pass. Rules for the tasks:
 - Each task is self-contained: another session with no memory of this one must be able to do it
   from `instructions` alone. Name files, functions, numbers and acceptance checks concretely.
-- Order by dependency: data loading -> split -> words-only baseline (all documents) -> off-topic filter
-  and its explanation -> feature groups -> ablation -> LLM pipeline (validation, then one test run) ->
-  comparison and statistics -> error analysis -> site sections -> report -> AI-use log.
+- Order by dependency: data loading and cleaning (off-topic and near-duplicate removal) -> split ->
+  the four analyses on validation (word counts, TF-IDF, TF-IDF with features, LLM) -> one final run
+  that scores every final model on test once -> comparison -> error analysis -> site sections ->
+  glossary -> AI-use log. The report is not a separate file to write: it is assembled from the
+  sections' "## Report" parts.
   Skip what already exists and is correct; say so in `notes`.
 - A task touches one coherent piece (one module + its tests, or one section, or one report chapter)
   and must be doable in about 10 minutes of focused work. Split anything bigger (e.g. one feature

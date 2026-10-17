@@ -180,8 +180,9 @@ def open_pull_request(branch: str, title: str, body: str) -> str:
 # Hard gates (deterministic). Each returns a list of human-readable failures.
 # --------------------------------------------------------------------------------------
 
-REQUIRED_HEADINGS = ["## Goal and hypothesis", "## Explanation", "## What could go wrong",
-                     "## Technical infrastructure"]
+REQUIRED_HEADINGS = ["## Explained simply", "## The code", "## Report", "## Check yourself"]
+EXPLAINED_MAX_WORDS = 450   # teammates read every section; long explanations get skipped
+MIN_QUESTIONS = 2
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 KEY_RE = re.compile(r"sk-ant-[A-Za-z0-9_-]{10,}")
 PUBLIC_DIRS = ["content", "results", "reports", "docs", "requirements", "site", "src", "tests", "README.md"]
@@ -199,18 +200,33 @@ def tracked_text_files() -> list[Path]:
     return files
 
 
+def _part(text: str, heading: str) -> str:
+    m = re.search(rf"^{re.escape(heading)}\s*$(.*?)(?=^## |\Z)", text, re.M | re.S)
+    return m.group(1) if m else ""
+
+
 def gate_sections() -> list[str]:
+    """Every content section has the same four parts, so teammates always know where to look."""
     fails = []
     sections = sorted((REPO / "content" / "sections").glob("*.md"))
     if not sections:
         return ["content/sections/ has no section files"]
     for s in sections:
+        if s.stem.startswith(("00-", "99-")):  # how-to-use page and glossary have their own shape
+            continue
         text = s.read_text(encoding="utf-8")
-        missing = [h for h in REQUIRED_HEADINGS if h not in text]
+        name = s.relative_to(REPO)
+        missing = [h for h in REQUIRED_HEADINGS if not re.search(rf"^{re.escape(h)}\s*$", text, re.M)]
         if missing:
-            fails.append(f"{s.relative_to(REPO)} is missing headings: {', '.join(missing)}")
-        if "<!-- cell:" not in text and s.stem not in {"00-overview", "99-glossary"}:
-            fails.append(f"{s.relative_to(REPO)} has no code cell (<!-- cell: path#symbol -->)")
+            fails.append(f"{name} is missing headings: {', '.join(missing)}")
+        if "<!-- cell:" not in _part(text, "## The code"):
+            fails.append(f"{name} has no code cell under '## The code' (<!-- cell: path#symbol -->)")
+        n = len(re.findall(r"\b\w[\w'-]*\b", re.sub(r"<!--.*?-->", " ", _part(text, "## Explained simply"), flags=re.S)))
+        if n > EXPLAINED_MAX_WORDS:
+            fails.append(f"{name}: 'Explained simply' has {n} words; keep it at or below {EXPLAINED_MAX_WORDS}")
+        q = len(re.findall(r"^Q:", _part(text, "## Check yourself"), re.M))
+        if q < MIN_QUESTIONS:
+            fails.append(f"{name}: 'Check yourself' has {q} question(s) (lines starting 'Q:'); need {MIN_QUESTIONS}")
     return fails
 
 
@@ -257,15 +273,21 @@ def gate_test_access() -> list[str]:
 
 
 def gate_report_length() -> list[str]:
+    """Counted on the report as assembled from the sections' '## Report' parts (the real report)."""
+    from sitegen.build import report_text
     cfg = load_config("project")["report"]
-    path = REPO / cfg["path"]
-    if not path.is_file():
+    text = report_text(REPO / "content")
+    if not text:
+        path = REPO / cfg["path"]
+        text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    if not text:
         return []
-    text = re.sub(r"```.*?```", " ", path.read_text(encoding="utf-8"), flags=re.S)
+    text = re.sub(r"```.*?```", " ", text, flags=re.S)
+    text = re.sub(r"^\|.*\|\s*$", " ", text, flags=re.M)        # tables are not prose
     body = re.split(r"\n#+\s*References\b", text, flags=re.I)[0]
     n = len(re.findall(r"\b\w[\w'-]*\b", body))
     if not cfg["min_words"] <= n <= cfg["max_words"]:
-        return [f"report body has {n} words; target {cfg['min_words']}-{cfg['max_words']}"]
+        return [f"report text (all '## Report' parts) has {n} words; target {cfg['min_words']}-{cfg['max_words']}"]
     return []
 
 

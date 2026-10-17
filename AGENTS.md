@@ -5,10 +5,14 @@ Humans: this is also the shortest accurate description of how the project is put
 
 ## Mission
 
-Compare a logistic regression we train ourselves with one cheap LLM (Claude Haiku 5.5, zero-shot) on
-classifying **full** 9/11 articles from the LOCO corpus as coming from conspiracy-oriented or mainstream
-websites. Find out where each approach works and fails, whether hand-made features help the logistic
-regression, and explain every step so that five teammates with mixed backgrounds understand it.
+Classify **full** 9/11 articles from the LOCO corpus as coming from conspiracy-oriented or mainstream
+websites, in four ways: logistic regression on (1) word counts, (2) TF-IDF weights, (3) TF-IDF plus
+engineered features, and (4) one cheap LLM (Claude Haiku 5.5, zero-shot). Find out where each works and
+fails and whether the hand-made features help.
+
+**Audience.** Five teammates with no technical background, in a 2.5-ECTS fundamentals course. They read
+the site to learn the concepts, check their own understanding and criticise the text. Plain words beat
+technical completeness everywhere: keep the analysis simple, and explain concepts rather than details.
 
 ## Sources of truth, in order
 
@@ -38,15 +42,19 @@ your choice in `docs/decisions.md`. If you cannot resolve something from the fil
 - **Test set is locked.** Only `fml evaluate-final <model_id>` may score a model on test. It appends
   `{"model_id", "config_hash", "at", "n_docs"}` to `results/test_access_log.jsonl`. The same model id
   may never be scored on test with a different configuration.
-- **The LLM classifier**: model from `config/project.yaml` (`claude-haiku-5-5`), temperature 0, the
-  API key from the env var `LLM_CLASSIFIER_API_KEY` (never `ANTHROPIC_API_KEY`). It answers the **source
+- **The LLM classifier**: model from `config/project.yaml` (`claude-haiku-5-5`), its default sampling
+  settings (the model rejects a temperature setting), an output limit large enough that answers are
+  never cut off, the API key from the env var `LLM_CLASSIFIER_API_KEY` (never `ANTHROPIC_API_KEY`). It answers the **source
   question** (conspiracy-oriented vs mainstream website). At most 3 prompt variants, all tried on
   validation only, all reported. Responses cached in `results/llm_cache.jsonl` keyed by doc_id and
   prompt hash, so `fml run-all` reruns without new API calls. No key and no cache entry → fail loudly.
-- **Off-topic filter, in this order.** The first words-only model runs on all 3,146 documents.
-  Then documents not matching `data.topic_filter_pattern` are removed (expected 2,608 remain:
-  777 conspiracy, 1,831 mainstream), and a section shows the before/after numbers and explains why.
-  All later experiments use the filtered set and the same split.
+- **Cleaning comes first.** Before any model runs, cleaning removes off-topic documents (not matching
+  `data.topic_filter_pattern`: 3,146 → 2,608, i.e. 777 conspiracy, 1,831 mainstream) and near-duplicate
+  articles. Section `02-data-and-cleaning` shows the before/after numbers and explains why. Every model
+  uses the cleaned set and the same split.
+- **All runs first, then compare.** Settings are chosen on validation for all four analyses; then one
+  final run scores every final model on test exactly once (new model ids, see the test-set rule).
+  Comparisons and test numbers appear only in `08-results` and later.
 - **Protected paths.** Do not edit `agent/`, `sitegen/`, `scripts/`, `.github/`, `config/rubric.yaml`,
   `config/agent.yaml` or `requirements/`. They define how you are run and graded.
 - **Fail loud.** "Done" is wrong if anything was skipped; "tests pass" is wrong if any were skipped.
@@ -58,10 +66,10 @@ your choice in `docs/decisions.md`. If you cannot resolve something from the fil
 |---|---|
 | Reproduce everything | `fml run-all` → writes `results/` (calls `fml.pipeline.run_all()`) |
 | Final test scoring | `fml evaluate-final <model_id>` (calls `fml.pipeline.evaluate_final`) |
-| All numbers | `results/metrics.json` (top-level keys: `data`, `split`, `baseline_all_docs`, `topic_filter`, `baseline`, `ablation`, `llm`, `comparison`, `errors`), plus CSV tables in `results/tables/` |
+| All numbers | `results/metrics.json` (top-level keys: `data`, `cleaning`, `split`, `word_counts`, `tfidf`, `tfidf_features`, `llm`, `comparison`, `errors`), plus CSV tables in `results/tables/` |
 | Figures | `results/figures/*.png`, matplotlib, 150 dpi; conspiracy `#8c3b76`, mainstream `#2b7a6a` everywhere |
 | Notebook sections | `content/sections/NN-slug.md` (format below) |
-| Report | `reports/report.md`, 3,000–5,000 words before References |
+| Report | `reports/report.md` is **assembled automatically** by `python -m sitegen build` from every section's `## Report` part plus `content/references.md`. Never edit it by hand. 3,000–5,000 words before References (gate). |
 | AI-use log | `docs/ai-log.md` (the agent appends after every cycle; humans add what they checked) |
 | Decisions | `docs/decisions.md` (choices, conflicts, open questions) |
 
@@ -81,44 +89,63 @@ minutes** on a 2-CPU machine, and the full test suite in under 3 minutes.
 
 ## Section format
 
-Planned sections (create what is missing, keep slugs stable because feedback threads use them):
-`00-overview` (exists), `01-research-questions`, `02-data-and-labels`, `03-split-by-website`,
-`04-tfidf-and-logistic-regression`, `05-first-run-all-documents`, `06-off-topic-filter`,
-`07-feature-engineering`, `08-do-the-features-help`, `09-llm-classifier`, `10-head-to-head`,
-`11-error-analysis`, `12-limitations`, `13-how-we-used-ai`, `99-glossary`.
+Sections, in this order (slugs are fixed because feedback threads use them; delete section files
+whose slug is not in this list):
+`00-how-to-use`, `01-question-and-hypotheses`, `02-data-and-cleaning`, `03-split-by-website`,
+`04-word-counts`, `05-tf-idf`, `06-feature-engineering`, `07-llm`, `08-results`,
+`09-where-they-fail`, `10-limitations`, `11-conclusion`, `12-how-we-used-ai`, `99-glossary`.
 
-Each file:
+Every section except `00-how-to-use` and `99-glossary` has exactly these four parts, in this order:
 
 ```markdown
 ---
 title: Splitting by website
-part: Evaluation                 # which part of the assignment this explains
-hypothesis: One sentence: what we expected before running it.
+part: Evaluation                 # which part of the assignment this belongs to
+hypothesis: (optional) one plain sentence: what we expected
 ---
-## Goal and hypothesis
-## Explanation                    (plain language; define every technical term on first use)
-## What could go wrong
-## Technical infrastructure       (files, functions, commands)
-```
+## Explained simply
+Plain-language explanation of the ideas in this step and of every design choice we made (and why),
+with an everyday example. It must stand on its own: someone who reads only this part understands the
+step. At most 450 words (gate). No numbers that need the code to understand.
 
-Put code and outputs between the text where they belong, notebook-style:
-
-```markdown
+## The code
+Short sentences between cells that say what each cell does, then the cells:
 <!-- cell: src/fml/split.py#make_split -->                  real code, by function/class name
-<!-- cell: src/fml/features/style.py:10-42 -->              or by line range
 <!-- output: results/figures/split_sizes.png | Documents per split and label -->
 <!-- output: results/tables/split_summary.csv -->
-<!-- output: results/metrics.json#baseline.validation -->
+<!-- output: results/metrics.json#split.sizes -->
+
+## Report
+The text of the final report for this part, written as report prose (academic, concise). It may
+contain output markers for figures and tables (flat JSON only), never code cells. All report parts
+together are the whole report: 3,000–5,000 words, coherent when read without the rest of the site.
+
+## Check yourself
+Q: A question that tests understanding, not memory?
+A: The answer, in one to three sentences.
+(at least two pairs; the answers are hidden until clicked)
 ```
 
-Every section except `00-overview` and `99-glossary` needs at least one code cell. Write for a
-teammate who knows little ML: short sentences, concrete examples, define TF-IDF, F1, precision,
-recall, regularisation, grouped split, confidence interval, McNemar test the first time they appear,
-and answer every **Unclear** item from the requirements in the section it is about.
+**Glossary (`99-glossary`).** One entry per technical term, as `### Term`, an optional line
+`Also: other name, other name`, then a definition in plain words with an everyday example (at most 80
+words). The site links the first use of each term in every section to its entry automatically, so
+every technical word used anywhere must have an entry.
+
+**What stays off the site.** Plans, task lists, decision logs, "Member __ confirm" lines, agent errors
+and retries belong in `docs/` only. The site and the report describe the study, not how the agent
+built it. The test set was used during development: `10-limitations` says so in one honest sentence
+and states that every final model was chosen on validation and scored on test once.
+
+**Statistics, and nothing more.** Confusion matrix, precision, recall, F1 (conspiracy class), one 95%
+bootstrap confidence interval per number, and McNemar tests for three pairs (word counts vs TF-IDF,
+TF-IDF vs TF-IDF with features, best logistic regression vs LLM). Define each in the glossary.
 
 ## Code conventions
 
-- Python ≥ 3.11, type hints, small functions; docstrings say *why*, not only what.
+- Python ≥ 3.11. **Write for a beginner who reads the code on the site**: short functions, plain
+  variable names, one step per line, short inline comments in plain English (`# keep only training
+  articles`). At most a one-line docstring; no long comment blocks. Remove code for analyses that are no
+  longer reported instead of leaving it unused.
 - pandas + scikit-learn; `random_state` from config everywhere.
 - Tests in `tests/` encode why a rule matters and must fail when the rule breaks (e.g. a test that
   fits on all data must make the leakage test fail). Mark tests that need the data repo with

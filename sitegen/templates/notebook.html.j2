@@ -13,8 +13,9 @@
   </nav>
   <main>
     <header class="masthead">
-      <h1>Conspiracy or mainstream? Two ways to read 9/11 articles</h1>
-      <p>A logistic regression we built ourselves against an LLM that was never trained on our data, both reading the same full articles. This page walks through every step with the code that ran, what we expected and what came out.</p>
+      <h1>Conspiracy or mainstream? Four ways to read 9/11 articles</h1>
+      <p>Can a computer tell whether an article about 9/11 comes from a conspiracy website or a mainstream news site? We try three versions of a simple model we train ourselves, and one large language model that was never trained on our data. All four read the same full articles.</p>
+      <p>Every section has the same four parts: <strong>Explained simply</strong> (the ideas, no background needed), <strong>The code</strong> (what actually ran, with its output), <strong>Report text</strong> (exactly what goes into our report) and <strong>Check yourself</strong> (questions with hidden answers). Underlined words link to the glossary.</p>
       <p>Cycle {{ cycle }}. Built {{ built }}. After each section, tell the team what was unclear or what you would change.</p>
     </header>
 
@@ -22,7 +23,7 @@
     <section class="section" id="{{ s.slug }}" aria-labelledby="{{ s.slug }}-title">
       <h2 class="section-title" id="{{ s.slug }}-title">{{ s.title }}</h2>
       {% if s.part %}<p class="part">Assignment part: {{ s.part }}</p>{% endif %}
-      {% if s.hypothesis %}<p class="hypothesis">{{ s.hypothesis }}</p>{% endif %}
+      {% if s.hypothesis %}<p class="hypothesis"><strong>What we expected:</strong> {{ s.hypothesis }}</p>{% endif %}
       {{ s.html | safe }}
       <div class="feedback" id="{{ s.slug }}-feedback">
         <h3>Your feedback on “{{ s.title }}”</h3>

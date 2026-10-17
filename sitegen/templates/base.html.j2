@@ -74,6 +74,18 @@ th, td { padding: .3rem .7rem; border-bottom: 1px solid var(--rule); text-align:
 td { font-variant-numeric: tabular-nums; }
 .note { color: var(--muted); font-size: .85rem; }
 
+.part { max-width: 46rem; margin: 1.6rem 0; }
+.part-label { font: 600 .78rem/1 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 .7rem !important; }
+.part-code { max-width: 58rem; }
+.part-report { background: var(--cell-out); border: 1px solid var(--rule); border-left: 4px solid var(--ink); border-radius: 4px; padding: 1.1rem 1.4rem; }
+.part-report .part-label::after { content: " — goes into the final report word for word"; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.part-report .cell { grid-template-columns: 1fr; } .part-report .cell .prompt { display: none; }
+.part-check details { border: 1px solid var(--rule); border-radius: 4px; margin: .5rem 0; padding: .55rem .9rem; background: var(--cell-out); }
+.part-check summary { cursor: pointer; font-weight: 600; }
+.part-check details[open] summary { margin-bottom: .4rem; }
+.part-check details p { margin: .3rem 0; }
+a.gl { color: inherit; text-decoration: underline dotted var(--link); text-decoration-thickness: 1.5px; }
+a.gl:hover { color: var(--link); }
 .feedback { max-width: 58rem; margin: 2.2rem 0 0 5.2rem; border: 1px solid var(--rule); border-radius: 6px; padding: 1.1rem 1.3rem; background: var(--cell-out); }
 .feedback h3 { margin: 0 0 .4rem; font-size: 1.05rem; }
 .feedback p { margin: .3rem 0; color: var(--muted); font-size: .95rem; }

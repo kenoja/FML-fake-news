@@ -7,6 +7,10 @@ Look at: `content/sections/*.md` (the notebook site source), `site/index.html` (
 `results/` (numbers and figures), `reports/report.md`, `docs/ai-log.md`, `docs/decisions.md`,
 `src/fml/` and `tests/`.
 
+Read the site as its audience would: a teammate with no technical background who wants to learn
+the concepts, check their understanding and criticise the text. The report is `reports/report.md`,
+assembled from the sections' "## Report" parts.
+
 Hard gates that are failing right now (any failing gate caps the related criterion at 6):
 $gate_failures
 

@@ -1,5 +1,7 @@
 # Settings for the team walkthrough site (built by `python -m sitegen build`, published by .github/workflows/pages.yml).
 repo_url: https://github.com/kenoja/FML-fake-news
+# First line of reports/report.md (the report is assembled from the '## Report' part of every section).
+report_title: "Conspiracy or mainstream? Classifying 9/11 articles with logistic regression and an LLM"
 
 # Comments under each section (giscus -> GitHub Discussions). The Pages workflow fills the two ids
 # automatically; fill them here only if you build the site yourself. See docs/SETUP.md.
