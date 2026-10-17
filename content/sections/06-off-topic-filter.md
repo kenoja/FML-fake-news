@@ -44,13 +44,13 @@ Hypothesis: (1) off-topic documents make the task artificially easy or noisy, so
 
 Three rows answer different questions:
 
-- **A** is the first run: the all-documents model on all 471 validation documents, F1 0.926 (website-level CI 0.784 to 0.958).
-- **C** is the filtered model on the 398 filtered validation documents, F1 0.927 (document CI 0.891 to 0.959, website CI 0.796 to 0.963). Precision 0.966, recall 0.891.
-- **B** is the like-for-like row: the *all-documents* model scored on exactly the same 398 documents as C, F1 0.940.
+- **A** is the first run: the all-documents model on all 471 validation documents, F1 0.926 (website-level CI 0.791 to 0.957).
+- **C** is the filtered model on the 398 filtered validation documents, F1 0.914 (document CI 0.877 to 0.946, website CI 0.742 to 0.957). Precision 0.914, recall 0.914.
+- **B** is the like-for-like row: the *all-documents* model scored on exactly the same 398 documents as C, F1 0.936.
 
-**A and C cannot be compared directly**, because their validation sets contain different documents; the equal-looking F1 values (0.926 and 0.927) are a coincidence of two different samples. The fair comparison is B against C: training on the filtered set gave F1 0.927 against 0.940, a difference of -0.013, far inside the intervals. We do not claim that filtering helps or hurts and we ran no significance test, because B and C are not independent samples of a stable effect on 19 websites. What can be said: the first-run score was not an artefact of off-topic documents. The all-documents model got 93.2% of the 73 removed validation documents right (12 of them conspiracy), about as good as on-topic documents (95.5% for C), so these documents were **not** noticeably easier.
+**A and C cannot be compared directly**, because their validation sets contain different documents. The fair comparison is B against C: training on the filtered set gave F1 0.914 against 0.936, a difference of -0.022, inside the intervals. We do not claim that filtering helps or hurts and we ran no significance test, because B and C are not independent samples of a stable effect on 19 websites. What can be said: the first-run score was not an artefact of off-topic documents. The all-documents model got 94.5% of the 73 removed validation documents right (12 of them conspiracy), about as good as on-topic documents (94.5% for C), so these documents were **not** noticeably easier.
 
-The selected regularisation strength is again the grid edge (C = 100), so as in the first run we note that the model prefers very weak regularisation.
+The filtered model selects C = 10 with balanced class weights on validation (the first run selected C = 100 without class weights, the grid edge), so the filtered model prefers somewhat stronger regularisation and counts the rarer conspiracy class more.
 
 ## What could go wrong
 

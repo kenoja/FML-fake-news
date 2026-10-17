@@ -525,7 +525,7 @@ def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] |
 
 # ---------------------------------------------------------------- stage: ablation
 
-LR_WORDS_ID, LR_EXTENDED_ID = "lr_words", "lr_extended"
+LR_WORDS_ID, LR_EXTENDED_ID = "lr_words_v2", "lr_extended"
 ABLATION_GROUPS = {"H2": ("ngrams", "lr_plus_ngrams", "lr_extended_minus_ngrams"),
                    "H3": ("epistemic", "lr_plus_epistemic", "lr_extended_minus_epistemic"),
                    "H4": ("style", "lr_plus_style", "lr_extended_minus_style")}

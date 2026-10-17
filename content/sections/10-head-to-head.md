@@ -10,7 +10,7 @@ Everything so far was tuned on **validation**. This section is the one place whe
 We compare four things on the same 423 test documents (numbers in `results/metrics.json`, key `comparison`):
 
 - **majority**: always answers "mainstream" (the most common class in training);
-- **lr_words**: logistic regression on word TF-IDF; this is also the "best LR" because validation did not show a clear gain for the extended features (`ablation.chosen_lr`);
+- **lr_words_v2**: logistic regression on word TF-IDF; this is also the "best LR" because validation did not show a clear gain for the extended features (`ablation.chosen_lr`);
 - **lr_extended**: the logistic regression with n-grams, epistemic and style features (reported, but not chosen);
 - **llm_haiku**: Claude Haiku 5.5 zero-shot, with the prompt chosen on validation, **pass 1** (the official one).
 
@@ -44,17 +44,17 @@ Roughly 95% agreement and a kappa near 0.89 mean the answers are mostly stable b
 
 <!-- output: results/figures/comparison_confusion.png | Confusion matrices on test: rows are the true website type -->
 
-**H1 verdict.** The majority baseline finds no conspiracy page, so its conspiracy F1 is 0. Both lr_words and llm_haiku are above it and the website-bootstrap interval of their F1 stays above 0 (`comparison.h1`: `site_ci_excludes_majority` is true for both). **H1 holds on test.** That is a low bar, however; macro-F1 and balanced accuracy show the real gap (majority 0.50 balanced accuracy).
+**H1 verdict.** The majority baseline finds no conspiracy page, so its conspiracy F1 is 0. Both lr_words_v2 and llm_haiku are above it and the website-bootstrap interval of their F1 stays above 0 (`comparison.h1`: `site_ci_excludes_majority` is true for both). **H1 holds on test.** That is a low bar, however; macro-F1 and balanced accuracy show the real gap (majority 0.50 balanced accuracy).
 
-**Who wins on which class.** The LLM has much higher precision (`winner_by_metric`: llm_haiku for precision, recall and F1) and only 2 false alarms, and it is also right on 99% of mainstream pages versus 95% for lr_words (`comparison.mainstream_accuracy`). Its recall on conspiracy pages (0.53) is only a little above lr_extended (0.52) and above lr_words (0.45). In short: the LLM is the more careful judge of mainstream pages and has the higher F1; the logistic regression's mistakes are mostly false alarms on mainstream pages (15 for lr_words, 26 for lr_extended) and misses on conspiracy pages. Neither finds even 60% of the conspiracy pages.
+**Who wins on which class.** The LLM has much higher precision (`winner_by_metric`: llm_haiku for precision, recall and F1) and only 2 false alarms, and it is also right on 99% of mainstream pages versus 93% for lr_words_v2 (`comparison.mainstream_accuracy`). Its recall on conspiracy pages (0.53) is only a little above lr_extended (0.52) and lr_words_v2 (0.51). In short: the LLM is the more careful judge of mainstream pages and has the higher F1; the logistic regression's mistakes are false alarms on mainstream pages (23 for lr_words_v2, 26 for lr_extended) and misses on conspiracy pages. No model finds even 60% of the conspiracy pages.
 
 ### Is the difference real?
 
 <!-- output: results/metrics.json#comparison.mcnemar -->
 
-*lr_words vs llm_haiku:* the LLM is right and the LR wrong on 28 documents, the other way round on 7 (McNemar p = 0.0005). The paired delta-F1 is +0.124; its document interval is 0.041 to 0.207 and its **website interval is 0.024 to 0.334**. By documents the LLM is clearly better; by websites the interval barely excludes 0 and is very wide, so the honest statement is "the LLM is probably better here, by an amount we cannot pin down".
+*lr_words_v2 vs llm_haiku:* the LLM is right and the LR wrong on 32 documents, the other way round on 9 (McNemar p = 0.0004). The paired delta-F1 is +0.0994; its document interval is 0.0235 to 0.1795 and its **website interval is -0.0166 to 0.3891**. By documents the LLM is clearly better; by websites the interval includes 0 and is very wide, so the honest statement is "the LLM is better on these documents, but with so few websites we cannot show that the difference would hold for other websites".
 
-*lr_words vs lr_extended:* 22 vs 18 discordant documents, p = 0.64, delta-F1 +0.022 with interval -0.131 to 0.091 across websites. No evidence that the hand-made features help, which agrees with the validation result in section 08.
+*lr_words_v2 vs lr_extended:* 19 vs 17 discordant documents, p = 0.8679, delta-F1 -0.0019 with interval -0.1146 to 0.0972 across websites. No evidence that the hand-made features help, which agrees with the validation result in section 08.
 
 ### Where do the models differ? Length, thresholds and websites
 
@@ -62,13 +62,13 @@ Roughly 95% agreement and a kappa near 0.89 mean the answers are mostly stable b
 
 The length table has only 27 and 32 documents in the two short buckets (5 and 7 conspiracy pages), so it shows no reliable length effect.
 
-<!-- output: results/figures/comparison_pr.png | Precision-recall curves on test for lr_words and the LLM confidence -->
+<!-- output: results/figures/comparison_pr.png | Precision-recall curves on test for lr_words_v2 and the LLM confidence -->
 
 The precision-recall figure ranks documents by the logistic regression's probability and by the LLM's stated confidence (conspiracy confidence if it answered "conspiracy", 1 - confidence otherwise; unparsable replies get 0). The LLM's confidence is not a calibrated probability and has few distinct values, so its curve is coarse. Average precision is in `comparison.average_precision`: the logistic regression's ranking is the slightly better one even though the LLM's hard decisions score higher F1.
 
 <!-- output: results/tables/per_website_test.csv -->
 
-The per-website table is the most important caution. The test split has only **6 conspiracy websites** (`test_conspiracy_websites`), and one of them (neonnettle.com, 44 pages) is the large majority of the misses for all three models: accuracy there is about 0.16 to 0.20 even for the LLM. One oye.news page counts as a whole website. A different website draw could move every number in the table, which is exactly what the wide website intervals say.
+The per-website table is the most important caution. The test split has only **6 conspiracy websites** (`test_conspiracy_websites`), and one of them (neonnettle.com, 44 pages) is the large majority of the misses for all three models: accuracy there is 0.2045 for both logistic regressions and 0.1591 for the LLM. One oye.news page counts as a whole website. A different website draw could move every number in the table, which is exactly what the wide website intervals say.
 
 ## What could go wrong
 

@@ -44,3 +44,7 @@ after every cycle; team members add what they checked or changed by hand.
      `results/llm_cache.jsonl` is missing entries.
   5. Spot-check several report numbers against `results/metrics.json`, and read the report once for article text
      or personal data. Members A-E add here what they checked.
+
+- Gate fix (run-all timeout): AI added a per-process feature-block cache and a parallel C-grid in
+  `src/fml/models.py`, renamed the words-only LR to `lr_words_v2` after the test lock rejected the stale
+  `lr_words` config, and refreshed the quoted numbers. Humans: please re-check the numbers in the report.

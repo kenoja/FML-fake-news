@@ -11,7 +11,7 @@ The labels say which **website** published an article, not what the article says
 
 ## Explanation
 
-**Disagreement sets.** For every test document we compare the best logistic regression (`lr_words`) and the LLM (Haiku, pass 1) with the true label:
+**Disagreement sets.** For every test document we compare the best logistic regression (`lr_words_v2`) and the LLM (Haiku, pass 1) with the true label:
 
 - `lr_only_wrong`: the LR is wrong, the LLM is right;
 - `llm_only_wrong`: the LLM is wrong, the LR is right (replies that could not be parsed count as "mainstream", so some of these are formatting failures);
@@ -28,7 +28,7 @@ A *false positive* is a mainstream article called conspiracy; a *false negative*
 - `reports_neutrally`: describes the claims or the debate without taking a side;
 - `no_claim`: makes and discusses no such claim.
 
-It also gave a justification of at most 25 words. We coded **all** 76 disagreement documents (the cap in `config/project.yaml` is 40 for the two smaller sets, and none exceeds it). Answers are cached in `results/stance_cache.jsonl` (document id, prompt hash and answer only, never article text), so reruns need no key. Without a key and without a complete cache the stage fails loudly.
+It also gave a justification of at most 25 words. We coded **all** 80 disagreement documents (the cap in `config/project.yaml` is 40 for the two smaller sets, and none exceeds it). Answers are cached in `results/stance_cache.jsonl` (document id, prompt hash and answer only, never article text), so reruns need no key. Without a key and without a complete cache the stage fails loudly.
 
 **The rule: "model wrong" or "label does not describe the text".** Stated before looking at results:
 
@@ -49,13 +49,13 @@ The last row is deliberately strict: a mainstream article that debunks theories 
 
 Read the `h6` block as `hit` out of `n` (with `share`):
 
-- **False negatives (conspiracy sites missed).** `fn_conspiracy_no_claim`: 50 of 59 coded documents (85%) contain no conspiracy claim at all according to Claude. Another 5 only report or reject. Only 4 endorse a claim and are really "missed" conspiracy content. Many of these pages are show announcements, politics or health news that merely mention 9/11. The label (conspiracy *website*) is true, but a text-only model has nothing to find.
-- **False positives (mainstream articles flagged).** `fp_mainstream_not_endorsing_but_discusses`: 7 of 15 (47%) discuss conspiracy claims, 3 of them to debunk them (20%) and 4 neutrally. Most others were classified `no_claim`, so the model flagged them for other reasons (topic words such as "Saudi", "FBI", "government").
-- Overall 56 of 74 coded errors (76%) are "label does not describe the text".
+- **False negatives (conspiracy sites missed).** `fn_conspiracy_no_claim`: 48 of 55 coded documents (87%) contain no conspiracy claim at all according to Claude. Another 5 only report or reject. Only 2 endorse a claim and are really "missed" conspiracy content. Many of these pages are show announcements, politics or health news that merely mention 9/11. The label (conspiracy *website*) is true, but a text-only model has nothing to find.
+- **False positives (mainstream articles flagged).** `fp_mainstream_not_endorsing_but_discusses`: 8 of 23 (35%) discuss conspiracy claims, 3 of them to debunk them (13%) and 5 neutrally. Most others were classified `no_claim`, so the model flagged them for other reasons (topic words such as "Saudi", "FBI", "government").
+- Overall 54 of 78 coded errors (69%) are "label does not describe the text".
 
-**Verdict on H6: supported for false negatives, only partly for false positives.** The false-negative half is strong (85% have no claim), but see the cautions below. For false positives, "many" debunk or discuss conspiracy theories (47%), yet fewer than half, and only 20% debunk; the majority of FP errors are plain model mistakes (14 of 16 by the rule). Because Claude's stance codes are unchecked, we call this provisional.
+**Verdict on H6: supported for false negatives, only partly for false positives.** The false-negative half is strong (87% have no claim), but see the cautions below. For false positives, a minority debunk or discuss conspiracy theories (35%), and only 13% debunk; the large majority of FP errors are plain model mistakes (22 of 24 by the rule). Because Claude's stance codes are unchecked, we call this provisional.
 
-The two models err differently. In `lr_only_wrong` the LR's false positives are mostly "model wrong" (12 of 14), while in `both_wrong` almost everything (39 of 41) is a conspiracy-site article without a conspiracy claim: neither approach can be expected to get these right from the text.
+The two models err differently. In `lr_only_wrong` the LR's false positives are mostly "model wrong" (20 of 22), while in `both_wrong` almost everything (37 of 39) is a conspiracy-site article without a conspiracy claim: neither approach can be expected to get these right from the text.
 
 ### Worked examples
 
@@ -67,7 +67,7 @@ The two models err differently. In `lr_only_wrong` the LR's false positives are 
 
 > Mysterious terrorist attacks prompt public panic, allowing a cynical government to trample on the constitution. Would that be Russia after the 1999 apartment block bombings [...]
 
-The LR's strongest conspiracy words are "official", "russia", "russian", "version", "story"; "theories" and "theorists" pull towards mainstream but not enough. The LLM answered correctly ("weighs both sides, scrutinizes conspiracy theories skeptically"). The LR reacts to the vocabulary of the topic, not to the article's stance. By the rule: **model wrong**.
+The LR's strongest conspiracy words are "official", "russia", "russian", "is", "story"; "theories" and "theorists" pull towards mainstream but not enough. The LLM answered correctly ("weighs both sides, scrutinizes conspiracy theories skeptically"). The LR reacts to the vocabulary of the topic, not to the article's stance. By the rule: **model wrong**.
 
 **2. Conspiracy site, no claim.** `C0051b` (neonnettle.com), LR-only error, stance `no_claim`:
 
@@ -75,7 +75,7 @@ The LR's strongest conspiracy words are "official", "russia", "russian", "versio
 
 The article is outrage news about a statue, not a theory about 9/11. The LR called it mainstream ("qaeda", "killed" pull that way); with no theory in the text there is little for a word model to find. The LLM called it conspiracy from tone ("sensationalist framing ... typical of alarm-driven outlets"), a judgement about the site's style that happened to match the label. By the rule: **label does not describe the text**.
 
-**3. Conspiracy article that endorses, missed by the LR.** `C01519` (conspiracydailyupdate.com), stance `endorses`. The words "cia", "demolition", "wtc", "controlled" push strongly towards conspiracy, but the LR still said mainstream. By the rule: **model wrong**; the LLM ("promotes fabricated claims of a CIA-run controlled demolition") was right.
+**3. Conspiracy article that endorses, missed by the LR.** `C0245a` (conspiracydailyupdate.com), stance `endorses`. The words "mossad", "israeli", "intelligence", "government" push towards conspiracy, but the LR still said mainstream. By the rule: **model wrong**; the LLM ("claims Mossad secretly ran the 9/11 hijackers ... classic cover-up narrative") was right.
 
 **4. Mainstream site that endorses.** `M1b4b7` (foxnews.com), stance `endorses`:
 

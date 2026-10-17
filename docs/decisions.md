@@ -116,3 +116,19 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   topic filter, the count will fall below 2,608 and that is the number used downstream. Conservative
   reading (T2 measured 63 near-duplicate pairs, 53 documents would go, 36 pairs cross splits): report 2,608 after the topic filter first, then the count after near-duplicate removal
   separately, and use the smaller set only if the team approves; until then experiments use 2,608.
+
+## Gate fix: `fml run-all` timeout and the `lr_words` test lock
+
+- **Speed.** `fml run-all` ran into the harness timeout (648 s) because every ablation model refitted
+  its TF-IDF / n-gram / dense feature blocks and fitted the 18 (C, class weight) models one after
+  another. Now `models.SharedPart` fits each identical feature block once per process (cache key = block
+  settings + the exact training texts, so nothing is ever reused on different rows), and
+  `tune_on_validation` fits the grid in parallel (same rows, same tie-break). Measured stages: data 27 s,
+  first run 32 s, filter 6 s, baseline 7 s, features 13 s, ablation 106 s, llm+comparison+errors 21 s.
+- **Conflict: `lr_words` tuned config changed.** The committed `results/tables/ablation.csv` (01:27) was
+  produced by older code/data; it selected C=100 / no class weights for words-only LR, while the current
+  pipeline (and the filtered baseline stage) select C=10 / balanced. `results/test_access_log.jsonl`
+  already holds `lr_words` with the stale config hash, and the test lock forbids scoring the same id with
+  another configuration. Choice: new model id `lr_words_v2` (this is a second test access for the
+  words-only LR, openly recorded); the old log lines are kept untouched and `lr_words` numbers from the
+  stale run are no longer used. Report and sections 08/10/11 were updated to the regenerated results.

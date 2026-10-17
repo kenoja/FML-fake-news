@@ -37,18 +37,18 @@ The course feedback asked whether hand-made features help the logistic regressio
 
 ### Verdicts
 
-All numbers below are in `results/tables/ablation.csv` (columns `delta_f1_vs_m1*`, `mcnemar_p_m1`, `contribution_f1_vs_m2*`). M1 has validation F1 0.9268.
+All numbers below are in `results/tables/ablation.csv` (columns `delta_f1_vs_m1*`, `mcnemar_p_m1`, `contribution_f1_vs_m2*`). M1 (`lr_words_v2`, C 10, balanced class weights) has validation F1 0.9141.
 
 | Hypothesis | Added to M1: ΔF1 [website CI] | McNemar p | Dropped from M2: ΔF1 [website CI] | Verdict |
 |---|---|---|---|---|
-| H2 n-grams | -0.0031 [-0.0234, 0.0159] | 1.0 | -0.0146 [-0.0395, 0.0302] | no clear gain |
-| H3 epistemic | +0.0060 [-0.0278, 0.0469] | 1.0 | -0.0044 [-0.0318, 0.0324] | no clear gain |
-| H4 style | -0.0098 [-0.0561, 0.0271] | 0.5488 | -0.0089 [-0.0398, 0.0213] | no clear gain |
-| M2 (all three) | -0.0244 [-0.0629, 0.0123] | 0.2379 | – | no clear gain |
+| H2 n-grams | +0.0059 [-0.0166, 0.0496] | 0.7266 | -0.0147 [-0.0407, 0.0305] | no clear gain |
+| H3 epistemic | +0.0187 [-0.0099, 0.0851] | 0.2668 | -0.0089 [-0.0365, 0.0323] | no clear gain |
+| H4 style | -0.0007 [-0.043, 0.0563] | 1.0 | -0.006 [-0.0364, 0.0358] | no clear gain |
+| M2 (all three) | -0.0124 [-0.0613, 0.073] | 0.845 | – | no clear gain |
 
-Every interval contains 0, so **none of H2, H3 or H4 is supported**, and none is refuted either: the data cannot tell a gain of a few points from no gain. The point estimate for epistemic markers (+0.006) is the only positive one and is far inside the noise. Style and the combined model M2 have negative point estimates, also inside the noise; we do not claim they hurt.
+Every interval contains 0, so **none of H2, H3 or H4 is supported**, and none is refuted either: the data cannot tell a gain of a few points from no gain. The point estimates for n-grams (+0.0059) and epistemic markers (+0.0187) are positive but well inside the noise (the epistemic interval runs from -0.0099 to 0.0851). Style and the combined model M2 have negative point estimates, also inside the noise; we do not claim they hurt.
 
-**Model choice (validation only).** The rule is: take M2 only if its website-CI for ΔF1 against M1 lies fully above 0. It does not, so **M1 (`lr_words`) is the chosen logistic regression** (`ablation.chosen_lr` in `metrics.json`). Both M1 and M2 were then scored once on the locked test split with `fml evaluate-final`, because the comparison with the LLM needs a reported number for both; the choice was already fixed on validation.
+**Model choice (validation only).** The rule is: take M2 only if its website-CI for ΔF1 against M1 lies fully above 0. It does not (ΔF1 -0.0124, CI -0.0613 to 0.073), so **M1 (`lr_words_v2`) is the chosen logistic regression** (`ablation.chosen_lr` in `metrics.json`). Both M1 and M2 were then scored once on the locked test split with `fml evaluate-final`, because the comparison with the LLM needs a reported number for both; the choice was already fixed on validation.
 
 ### What the models learned
 
@@ -62,7 +62,7 @@ Every interval contains 0, so **none of H2, H3 or H4 is supported**, and none is
 <!-- output: results/tables/test_lr.csv -->
 <!-- output: results/metrics.json#ablation.test -->
 
-Each model was scored on test exactly once (`results/test_access_log.jsonl` has one line each for `lr_words` and `lr_extended`). The test conspiracy-F1 of M1 is 0.5605 (website CI 0.3183 to 0.7925) and of M2 is 0.5829 (website CI 0.3137 to 0.8221), compared with about 0.93 on validation. The drop is large and the two test intervals overlap almost completely, so the test set does not separate M1 from M2 either. Per-document predictions (ids, labels, predictions, probabilities; no text) are in `results/tables/predictions_lr.csv` for the head-to-head and error analysis.
+Each model configuration was scored on test exactly once (`results/test_access_log.jsonl` has one line each for `lr_words_v2` and `lr_extended`). The log also contains an earlier `lr_words` line. It came from a stale configuration (C 100, no class weights) that validation tuning no longer selects (it selects C 10, balanced). The test lock forbids scoring an id with a new configuration, so the model was renamed `lr_words_v2`; the old line stays in the log untouched, is superseded by `lr_words_v2` and is not used for any number here. The test conspiracy-F1 of M1 is 0.5848 (website CI 0.3235 to 0.8036) and of M2 is 0.5829 (website CI 0.3137 to 0.8221), compared with about 0.91 and 0.90 on validation. The drop is large and the two test intervals overlap almost completely, so the test set does not separate M1 from M2 either. Per-document predictions (ids, labels, predictions, probabilities; no text) are in `results/tables/predictions_lr.csv` for the head-to-head and error analysis.
 
 **Literature.** Our groups follow Wang and Manning (2012) for n-grams, Islam et al. (2020), Marini and Jezek (2024) and Rashkin et al. (2017) for epistemic markers, and Horne and Adali (2017) and Perez-Rosas et al. (2018) for style. The latter found style features strong inside one domain but weak across domains, which fits a flat result on unseen websites.
 
@@ -79,6 +79,6 @@ Each model was scored on test exactly once (`results/test_access_log.jsonl` has 
 
 - `src/fml/ablation.py`: `run_ablation` (fit, tune on validation, bootstrap CIs, paired difference, McNemar), `verdict`, `group_verdicts`, `choose_between`, `coefficient_tables`.
 - `src/fml/pipeline.py`: `ablation_variants`, stage `ablation`, `evaluate_final` (test lock and log), `plot_ablation`.
-- Command: `fml run-all` (stage `ablation`); `fml evaluate-final lr_words` and `fml evaluate-final lr_extended` for the test scores.
+- Command: `fml run-all` (stage `ablation`); `fml evaluate-final lr_words_v2` and `fml evaluate-final lr_extended` for the test scores.
 - Outputs: `results/tables/ablation.csv`, `top_ngrams.csv`, `dense_coefficients.csv`, `test_lr.csv`, `predictions_lr.csv`, `results/figures/ablation_f1.png`, `metrics.json` keys `ablation` and `baseline`.
 - Tests: `tests/test_ablation.py` (a planted informative feature is found; an uninformative one is not called a gain; identical numbers on rerun; one test-log entry per model).

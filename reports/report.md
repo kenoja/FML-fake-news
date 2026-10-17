@@ -89,13 +89,13 @@ Every split has at least 3 conspiracy websites, so no split triggers the warning
 
 **McNemar test.** To ask whether two models differ on the same documents, we count documents that only model A gets right and documents that only model B gets right. McNemar's test asks whether these two counts differ more than chance would allow. We also report the F1 difference with bootstrap intervals.
 
-**Test set used once per model.** The test split is locked. Only `fml evaluate-final <model_id>` may score a model on it. It appends the model id, a hash of the configuration and the number of documents to `results/test_access_log.jsonl`, and a gate fails if one model id is scored with two configurations. Three models were scored: the words-only logistic regression `lr_words`, the extended `lr_extended`, and `llm_haiku`. Model selection used validation only. The rule for choosing between M1 and M2 was fixed in advance: M2 is chosen only if the F1 gain over M1 has a website-bootstrap interval above 0 on validation.
+**Test set used once per model.** The test split is locked. Only `fml evaluate-final <model_id>` may score a model on it. It appends the model id, a hash of the configuration and the number of documents to `results/test_access_log.jsonl`, and a gate fails if one model id is scored with two configurations. Three models count: the words-only logistic regression `lr_words_v2`, the extended `lr_extended`, and `llm_haiku`. The log also holds an earlier `lr_words` entry. It came from a stale configuration (C 100, no class weights) that validation tuning no longer picks (it picks C 10, balanced). Because the lock forbids scoring the same id with a new configuration, the model was renamed `lr_words_v2` and the old `lr_words` line was left untouched in the log. It is superseded and is not used anywhere in this report. Model selection used validation only. The rule for choosing between M1 and M2 was fixed in advance: M2 is chosen only if the F1 gain over M1 has a website-bootstrap interval above 0 on validation.
 
 ## 5. Findings
 
 ### 5.1 First run on all documents
 
-The words-only model on all 3,146 documents reaches a validation F1 of 0.926 (document interval 0.894 to 0.957, website interval 0.784 to 0.958), with precision 0.955 and recall 0.9. The average precision is 0.97. The selected C is 100 with no class weights. No website name appears among the top 25 words per class. A blog-format vocabulary ("posted", "entry") is among the top conspiracy words, a style giveaway that has nothing to do with 9/11.
+The words-only model on all 3,146 documents reaches a validation F1 of 0.926 (document interval 0.892 to 0.957, website interval 0.791 to 0.957), with precision 0.962 and recall 0.893. The average precision is 0.97. The selected C is 100 with no class weights. No website name appears among the top 25 words per class. A blog-format vocabulary ("posted", "entry") is among the top conspiracy words, a style giveaway that has nothing to do with 9/11.
 
 ![Confusion matrix of the first run](../results/figures/baseline_all_docs_confusion.png)
 
@@ -107,11 +107,11 @@ The filter removes 538 of 3,146 documents. The removal rate is almost the same i
 
 | Setting | Documents | Conspiracy | Precision | Recall | F1 |
 |---|---|---|---|---|---|
-| A: all-documents model on all validation documents | 471 | 140 | 0.955 | 0.9 | 0.926 |
-| B: all-documents model on filtered validation documents | 398 | 128 | 0.959 | 0.922 | 0.94 |
-| C: filtered model on filtered validation documents | 398 | 128 | 0.966 | 0.891 | 0.927 |
+| A: all-documents model on all validation documents | 471 | 140 | 0.962 | 0.893 | 0.926 |
+| B: all-documents model on filtered validation documents | 398 | 128 | 0.959 | 0.914 | 0.936 |
+| C: filtered model on filtered validation documents | 398 | 128 | 0.914 | 0.914 | 0.914 |
 
-The validation sets of rows A and C differ, so their F1 values are not directly comparable. Row B scores the first model on exactly the documents of row C. Filtering did not improve validation F1 (row C minus row B is -0.013). We keep the filter because it is a team decision with a clear reason: articles that never mention 9/11 do not belong to the topic under study. The first model classified the 73 removed validation documents with an accuracy of 0.932, so it did not need the topic to recognise the site.
+The validation sets of rows A and C differ, so their F1 values are not directly comparable. Row B scores the first model on exactly the documents of row C. Filtering did not improve validation F1 (row C minus row B is -0.022). We keep the filter because it is a team decision with a clear reason: articles that never mention 9/11 do not belong to the topic under study. The first model classified the 73 removed validation documents with an accuracy of 0.945, so it did not need the topic to recognise the site.
 
 ### 5.3 Do the extra features help? (RQ2)
 
@@ -119,15 +119,15 @@ All values below are validation results on 398 filtered documents from 19 websit
 
 | Model | Precision | Recall | F1 | Change vs words | Website interval | Verdict |
 |---|---|---|---|---|---|---|
-| M1: words | 0.966 | 0.891 | 0.927 | | | reference |
-| + n-grams (1-3) | 0.95 | 0.898 | 0.924 | -0.0031 | -0.0234 to 0.0159 | no clear gain |
-| + epistemic | 0.944 | 0.922 | 0.933 | 0.006 | -0.0278 to 0.0469 | no clear gain |
-| + style | 0.928 | 0.906 | 0.917 | -0.0098 | -0.0561 to 0.0271 | no clear gain |
-| M2: all three | 0.941 | 0.867 | 0.902 | -0.0244 | -0.0629 to 0.0123 | no clear gain |
+| M1: words | 0.9141 | 0.9141 | 0.9141 | | | reference |
+| + n-grams (1-3) | 0.9426 | 0.8984 | 0.92 | 0.0059 | -0.0166 to 0.0496 | no clear gain |
+| + epistemic | 0.944 | 0.9219 | 0.9328 | 0.0187 | -0.0099 to 0.0851 | no clear gain |
+| + style | 0.9206 | 0.9062 | 0.9134 | -0.0007 | -0.043 to 0.0563 | no clear gain |
+| M2: all three | 0.9483 | 0.8594 | 0.9016 | -0.0124 | -0.0613 to 0.073 | no clear gain |
 
 ![Ablation F1 on validation](../results/figures/ablation_f1.png)
 
-No feature group gives a clear gain, and the full extended model is not better than words alone. H2, H3 and H4 are therefore **not supported** on validation: the intervals all include 0. The best single number (epistemic markers, +0.006) lies far inside the noise. By the rule fixed in advance, M1 (`lr_words`) is the chosen logistic regression. The extended model was still scored on test, once, so that the cost of the extra features is visible.
+No feature group gives a clear gain, and the full extended model is not better than words alone. H2, H3 and H4 are therefore **not supported** on validation: the intervals all include 0. The best single number (epistemic markers, +0.0187) lies inside the noise: its website interval runs from -0.0099 to 0.0851. By the rule fixed in advance, M1 (`lr_words_v2`, C 10, balanced class weights) is the chosen logistic regression. The extended model was still scored on test, once, so that the cost of the extra features is visible.
 
 The feature table shows that some groups do separate the classes in the training data. Hidden-truth vocabulary is far more frequent on conspiracy websites (mean 1.0913 per 1,000 words against 0.0554), as are boosters and exclamation marks. The words already carry this signal, so the extra counts add little. See `results/tables/feature_summary.csv`.
 
@@ -152,8 +152,8 @@ Variant v2 is chosen by the fixed rule (highest validation F1). All three varian
 | Model | Precision | Recall | F1 | F1 document interval | F1 website interval | Macro F1 | Balanced accuracy |
 |---|---|---|---|---|---|---|---|
 | Majority class | 0.0 | 0.0 | 0.0 | 0.0 to 0.0 | 0.0 to 0.0 | 0.4345 | 0.5 |
-| Logistic regression, words (`lr_words`) | 0.7458 | 0.449 | 0.5605 | 0.464 to 0.6474 | 0.3183 to 0.7925 | 0.7302 | 0.7014 |
-| Logistic regression, extended (`lr_extended`) | 0.6623 | 0.5204 | 0.5829 | 0.494 to 0.6667 | 0.3137 to 0.8221 | 0.737 | 0.7202 |
+| Logistic regression, words (`lr_words_v2`) | 0.6849 | 0.5102 | 0.5848 | 0.491 to 0.6667 | 0.3235 to 0.8036 | 0.7398 | 0.7197 |
+| Logistic regression, extended (`lr_extended`) | 0.6623 | 0.5204 | 0.5829 | 0.4932 to 0.6667 | 0.3137 to 0.8221 | 0.737 | 0.7202 |
 | Claude Haiku 5.5 (`llm_haiku`) | 0.963 | 0.5306 | 0.6842 | 0.5917 to 0.7625 | 0.3713 to 0.9333 | 0.8075 | 0.7622 |
 
 The test set has 423 documents, of which 98 are conspiracy, from 18 websites.
@@ -162,13 +162,13 @@ The test set has 423 documents, of which 98 are conspiracy, from 18 websites.
 
 ![Confusion matrices on the test set](../results/figures/comparison_confusion.png)
 
-**H1 is supported.** Both approaches beat the majority baseline, and the website-bootstrap intervals of the difference exclude 0 (for the LLM 0.3713 to 0.9333, for the logistic regression 0.3183 to 0.7925).
+**H1 is supported.** Both approaches beat the majority baseline, and the website-bootstrap intervals of the difference exclude 0 (for the LLM 0.3713 to 0.9333, for the logistic regression 0.3235 to 0.8036).
 
-**The LLM scores higher than the chosen logistic regression, with a wide uncertainty about how much.** Among the 423 test documents, 28 are right only for the LLM and 7 are right only for the logistic regression, 347 are right for both and 41 are wrong for both. McNemar's test gives p = 0.0005. The F1 difference is 0.1237 (document interval 0.0408 to 0.2067, website interval 0.024 to 0.3336). The two models make different kinds of mistakes. The LLM almost never flags a mainstream article (accuracy on mainstream articles 0.9938, against 0.9538 for the logistic regression) but it misses about half of the conspiracy articles. The logistic regression produces 15 false positives against 2 for the LLM. The ranking quality of the two scores is similar: the average precision is 0.6919 for the logistic regression and 0.6409 for the LLM.
+**The LLM scores higher than the chosen logistic regression on documents, but the website-level evidence is not conclusive.** Among the 423 test documents, 32 are right only for the LLM and 9 are right only for the logistic regression, 343 are right for both and 39 are wrong for both. McNemar's test gives p = 0.0004. The F1 difference is 0.0994 (document interval 0.0235 to 0.1795). The website interval, however, is -0.0166 to 0.3891 and includes 0. So the LLM is better on this set of documents, but with only 6 conspiracy websites we cannot rule out that the two models are equal when whole websites are resampled. The two models make different kinds of mistakes. The LLM almost never flags a mainstream article (accuracy on mainstream articles 0.9938, against 0.9292 for the logistic regression) but it misses about half of the conspiracy articles. The logistic regression produces 23 false positives against 2 for the LLM. The ranking quality of the two scores is similar, and the logistic regression is slightly ahead: the average precision is 0.6764 for the logistic regression and 0.6409 for the LLM.
 
-**The extended model is not clearly better than the words-only model on test either.** Its F1 is 0.5829 against 0.5605. McNemar's test gives p = 0.6358, and the website interval of the F1 difference is -0.1313 to 0.0909. It finds more conspiracy articles (recall 0.5204) but raises 26 false positives instead of 15.
+**The extended model is not better than the words-only model on test either.** Its F1 is 0.5829 against 0.5848. McNemar's test gives p = 0.8679, and the website interval of the F1 difference is -0.1146 to 0.0972. It finds slightly more conspiracy articles (recall 0.5204) but raises 26 false positives instead of 23.
 
-**Validation numbers do not carry over to test.** The logistic regression drops from 0.9268 on validation to 0.5605 on test, and the LLM from 0.9508 to 0.6842. Some of the reason is in the data. Most conspiracy test documents come from a few websites, and one of them contributes 44 of the 98 conspiracy documents. All three models recognise only 0.1591 of the documents of this site, while several other conspiracy sites reach between 0.5263 and 0.875. The test set therefore measures mostly "how well do we recognise this one site type", and the website intervals (about 0.32 to 0.79 for the logistic regression) are the honest description of our uncertainty.
+**Validation numbers do not carry over to test.** The logistic regression drops from 0.9141 on validation to 0.5848 on test, and the LLM from 0.9508 to 0.6842. Some of the reason is in the data. Most conspiracy test documents come from a few websites, and one of them contributes 44 of the 98 conspiracy documents. The models recognise only 0.2045 (both logistic regressions) and 0.1591 (LLM) of the documents of this site, while several other conspiracy sites reach between 0.5789 and 0.8947 (leaving out a site with one document). The test set therefore measures mostly "how well do we recognise this one site type", and the website intervals (0.3235 to 0.8036 for the logistic regression) are the honest description of our uncertainty.
 
 ![Precision-recall curves on the test set](../results/figures/comparison_pr.png)
 
@@ -176,24 +176,24 @@ The test set has 423 documents, of which 98 are conspiracy, from 18 websites.
 
 | Length | Documents | Conspiracy | Logistic regression, words | Logistic regression, extended | LLM |
 |---|---|---|---|---|---|
-| 0-149 words | 27 | 5 | 0.5714 | 0.5 | 1.0 |
+| 0-149 words | 27 | 5 | 0.5 | 0.5 | 1.0 |
 | 150-249 words | 32 | 7 | 0.6154 | 0.6667 | 0.7273 |
-| >= 250 words | 364 | 86 | 0.5547 | 0.5806 | 0.6565 |
+| >= 250 words | 364 | 86 | 0.5867 | 0.5806 | 0.6565 |
 
 Short articles are not impossible to classify, but the 5 and 7 conspiracy documents in the two short buckets are too few for a conclusion.
 
 ### 5.6 Error analysis (RQ3, H6)
 
-On test, the logistic regression is wrong alone on 28 documents (14 false positives, 14 false negatives), the LLM alone on 7, and both are wrong on 41 (40 of them false negatives). Claude Sonnet 5.5 coded the stance of these 76 articles towards a 9/11 conspiracy claim: endorses, rejects or debunks, reports neutrally, or makes no claim, with a short justification. Two answers could not be parsed, so 74 documents are usable. We then applied a fixed rule: a conspiracy-site article that rejects, reports neutrally or makes no claim, and a mainstream-site article that endorses, are classed as "label does not describe the text". All other errors are "model wrong".
+On test, the logistic regression is wrong alone on 32 documents (22 false positives, 10 false negatives), the LLM alone on 9, and both are wrong on 39 (38 of them false negatives). Claude Sonnet 5.5 coded the stance of these 80 articles towards a 9/11 conspiracy claim: endorses, rejects or debunks, reports neutrally, or makes no claim, with a short justification. Two answers could not be parsed, so 78 documents are usable and the rows of the table below add up to 80 errors but only 78 verdicts. We then applied a fixed rule: a conspiracy-site article that rejects, reports neutrally or makes no claim, and a mainstream-site article that endorses, are classed as "label does not describe the text". All other errors are "model wrong".
 
 | Disagreement set | Errors | Model wrong | Label does not describe the text |
 |---|---|---|---|
-| Logistic regression only wrong | 28 | 15 | 12 |
-| LLM only wrong | 7 | 2 | 5 |
-| Both wrong | 41 | 1 | 39 |
-| All | 76 | 18 | 56 |
+| Logistic regression only wrong | 32 | 21 | 10 |
+| LLM only wrong | 9 | 2 | 7 |
+| Both wrong | 39 | 1 | 37 |
+| All | 80 | 24 | 54 |
 
-By stance, 57 articles make no claim, 8 report neutrally, 5 endorse a conspiracy claim and 4 reject or debunk. For the **false negatives**, the answer to H6 is clear: of the conspiracy-site articles that were missed, the share with no conspiracy claim is 0.8475, and the share that do not endorse a claim is 0.9322. Many of them only mention 9/11 in passing, for example as a death-toll comparison, and a model that missed them was arguably right. For the **false positives** the picture is mixed: of the mainstream articles flagged as conspiracy, the share that discuss conspiracy theories without endorsing them is 0.4667, but only 0.2 debunk them. Most false positives are therefore plain model errors (14 of 16). In total the share of errors that are label problems is 0.7568.
+By stance, 62 articles make no claim, 9 report neutrally, 3 endorse a conspiracy claim and 4 reject or debunk. For the **false negatives**, the answer to H6 is clear: of the conspiracy-site articles that were missed, the share with no conspiracy claim is 0.8727, and the share that do not endorse a claim is 0.9636. Many of them only mention 9/11 in passing, for example as a death-toll comparison, and a model that missed them was arguably right. For the **false positives** the picture is mixed: of the mainstream articles flagged as conspiracy, the share that discuss conspiracy theories without endorsing them is 0.3478, but only 0.1304 debunk them. Most false positives are therefore plain model errors (22 of 24). In total the share of errors that are label problems is 0.6923.
 
 **H6 is supported for false negatives and only partly for false positives.** The finding is provisional: the stance codes come from Claude and have not been checked by a person (section 6).
 

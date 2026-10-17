@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
+from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -26,6 +28,54 @@ DEFAULT_FEATURES = {"ngram_range": (1, 1), "min_df": 2, "max_features": None, "s
                     "numeric_columns": [], "dense_groups": []}
 
 
+_PART_CACHE: dict[tuple, object] = {}
+_PART_CACHE_MAX = 24
+
+
+class SharedPart(BaseEstimator, TransformerMixin):
+    """Wraps one feature block so identical blocks are fitted and applied once per process.
+
+    The ablation trains 8 models whose blocks overlap (the same 1-3-gram TF-IDF sits in four of them) and
+    `evaluate_final` refits the winners on the same training rows. The cache key holds the block's settings
+    and the exact texts it is fitted on, so a block can only be reused on the same training rows: nothing
+    learned on one split is ever applied to a differently fitted block.
+    """
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    @staticmethod
+    def _texts_key(X) -> int:
+        return hash(tuple(np.asarray(X).ravel().tolist()))
+
+    def fit(self, X, y=None):
+        key = ("fit", repr(self.inner), self._texts_key(X))
+        if key not in _PART_CACHE:
+            if len(_PART_CACHE) >= _PART_CACHE_MAX:
+                _PART_CACHE.clear()
+            _PART_CACHE[key] = clone(self.inner).fit(X, y)
+        self.fitted_ = _PART_CACHE[key]
+        self.fit_key_ = key
+        return self
+
+    def transform(self, X):
+        key = ("transform", self.fit_key_, self._texts_key(X))
+        if key not in _PART_CACHE:
+            if len(_PART_CACHE) >= _PART_CACHE_MAX:
+                _PART_CACHE.clear()
+            _PART_CACHE[key] = self.fitted_.transform(X)
+        return _PART_CACHE[key]
+
+    def __getattr__(self, name: str):
+        """Expose the fitted block's learned attributes (`vocabulary_`, `idf_`) for inspection and tests."""
+        if name.startswith("__") or name in ("fitted_", "inner"):
+            raise AttributeError(name)
+        return getattr(self.fitted_, name)
+
+    def get_feature_names_out(self, input_features=None):
+        return self.fitted_.get_feature_names_out(input_features)
+
+
 def build_pipeline(feature_cfg: dict | None = None, C: float = 1.0, class_weight=None,
                    random_state: int | None = None) -> Pipeline:
     """TF-IDF on the text column (+ optional standardised numeric columns) -> L2 logistic regression.
@@ -40,10 +90,10 @@ def build_pipeline(feature_cfg: dict | None = None, C: float = 1.0, class_weight
     from .features import scaled
 
     cfg = {**DEFAULT_FEATURES, **(feature_cfg or {})}
-    parts = [("tfidf", TfidfVectorizer(ngram_range=tuple(cfg["ngram_range"]), min_df=cfg["min_df"],
-                                       sublinear_tf=cfg["sublinear_tf"], lowercase=True,
-                                       max_features=cfg["max_features"]), TEXT_COLUMN)]
-    parts += [(group, scaled(group), TEXT_COLUMN) for group in cfg["dense_groups"]]
+    tfidf = TfidfVectorizer(ngram_range=tuple(cfg["ngram_range"]), min_df=cfg["min_df"],
+                            sublinear_tf=cfg["sublinear_tf"], lowercase=True, max_features=cfg["max_features"])
+    parts = [("tfidf", SharedPart(tfidf), TEXT_COLUMN)]
+    parts += [(group, SharedPart(scaled(group)), TEXT_COLUMN) for group in cfg["dense_groups"]]
     if cfg["numeric_columns"]:
         parts.append(("scale", StandardScaler(), list(cfg["numeric_columns"])))
     seed = project_config()["split"]["seed"] if random_state is None else random_state
@@ -82,11 +132,13 @@ def tune_on_validation(train: pd.DataFrame, valid: pd.DataFrame, feature_cfg: di
     def classifier(C, cw) -> LogisticRegression:
         return LogisticRegression(C=C, class_weight=cw, solver="liblinear", max_iter=2000, random_state=seed)
 
-    rows = []
-    for cw in class_weights:
-        for C in c_grid:
-            m = classification_metrics(valid["label"], classifier(C, cw).fit(X_train, y_train).predict(X_valid))
-            rows.append({"C": C, "class_weight": "none" if cw is None else cw, **m})
+    def score(C, cw) -> dict:
+        m = classification_metrics(valid["label"], classifier(C, cw).fit(X_train, y_train).predict(X_valid))
+        return {"C": C, "class_weight": "none" if cw is None else cw, **m}
+
+    # The fits are independent and the large-C ones on n-gram + dense features take seconds each, so they
+    # run on all CPUs; the result order (and so the tie-break to the smaller C) is unchanged.
+    rows = Parallel(n_jobs=-1)(delayed(score)(C, cw) for cw in class_weights for C in c_grid)
     grid = pd.DataFrame(rows)
     best = grid.iloc[int(grid[SELECTION_METRIC].to_numpy().argmax())]
     grid["selected"] = grid.index == best.name
