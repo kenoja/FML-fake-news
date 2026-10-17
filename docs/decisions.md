@@ -23,6 +23,14 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   this is not a statement about the page). Licence therefore still unconfirmed. Excerpt rules stay
   (≤ 50 words, ≤ 6 per section). Note for the report's data section: "Licence of the LOCO texts: not
   confirmed (OSF page not reachable on 2026-10-16); texts are kept private and only short excerpts shown."
+- **2026-10-17 · Licence recheck, cycle 1 task T9: still unconfirmed.** Attempted to fetch
+  https://osf.io/snpcg/ again on 2026-10-17; the shell and fetch calls were denied by the environment
+  (no approval surface), so the page was not seen. Wording "unconfirmed" kept in report §2 and section 01.
+  A person with network access should open the page and record the licence text and date here.
+- **2026-10-17 · Hypotheses traceability.** `docs/PROJECT_PLAN.md` has two commits: `9658f98` (2026-10-16)
+  and `5964544` (2026-10-17). The `git log -S` check of which one introduced the hypothesis table was
+  denied, so it is unknown. Report §1 and section 01 now give a decision rule and an expected effect size
+  for H2–H4, and H6 is called an expectation instead of a claim that predates results.
 - **2026-10-16 · Conflict: final-scoring command.** AGENTS.md says `fml evaluate-final <model_id>`;
   `docs/PROJECT_PLAN.md` says `fml evaluate --final`. AGENTS.md ranks higher, so `evaluate-final` is
   used everywhere (the CLI already implements it).

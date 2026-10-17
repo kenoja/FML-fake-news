@@ -50,6 +50,10 @@ Six numbers: the share of ALL-CAPS words (words of at least two letters, so "I" 
 
 *Literature reason.* Horne and Adali (2017) found that fake-news bodies used more all-caps words, fewer quotes and more repetition. Perez-Rosas et al. (2018) found punctuation and readability features strong inside one domain but poor across domains, which is why our website-held-out split is the right test for them.
 
+### Why these groups, and what we expected (as in the report, section 5.3)
+
+*N-grams:* simple word and bigram features with a linear model are a strong text-classification baseline (Wang and Manning, 2012), so we expected a small gain, the largest of the three (H2). *Epistemic markers:* conspiracy discourse is marked by evidentiality, certainty and hidden-truth vocabulary (Marini and Jezek, 2024); we expected more hidden-truth words on conspiracy websites, while the direction for certainty is mixed. *Style:* fake-news bodies use more ALL-CAPS words, fewer quotes and more repetition (Horne and Adali, 2017), but punctuation and readability features generalise poorly across domains (Perez-Rosas et al., 2018), so we expected a small gain at best (H4). **Untuned settings:** `ngram_min_df` (3 training documents) and `ngram_max_features` (200,000) were fixed in `config/project.yaml` before the ablation and never varied.
+
 ### What the features look like
 
 The table below is from `results/tables/feature_examples.csv`. The two snippets are **invented** sentences (not article text) written to show what each column reacts to. Snippet A is full of hidden-truth vocabulary and capitals; snippet B uses a hedge and a debunking phrase:
