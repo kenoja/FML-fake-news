@@ -80,6 +80,13 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 
 ## Needs a team decision
 
+- **LLM temperature 0 cannot be set (T8).** AGENTS.md asks for temperature 0, but `claude-haiku-5-5`
+  answers HTTP 400 ("`temperature` is deprecated for this model") and the installed SDK has no such
+  argument. Conflict between the rule and the model; the rule cannot be followed. Conservative choice:
+  call the model with default sampling, keep `temperature: 0` in config (it stays in the cache key),
+  and measure the consequence with the second test pass (agreement, Cohen's kappa, flipped documents).
+  The team should confirm that this is acceptable.
+
 - **Licence of the LOCO texts.** Unconfirmed (see above). Conservative reading chosen: texts not
   redistributable; private data repo only; excerpt limits apply.
 - **LLM API key in the cloud environment.** It is unknown whether `LLM_CLASSIFIER_API_KEY` is set when

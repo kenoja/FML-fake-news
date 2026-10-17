@@ -28,6 +28,10 @@ llm_classifier:
   temperature: 0
   max_prompt_variants: 3                # all tried on validation only
   question: source                      # team decision: ask "conspiracy-oriented or mainstream WEBSITE?"
+  max_input_words: 3000                 # every article is cut to its first 3,000 words (same for all documents)
+  max_output_tokens: 150
+  price_input_per_mtok_usd: 0.10        # Haiku 5.5 list price (docs/PROJECT_PLAN.md), used only for the cost column
+  price_output_per_mtok_usd: 0.50
   cache_file: results/llm_cache.jsonl   # doc_id + prompt hash + answer only; never article text
 
 features:
