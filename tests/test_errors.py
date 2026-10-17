@@ -193,3 +193,25 @@ def test_parse_stance_tolerates_reasoning_before_complete_json_only():
     assert ok["stance"] == "no_claim"
     cut = errors.parse_stance('It is news.\n\n{"stance":"no_claim","justification":"cut off')
     assert cut["stance"] == errors.PARSE_ERROR
+
+
+def test_cli_stance_agreement_empty_prints_clear_message(tmp_path, capsys):
+    """Blank human column must give a plain 'pending' message and kappa null, never a crash or a fake 0."""
+    from fml.cli import main
+    assert main(["stance-agreement", str(_sample(tmp_path, [""] * 4))]) == 0
+    out = capsys.readouterr().out
+    assert "pending human check" in out and "pending: 0/4 filled" in out and '"kappa": null' in out
+
+
+def test_cli_stance_agreement_filled_toy_input_computes_kappa(tmp_path, capsys):
+    from fml.cli import main
+    p = _sample(tmp_path, ["endorses", "no_claim", "no_claim", "reports_neutrally"])
+    assert main(["stance-agreement", str(p)]) == 0
+    out = capsys.readouterr().out
+    assert "pending" not in out and '"human_filled": 4' in out and '"kappa": 0.' in out
+
+
+def test_cli_stance_agreement_missing_file_is_clear_error(tmp_path, capsys):
+    from fml.cli import main
+    assert main(["stance-agreement", str(tmp_path / "nope.csv")]) == 2
+    assert "not found" in capsys.readouterr().err

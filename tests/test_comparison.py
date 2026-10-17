@@ -112,3 +112,16 @@ def test_near_duplicate_exclusion_removes_only_test_docs_with_train_or_validatio
     assert s["f1_without_duplicates"]["lr"] == 0.0
     assert s["delta_f1_without_minus_all"]["lr"] == pytest.approx(-0.8)
     assert s["gap_f1_b_minus_a_all_test"] == pytest.approx(2 / 3 - 0.8)
+
+
+def test_no_duplicate_rows_carry_bootstrap_intervals_when_sites_given():
+    """Why: a sensitivity row without an interval cannot be compared with the headline rows."""
+    from fml.comparison import no_duplicate_sensitivity
+
+    ids = np.array(list("abcdefgh"))
+    y = np.array([1, 1, 1, 1, 0, 0, 0, 0], dtype=bool)
+    p = np.array([1, 1, 0, 1, 0, 0, 1, 0], dtype=bool)
+    sites = np.array(["s1", "s1", "s2", "s2", "s3", "s3", "s4", "s4"])
+    t, _ = no_duplicate_sensitivity(ids, y, {"m": p}, set(["a"]), "m", "m", sites=sites)
+    assert t[["f1_ci_doc_low", "f1_ci_site_high"]].notna().all().all()
+    assert (t["f1_ci_site_low"] <= t["f1_ci_site_high"]).all()

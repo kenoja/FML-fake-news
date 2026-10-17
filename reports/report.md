@@ -86,6 +86,18 @@ Every split has at least 3 conspiracy websites, so no split triggers the warning
 3. **Six conspiracy websites.** One of them supplies 44 of the 98 conspiracy test documents, so the test set mostly measures how well each model recognises that site.
 4. **36 near-duplicate pairs across splits** (`data.near_duplicate_pairs_across_splits`). Nine test documents have a partner in train or validation. The F1 changes by -0.005 (logistic regression) and -0.004 (LLM) without them, so they do not explain the result.
 
+**Plain statement on the second test look and what the conclusion rests on.** `lr_words` was scored on test first (2026-10-17T01:19:52, hash 4c7ae4b64bb07dc1). `lr_words_v2` was scored later (10:35:02, hash 686c1de15756e287), after `lr_extended` and `llm_haiku` had already been scored, so the words-only model got a second test look when other test results were known. The log has not changed (no new line was added for this check). The conclusion "the LLM beats the logistic regression" rests **only on the document-level test**: the McNemar test (p = 0.0004, 32 vs 9 documents that only one model gets right) and the document-bootstrap interval for delta-F1 (+0.0235 to +0.1795). At **website level the interval for the LLM-minus-LR F1 difference includes 0** (+0.0994, interval -0.0166 to +0.3891), so with 6 conspiracy websites the data cannot separate the two models. The without-near-duplicates rows in the table now carry bootstrap intervals computed from the saved predictions only (`results/tables/comparison_test_no_dups.csv`); no new scoring on test was done.
+
+**Sensitivity row for the first `lr_words` configuration.** Its test numbers are not stored anywhere in `results/` (the log keeps only the model id and a hash), and we do not score on test again. We therefore give the **validation** comparison, copied from `results/tables/comparison_lr_config_validation.csv` (`results/metrics.json#comparison.lr_config_validation_sensitivity`):
+
+| Model (validation split) | Setting | Precision | Recall | F1 |
+|---|---|---|---|---|
+| `lr_words` v1 (stale; scored on test first, number not stored) | C=100, no class weights | 0.965 | 0.867 | 0.914 |
+| `lr_words_v2` (reported) | C=10, balanced | 0.914 | 0.914 | 0.914 |
+| `llm_haiku` (chosen prompt v2) | zero-shot | 1.0 | 0.906 | 0.951 |
+
+On validation the two logistic regression settings have the same F1 (difference 0.0), so revising the configuration did not move the quality of the words-only model; it only changed the balance of precision and recall.
+
 **Headline comparison on test** (website intervals first, then document intervals; copied from `results/tables/comparison_test.csv`, `results/tables/comparison_test_no_dups.csv` and `results/metrics.json#comparison`):
 
 | Model | F1 | F1 website (cluster) interval | F1 document interval | Precision | Recall | Macro F1 | Balanced accuracy |
@@ -94,8 +106,8 @@ Every split has at least 3 conspiracy websites, so no split triggers the warning
 | Logistic regression, words (`lr_words_v2`) | 0.585 | 0.324 to 0.804 | 0.491 to 0.667 | 0.685 | 0.510 | 0.740 | 0.720 |
 | Logistic regression, extended (`lr_extended`) | 0.583 | 0.314 to 0.822 | 0.493 to 0.667 | 0.662 | 0.520 | 0.737 | 0.720 |
 | Claude Haiku 5.5 (`llm_haiku`) | 0.684 | 0.371 to 0.933 | 0.592 to 0.762 | 0.963 | 0.531 | 0.807 | 0.762 |
-| `lr_words_v2`, sensitivity: without near-duplicates (414 documents) | 0.580 | not computed | not computed | 0.681 | 0.505 | not computed | not computed |
-| `llm_haiku`, sensitivity: without near-duplicates (414 documents) | 0.680 | not computed | not computed | 0.962 | 0.526 | not computed | not computed |
+| `lr_words_v2`, sensitivity: without near-duplicates (414 documents) | 0.580 | 0.322 to 0.797 | 0.481 to 0.667 | 0.681 | 0.505 | 0.736 | 0.716 |
+| `llm_haiku`, sensitivity: without near-duplicates (414 documents) | 0.680 | 0.370 to 0.930 | 0.587 to 0.764 | 0.962 | 0.526 | 0.805 | 0.760 |
 
 **Metrics.** *Precision* is the share of articles flagged as conspiracy that really come from conspiracy websites. *Recall* is the share of conspiracy-site articles that we catch. *F1* is the harmonic mean of the two. We report F1 for the conspiracy class, because about 70 percent of the documents are mainstream and a model that always answers "mainstream" would look good on accuracy while finding nothing.
 
@@ -211,17 +223,25 @@ On test, the logistic regression is wrong alone on 32 documents (22 false positi
 | Both wrong | 39 | 1 | 37 | 1 |
 | All | 80 | 24 | 54 | 2 |
 
-By stance, 62 articles make no claim, 9 report neutrally, 3 endorse a conspiracy claim and 4 reject or debunk. For the **false negatives**, the answer to H6 is clear: of the missed conspiracy-site articles, the share with no conspiracy claim is 0.873 and the share that do not endorse a claim is 0.964. Many only mention 9/11 in passing, so a model that missed them was arguably right. For the **false positives** the picture is mixed: of the mainstream articles flagged as conspiracy, 0.348 discuss conspiracy theories without endorsing them, but only 0.130 debunk them, so most false positives are plain model errors (22 of 24). The share of errors that are label problems ranges from 0.286 to 0.692 (`errors.label_problem_range`): 0.692 under the current rule with unparsed replies left out, 0.675 with them kept in, and 0.286 if only decisive codes (endorses, rejects or debunks) count. The whole range rests on Claude-written stance codes that no human has checked (kappa = null; `fml stance-agreement` prints `pending: 0/40 filled`).
+By stance, 62 articles make no claim, 9 report neutrally, 3 endorse a conspiracy claim and 4 reject or debunk. For the **false negatives**, the answer to H6 is clear: of the missed conspiracy-site articles, the share with no conspiracy claim is 0.873 and the share that do not endorse a claim is 0.964. Many only mention 9/11 in passing, so a model that missed them was arguably right. For the **false positives** the picture is mixed: of the mainstream articles flagged as conspiracy, 0.348 discuss conspiracy theories without endorsing them, but only 0.130 debunk them, so most false positives are plain model errors (22 of 24). The share of errors that are label problems ranges from 0.286 to 0.692, provisional (Claude-coded, not human-verified) (`errors.label_problem_range`): 0.692 (provisional (Claude-coded, not human-verified)) under the current rule with unparsed replies left out, 0.675 (provisional (Claude-coded, not human-verified)) with them kept in, and 0.286 (provisional (Claude-coded, not human-verified)) if only decisive codes (endorses, rejects or debunks) count. The whole range rests on Claude-written stance codes that no human has checked (kappa = null; `fml stance-agreement` prints `pending: 0/40 filled`). Once a teammate fills the 40-row human sample and kappa is computed, these shares may move: if the human codes agree with Claude's, the range stands and loses the label; if humans read more of the vague `no_claim` and `reports_neutrally` articles as conspiracy content, the shares fall toward the low end or below it.
+
+Three short examples (Claude's scrubbed 25-word stance justifications; full articles stay in the private data repo under the `doc_id`):
+
+> Mainstream false positive, doc_id M07f55: "The article criticizes 9/11 conspiracy theories as incoherent and implausibly intricate, and calls them a 'non-issue' used by Russia [name]."
+
+> Conspiracy-site false negative, doc_id C0051b: "The article covers a [name] statue at the WTC site and lawsuits alleging Saudi support for al-Qaeda. Those are litigation allegations, not an inside-job"
+
+> Conspiracy-site false negative, doc_id C00a99: "The article is political commentary about where [name] and [name] were on 9/11; it makes and discusses no conspiracy claims about the attacks being an"
 
 **H6 is supported for false negatives and only partly for false positives.** The finding is provisional: the stance codes come from Claude and have not been checked by a person (section 6).
 
-**Status of the human stance check.** The column `human_stance` in `results/tables/stance_check_sample.csv` is blank for all 40 rows, Cohen's kappa was not computed (`null`, not 0), and H6 has not been tested by humans. To close it, Members A and B fill `human_stance` independently, run `fml stance-agreement`, and copy the kappa into the H6 verdict here and in section 11.
+**Status of the human stance check: blocked, pending human check.** The column `human_stance` in `results/tables/stance_check_sample.csv` is blank for all 40 rows, Cohen's kappa was not computed (`null`, not 0), and H6 has not been tested by humans. To close it, Members A and B fill `human_stance` independently, run `fml stance-agreement`, and copy the kappa into the H6 verdict here and in section 11.
 
 ## 6. Interpretation and limitations
 
 **What the results say.** Both approaches work well on validation and much less well on test, which asks for generalisation to unseen websites. The LLM is almost never wrong about mainstream articles, and its recall is limited by articles that do not look like conspiracy writing. The logistic regression is cheaper per document, but it learns blog style and misclassifies some mainstream sites. Hand-made features did not help beyond chance.
 
-**Label versus content.** The labels describe websites. Between 0.286 and 0.692 of the coded errors are articles a reader would not call conspiracy content (section 5.6), but this rests on Claude-coded stance that humans have not checked. If it holds, the limit of this task is the match between site label and article text, not model strength.
+**Label versus content.** The labels describe websites. Between 0.286 and 0.692 (provisional (Claude-coded, not human-verified)) of the coded errors are articles a reader would not call conspiracy content (section 5.6), but this rests on Claude-coded stance that humans have not checked. If it holds, the limit of this task is the match between site label and article text, not model strength.
 
 **Noise and sample size.** The test split has 7 conspiracy websites (6 after filtering), and 44 of its 98 conspiracy documents come from one site, so single sites move the result and the website bootstrap is wide. The filter removed far more conspiracy than mainstream test documents (section 5.2). The split is frozen and was not repaired.
 

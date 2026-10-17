@@ -955,6 +955,31 @@ def plot_comparison_pr(curves: dict[str, tuple[dict, float]], base_rate: float):
     return fig
 
 
+def _lr_config_validation_sensitivity() -> dict:
+    """Does the words-only LR configuration change (the second test look) matter? Validation answer.
+
+    The first test look (`lr_words`) used the stale setting C=100 without class weights; its test numbers
+    are not stored and are not used. Both settings are rows of the validation grid in
+    `m1_words_filtered_grid.csv`, so we compare them there, next to the LLM's chosen-prompt validation
+    row, without scoring anything on test.
+    """
+    tables = results_dir() / "tables"
+    grid = pd.read_csv(tables / "m1_words_filtered_grid.csv")
+    v1 = grid[(grid["C"] == 100.0) & (grid["class_weight"] == "none")].iloc[0]
+    v2 = grid[grid["selected"].astype(bool)].iloc[0]
+    chosen = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))["llm"]["chosen"]
+    llm = pd.read_csv(tables / "llm_prompt_variants.csv").set_index("variant").loc[chosen]
+    keys = ("precision", "recall", "f1")
+    out = {"data": "validation split only; the stale lr_words test result is not stored and not used",
+           "lr_words_v1_stale": {"setting": f"C={v1['C']:g}, {v1['class_weight']}", **{k: float(v1[k]) for k in keys}},
+           "lr_words_v2": {"setting": f"C={v2['C']:g}, {v2['class_weight']}", **{k: float(v2[k]) for k in keys}},
+           "llm_haiku": {"setting": f"prompt {chosen}", **{k: float(llm[k]) for k in keys}}}
+    out["f1_v2_minus_v1"] = out["lr_words_v2"]["f1"] - out["lr_words_v1_stale"]["f1"]
+    write_table("comparison_lr_config_validation", pd.DataFrame(
+        [{"model": n, **d} for n, d in out.items() if isinstance(d, dict)]).round(4))
+    return out
+
+
 def comparison_stage() -> dict:
     """Compare majority, lr_words, lr_extended and llm_haiku (pass 1) on the same test documents.
 
@@ -1016,7 +1041,9 @@ def comparison_stage() -> dict:
     # same pairs as metrics.json data.near_duplicate_pairs_across_splits (exact duplicates dropped first)
     dup_pairs = find_near_duplicates(cleaned_frame(keep_all=False))
     excluded = duplicate_test_ids(dup_pairs, split)
-    dup_table, dup_summary = no_duplicate_sensitivity(ids, y, {m: preds[m] for m in pair}, excluded, chosen_lr, LLM_ID)
+    dup_table, dup_summary = no_duplicate_sensitivity(ids, y, {m: preds[m] for m in pair}, excluded, chosen_lr, LLM_ID,
+                                                 sites=sites)
+    lr_config = _lr_config_validation_sensitivity()
     write_table("comparison_test_no_dups", dup_table.round(4))
     wins = {k: max(pair, key=lambda m: f1_of[m][k]) for k in ("precision", "recall", "f1")}
     values = {"data": "filtered documents, split_v1, TEST rows; predictions from evaluate_final files only",
@@ -1029,6 +1056,7 @@ def comparison_stage() -> dict:
               "mainstream_accuracy": {m: float((preds[m][~y] == y[~y]).mean()) for m in pair},
               "average_precision": {n: c[1] for n, c in curves.items()},
               "length_buckets": lengths.to_dict("records"), "llm_stability": metrics["llm"]["stability"],
+              "lr_config_validation_sensitivity": lr_config,
               "no_duplicate_sensitivity": {**dup_summary, "compared": list(pair),
                                            "pairs_across_splits_in_data":
                                                metrics["data"]["near_duplicate_pairs_across_splits"]}}

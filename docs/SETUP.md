@@ -56,7 +56,7 @@ https://claude.ai/code/routines → **New routine**:
 
 - **Name:** `FML agent`
 - **Model:** Sonnet 5.5
-- **Repositories:** `kenoja/FML-fake-news` and `kenoja/FML-data`
+- **Repositories:** `<owner>/<repo>` and `<owner>/<data-repo>`
 - **Environment:** `fml`
 - **Connectors:** remove all (the agent does not need any)
 - **Trigger:** **API** only, and do **not** generate a token. No schedule. Without a token nobody can

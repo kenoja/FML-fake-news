@@ -90,6 +90,32 @@ def scan_files(files: list[Path]) -> list[str]:
     return fails
 
 
+OWNER_RE = re.compile(r"kenoja|jahn|\bkeno\b|github\.com/[\w.-]+/FML-|\b(?!<owner>)[\w.-]+/FML-(?:fake-news|data)\b",
+                      re.I)
+
+
+def owner_hits(text: str) -> list[str]:
+    """GitHub usernames / owner paths. Why: a username identifies a team member in a public repo."""
+    return [m.group(0) for m in OWNER_RE.finditer(text)]
+
+
+def _doc_files() -> list[Path]:
+    files = [REPO / "README.md", REPO / ".env.example", REPO / ".gitignore"]
+    for sub in ("docs", "content/sections", "reports"):
+        files += sorted((REPO / sub).rglob("*.md"))
+    return [f for f in files if f.is_file()]
+
+
+def test_docs_have_no_github_owner_names():
+    hits = {f.name: owner_hits(f.read_text(encoding="utf-8", errors="ignore")) for f in _doc_files()}
+    assert {k: v for k, v in hits.items() if v} == {}
+
+
+def test_owner_scanner_catches_injected_username():
+    assert owner_hits("see " + "keno" + "ja/FML-data") and owner_hits("by " + "Jah" + "n")
+    assert owner_hits("<owner>/<repo> and <owner>/FML-data") == []
+
+
 def test_public_outputs_have_no_emails_or_long_quotes():
     assert scan_files(_public_files()) == []
 

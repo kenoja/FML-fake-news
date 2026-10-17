@@ -26,9 +26,19 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "stance-agreement":
         from .errors import human_agreement
 
-        result = human_agreement(Path(args.csv))
+        path = Path(args.csv)
+        if not path.is_file():
+            print(f"fml stance-agreement: {path} not found; run `fml run-all` to create the check sample.",
+                  file=sys.stderr)
+            return 2
+        try:
+            result = human_agreement(path)
+        except (ValueError, KeyError) as exc:
+            print(f"fml stance-agreement: cannot read {path}: {exc}", file=sys.stderr)
+            return 2
         if result["human_filled"] == 0:
-            print(f"{result['status']} (kappa = null: nobody has filled human_stance yet)")
+            print(f"BLOCKED, pending human check: {result['status']} (kappa = null: nobody has filled "
+                  f"human_stance yet; agents must not fill it).")
         print(json.dumps(result, indent=2))
         return 0
 

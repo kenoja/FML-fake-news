@@ -15,7 +15,9 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   that never mention 9/11 and explain the effect. Pattern in `config/project.yaml`; it includes
   "pentagon", which may also match unrelated defence articles — check the removed and kept examples.
 - **2026-10-16 · JFK transfer test** out of scope for now.
-- **2026-10-16 · Data location.** Full texts only in the private repo `FML-data`; this repo is public.
+- **2026-10-16 · Data location.** Full texts only in the private data repo; this repo is public.
+
+- **2026-10-17 · GitHub owner name removed from docs.** Replaced with `<owner>/<repo>` and `<owner>/<data-repo>` placeholders in docs/, `.gitignore` and `.env.example`. Not changed: `config/site.yaml` (`repo_url`, `giscus.repo`) still holds the real owner path because `sitegen` has no other source for the "Code on GitHub" link and the comment widget, and `sitegen/` is protected. Also containing it and protected (reported only): `scripts/collect_feedback.py` (default `--repo`). The directory names `../fml-data` / `../FML-data` in `config/project.yaml` are folder lookups, not an owner path.
 - **2026-10-16 · Licence.** No licence found in the LOCO paper; OSF page unreachable (maintenance).
   Treat texts as not redistributable until confirmed.
 - **2026-10-16 · Licence check, cycle 1 task T1: unreachable on 2026-10-16.** The agent could not open
@@ -280,3 +282,25 @@ No requirement is declined.
 
 - Report trimmed to 4,903 body words (limit 5,000); count recorded in `docs/ai-log.md`.
 - Not done by this task (left to the harness or humans): `fml run-all`, full test suite and site build run; the double-run reproducibility diff; human stance check (40 rows, kappa still `null`); human checks in the `docs/ai-log.md` table; licence confirmation; decisions on near-duplicates, default sampling for the LLM and a larger LLM output limit.
+
+## Blocked: human stance verification (requirement 2) — 2026-10-17
+
+- Status: **blocked, pending human check.** `results/tables/stance_check_sample.csv` has 0/40 rows with `human_stance` filled; kappa is `null` (not 0). Agents cannot supply human labels and no value was invented.
+- Who: two members (e.g. Member A and Member B), each independently, reading the articles in the private data repo before looking at `claude_stance`.
+- Steps: fill `human_stance` (one of `endorses`, `rejects_or_debunks`, `reports_neutrally`, `no_claim`), run `fml stance-agreement` (prints `pending: 0/40 filled` until then, and kappa afterwards), then update the H6 verdict in section 11 and report §5.6 and record the kappa here.
+- Tooling: `fml stance-agreement` now prints a clear "BLOCKED, pending human check" message on empty input and a plain error (exit 2) on a missing or malformed file; tested in `tests/test_errors.py` for empty, filled toy and missing input.
+
+## T4 (review): second test look, stated plainly, with sensitivity
+
+- Facts from `results/test_access_log.jsonl` (unchanged by this task, no `evaluate-final` call): `lr_words`
+  01:19:52, `lr_extended` 01:21:07, `llm_haiku` 09:26:03, `lr_words_v2` 10:35:02. `lr_words_v2` is therefore a
+  second look at the words-only LR, made after the test results of `lr_extended` and `llm_haiku` were known.
+- The LR-vs-LLM conclusion rests on the document-level test only (McNemar p = 0.0004; document-bootstrap
+  delta-F1 interval above 0). The website-level delta-F1 interval (-0.0166 to 0.3891) includes 0. Section 10
+  and report §4 say so.
+- Sensitivity for the stale `lr_words` result: its test numbers are not stored, so none is invented. Choice:
+  validation comparison of the stale setting (C=100, no class weights) against the reported one (C=10,
+  balanced) from `m1_words_filtered_grid.csv`, written to `results/tables/comparison_lr_config_validation.csv`
+  and `metrics.json#comparison.lr_config_validation_sensitivity`. Validation F1 is equal for both.
+- The "without near-duplicates" rows now have document and website bootstrap intervals, computed from
+  `predictions_lr.csv` and `predictions_llm.csv` (`comparison.no_duplicate_sensitivity(..., sites=...)`).

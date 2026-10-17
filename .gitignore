@@ -3,7 +3,7 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .venv/
-# raw data never lives here (private repo kenoja/FML-data)
+# raw data never lives here (private data repo)
 data/raw/
 *.jsonl.gz
 # built site is published by the Pages workflow, not committed

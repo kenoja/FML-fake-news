@@ -34,7 +34,7 @@ config/      project settings, agent limits, the 10/10 rubric
 
 ```bash
 pip install -e ".[dev]"
-export FML_DATA_DIR=/path/to/FML-data            # the private data repo (article texts are not in this repo)
+export FML_DATA_DIR=/path/to/data-repo            # the private data repo (article texts are not in this repo)
 export LLM_CLASSIFIER_API_KEY=...                # only needed if results/llm_cache.jsonl lacks entries
 fml data-summary                                 # check the data is found
 ```

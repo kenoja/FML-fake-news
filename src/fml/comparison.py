@@ -77,13 +77,15 @@ def duplicate_test_ids(pairs: pd.DataFrame, split: pd.Series) -> set:
 
 
 def no_duplicate_sensitivity(doc_ids, y, preds: dict[str, np.ndarray], excluded: set,
-                             a: str, b: str) -> tuple[pd.DataFrame, dict]:
+                             a: str, b: str, sites=None) -> tuple[pd.DataFrame, dict]:
     """Recompute conspiracy P/R/F1 on the test documents without near-duplicate partners.
 
     Why: a test text that is a near copy of a training text is partly "seen", which could flatter a
     model that memorises (the logistic regression) more than one that does not. The split stays
     frozen; this only quantifies how much the head-to-head depends on those documents.
     Returns a table (all test vs. remainder, per model) and a summary with F1 deltas (b minus a).
+    With `sites` (website per document) every row also carries the document and website bootstrap
+    intervals from `model_row`, computed from the saved predictions only.
     """
     ids, y = np.asarray(doc_ids), np.asarray(y, dtype=bool)
     keep = ~np.isin(ids, list(excluded))
@@ -92,8 +94,12 @@ def no_duplicate_sensitivity(doc_ids, y, preds: dict[str, np.ndarray], excluded:
         p = np.asarray(p, dtype=bool)
         for setting, m in (("all_test", np.ones(len(y), dtype=bool)), ("without_duplicates", keep)):
             met = classification_metrics(y[m], p[m]) if m.any() else dict.fromkeys(METRIC_NAMES, float("nan"))
-            rows.append({"model": name, "setting": setting, "documents": int(m.sum()),
-                         "conspiracy": int(y[m].sum()), **{k: met[k] for k in ("precision", "recall", "f1")}})
+            row = {"model": name, "setting": setting, "documents": int(m.sum()),
+                   "conspiracy": int(y[m].sum()), **{k: met[k] for k in ("precision", "recall", "f1")}}
+            if sites is not None and m.any():
+                full = model_row(name, y[m], p[m], np.asarray(sites)[m])
+                row.update({k: v for k, v in full.items() if k not in ("model", "documents", "conspiracy", *row)})
+            rows.append(row)
             f1[(name, setting)] = met["f1"]
     summary = {"n_excluded": int((~keep).sum()), "n_excluded_conspiracy": int(y[~keep].sum()),
                "n_remaining": int(keep.sum()), "n_remaining_conspiracy": int(y[keep].sum()),

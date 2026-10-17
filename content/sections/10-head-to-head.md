@@ -12,6 +12,18 @@ hypothesis: Both approaches beat the always-mainstream baseline on conspiracy F1
 3. **Six conspiracy websites.** One of them supplies 44 of the 98 conspiracy test documents, so the test set mostly measures how well each model recognises that site.
 4. **36 near-duplicate pairs across splits** (`data.near_duplicate_pairs_across_splits`). Nine test documents have a partner in train or validation. The "without near-duplicates" rows stay in the table below: the F1 changes by -0.005 (logistic regression) and -0.004 (LLM), and the gap stays about 0.1, so the duplicates do not explain the result.
 
+**Plain statement on the second test look and what the conclusion rests on.** `lr_words` was scored on test first (2026-10-17T01:19:52, hash 4c7ae4b64bb07dc1). `lr_words_v2` was scored later (10:35:02, hash 686c1de15756e287), after `lr_extended` and `llm_haiku` had already been scored, so the words-only model got a second test look when other test results were known. The log has not changed (no new line was added for this check). The conclusion "the LLM beats the logistic regression" rests **only on the document-level test**: the McNemar test (p = 0.0004, 32 vs 9 documents that only one model gets right) and the document-bootstrap interval for delta-F1 (+0.0235 to +0.1795). At **website level the interval for the LLM-minus-LR F1 difference includes 0** (+0.0994, interval -0.0166 to +0.3891), so with 6 conspiracy websites the data cannot separate the two models. The without-near-duplicates rows in the table now carry bootstrap intervals computed from the saved predictions only (`results/tables/comparison_test_no_dups.csv`); no new scoring on test was done.
+
+**Sensitivity row for the first `lr_words` configuration.** Its test numbers are not stored anywhere in `results/` (the log keeps only the model id and a hash), and we do not score on test again. We therefore give the **validation** comparison, copied from `results/tables/comparison_lr_config_validation.csv` (`results/metrics.json#comparison.lr_config_validation_sensitivity`):
+
+| Model (validation split) | Setting | Precision | Recall | F1 |
+|---|---|---|---|---|
+| `lr_words` v1 (stale; scored on test first, number not stored) | C=100, no class weights | 0.965 | 0.867 | 0.914 |
+| `lr_words_v2` (reported) | C=10, balanced | 0.914 | 0.914 | 0.914 |
+| `llm_haiku` (chosen prompt v2) | zero-shot | 1.0 | 0.906 | 0.951 |
+
+On validation the two logistic regression settings have the same F1 (difference 0.0), so revising the configuration did not move the quality of the words-only model; it only changed the balance of precision and recall.
+
 **Headline comparison on test** (website intervals first, then document intervals; copied from `results/tables/comparison_test.csv`, `results/tables/comparison_test_no_dups.csv` and `results/metrics.json#comparison`):
 
 | Model | F1 | F1 website (cluster) interval | F1 document interval | Precision | Recall | Macro F1 | Balanced accuracy |
@@ -20,8 +32,8 @@ hypothesis: Both approaches beat the always-mainstream baseline on conspiracy F1
 | Logistic regression, words (`lr_words_v2`) | 0.585 | 0.324 to 0.804 | 0.491 to 0.667 | 0.685 | 0.510 | 0.740 | 0.720 |
 | Logistic regression, extended (`lr_extended`) | 0.583 | 0.314 to 0.822 | 0.493 to 0.667 | 0.662 | 0.520 | 0.737 | 0.720 |
 | Claude Haiku 5.5 (`llm_haiku`) | 0.684 | 0.371 to 0.933 | 0.592 to 0.762 | 0.963 | 0.531 | 0.807 | 0.762 |
-| `lr_words_v2`, sensitivity: without near-duplicates (414 documents) | 0.580 | not computed | not computed | 0.681 | 0.505 | not computed | not computed |
-| `llm_haiku`, sensitivity: without near-duplicates (414 documents) | 0.680 | not computed | not computed | 0.962 | 0.526 | not computed | not computed |
+| `lr_words_v2`, sensitivity: without near-duplicates (414 documents) | 0.580 | 0.322 to 0.797 | 0.481 to 0.667 | 0.681 | 0.505 | 0.736 | 0.716 |
+| `llm_haiku`, sensitivity: without near-duplicates (414 documents) | 0.680 | 0.370 to 0.930 | 0.587 to 0.764 | 0.962 | 0.526 | 0.805 | 0.760 |
 
 <!-- output: results/tables/comparison_test.csv -->
 
@@ -99,6 +111,7 @@ A *near-duplicate* is a pair of articles whose TF-IDF vectors have cosine simila
 <!-- cell: src/fml/comparison.py#no_duplicate_sensitivity -->
 
 <!-- output: results/tables/comparison_test_no_dups.csv -->
+<!-- output: results/tables/comparison_lr_config_validation.csv -->
 <!-- output: results/metrics.json#comparison.no_duplicate_sensitivity -->
 
 Nine test documents (one of them conspiracy) are excluded (`n_excluded`), leaving 414. F1 of the logistic regression moves from 0.5848 to 0.5799 (change -0.0049) and F1 of the LLM from 0.6842 to 0.68 (change -0.0042). The gap between them is 0.0994 on all test documents and 0.1001 without the duplicates. Both models lose about the same tiny amount, so near-duplicates do not explain the LLM's lead and do not change the conclusion of this section.
