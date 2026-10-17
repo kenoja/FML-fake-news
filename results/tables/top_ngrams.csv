@@ -1,0 +1,101 @@
+direction,feature,n,coefficient,model_id
+conspiracy,truth,1,6.1043,lr_plus_ngrams
+conspiracy,posted,1,5.3034,lr_plus_ngrams
+conspiracy,was posted,2,5.1162,lr_plus_ngrams
+conspiracy,false,1,4.7454,lr_plus_ngrams
+conspiracy,fbi,1,4.3266,lr_plus_ngrams
+conspiracy,article was posted,3,4.2605,lr_plus_ngrams
+conspiracy,article,1,4.2242,lr_plus_ngrams
+conspiracy,the truth,2,4.1643,lr_plus_ngrams
+conspiracy,media,1,4.161,lr_plus_ngrams
+conspiracy,video,1,4.1547,lr_plus_ngrams
+conspiracy,official,1,3.8572,lr_plus_ngrams
+conspiracy,the official,2,3.8514,lr_plus_ngrams
+conspiracy,this,1,3.8415,lr_plus_ngrams
+conspiracy,false flag,2,3.8268,lr_plus_ngrams
+conspiracy,am,1,3.7455,lr_plus_ngrams
+conspiracy,fact,1,3.632,lr_plus_ngrams
+conspiracy,former,1,3.6211,lr_plus_ngrams
+conspiracy,the fbi,2,3.5586,lr_plus_ngrams
+conspiracy,cia,1,3.5448,lr_plus_ngrams
+conspiracy,article was,2,3.5276,lr_plus_ngrams
+conspiracy,here,1,3.5109,lr_plus_ngrams
+conspiracy,wtc,1,3.4295,lr_plus_ngrams
+conspiracy,this article was,3,3.4172,lr_plus_ngrams
+conspiracy,this article,2,3.3929,lr_plus_ngrams
+conspiracy,is the,2,3.3859,lr_plus_ngrams
+mainstream,killed,1,-3.8311,lr_plus_ngrams
+mainstream,the,1,-3.2514,lr_plus_ngrams
+mainstream,nearly,1,-3.0922,lr_plus_ngrams
+mainstream,tower,1,-3.0297,lr_plus_ngrams
+mainstream,often,1,-2.9999,lr_plus_ngrams
+mainstream,in,1,-2.9457,lr_plus_ngrams
+mainstream,response,1,-2.9415,lr_plus_ngrams
+mainstream,of,1,-2.8719,lr_plus_ngrams
+mainstream,life,1,-2.8664,lr_plus_ngrams
+mainstream,new york,2,-2.8294,lr_plus_ngrams
+mainstream,york,1,-2.8282,lr_plus_ngrams
+mainstream,new york city,3,-2.7713,lr_plus_ngrams
+mainstream,york city,2,-2.7713,lr_plus_ngrams
+mainstream,and,1,-2.7117,lr_plus_ngrams
+mainstream,risk,1,-2.7113,lr_plus_ngrams
+mainstream,000,1,-2.6473,lr_plus_ngrams
+mainstream,to,1,-2.6094,lr_plus_ngrams
+mainstream,city,1,-2.4342,lr_plus_ngrams
+mainstream,qaeda,1,-2.4149,lr_plus_ngrams
+mainstream,al qaeda,2,-2.412,lr_plus_ngrams
+mainstream,after,1,-2.4016,lr_plus_ngrams
+mainstream,nearly 000,2,-2.3496,lr_plus_ngrams
+mainstream,whether,1,-2.3132,lr_plus_ngrams
+mainstream,manhattan,1,-2.2785,lr_plus_ngrams
+mainstream,counterterrorism,1,-2.2131,lr_plus_ngrams
+conspiracy,was posted,2,5.1285,lr_extended
+conspiracy,truth,1,4.6178,lr_extended
+conspiracy,posted,1,4.2593,lr_extended
+conspiracy,article was posted,3,4.1843,lr_extended
+conspiracy,article,1,4.1272,lr_extended
+conspiracy,article was,2,3.6344,lr_extended
+conspiracy,this,1,3.6207,lr_extended
+conspiracy,this article was,3,3.5063,lr_extended
+conspiracy,official,1,3.4579,lr_extended
+conspiracy,this article,2,3.437,lr_extended
+conspiracy,fact,1,3.3096,lr_extended
+conspiracy,iran,1,3.3083,lr_extended
+conspiracy,media,1,3.3067,lr_extended
+conspiracy,am,1,3.2776,lr_extended
+conspiracy,former,1,3.2371,lr_extended
+conspiracy,here,1,3.078,lr_extended
+conspiracy,this entry,2,3.0384,lr_extended
+conspiracy,the official,2,3.0174,lr_extended
+conspiracy,bush,1,2.998,lr_extended
+conspiracy,the truth,2,2.8967,lr_extended
+conspiracy,secret,1,2.8829,lr_extended
+conspiracy,down the,2,2.8782,lr_extended
+conspiracy,fbi,1,2.8619,lr_extended
+conspiracy,is the,2,2.8552,lr_extended
+conspiracy,intelligence,1,2.7966,lr_extended
+mainstream,killed,1,-3.0876,lr_extended
+mainstream,tower,1,-2.8888,lr_extended
+mainstream,new york city,3,-2.7562,lr_extended
+mainstream,york city,2,-2.7562,lr_extended
+mainstream,life,1,-2.5265,lr_extended
+mainstream,response,1,-2.4572,lr_extended
+mainstream,risk,1,-2.3832,lr_extended
+mainstream,nearly,1,-2.2543,lr_extended
+mainstream,city,1,-2.2064,lr_extended
+mainstream,nearly 000,2,-2.1864,lr_extended
+mainstream,often,1,-2.1689,lr_extended
+mainstream,the president,2,-2.1591,lr_extended
+mainstream,band,1,-2.1333,lr_extended
+mainstream,the band,2,-2.1328,lr_extended
+mainstream,al qaeda,2,-2.0714,lr_extended
+mainstream,qaeda,1,-2.0624,lr_extended
+mainstream,new york,2,-2.0484,lr_extended
+mainstream,risks,1,-2.0357,lr_extended
+mainstream,york,1,-2.0273,lr_extended
+mainstream,2001 attacks,2,-2.0171,lr_extended
+mainstream,daily beast,2,-1.9966,lr_extended
+mainstream,increased,1,-1.9535,lr_extended
+mainstream,000,1,-1.9435,lr_extended
+mainstream,national,1,-1.9008,lr_extended
+mainstream,on wednesday,2,-1.8831,lr_extended
