@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -18,7 +19,15 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("run-all",help="reproduce every result in results/ from the data repo")
     final = sub.add_parser("evaluate-final", help="score one model on the TEST split (logged; see AGENTS.md)")
     final.add_argument("model_id")
+    agree = sub.add_parser("stance-agreement", help="Cohen's kappa between human and Claude stance codes")
+    agree.add_argument("csv", nargs="?", default="results/tables/stance_check_sample.csv")
     args = parser.parse_args(argv)
+
+    if args.command == "stance-agreement":
+        from .errors import human_agreement
+
+        print(json.dumps(human_agreement(Path(args.csv)), indent=2))
+        return 0
 
     if args.command == "data-summary":
         from .data import load_corpus, summary

@@ -1,0 +1,86 @@
+---
+title: Head-to-head on the test set
+part: Evaluation
+hypothesis: Both approaches beat the always-mainstream baseline on conspiracy F1 (H1); the zero-shot LLM is cautious (high precision, lower recall) while the logistic regression finds more conspiracy pages but also raises more false alarms, and with so few test websites the difference between them is not clearly separable.
+---
+## Goal and hypothesis
+
+Everything so far was tuned on **validation**. This section is the one place where all approaches meet on the same **test** documents, which were scored exactly once per model by `fml evaluate-final` (the log is `results/test_access_log.jsonl`). The comparison stage reads only the saved prediction files, so it cannot choose or re-score anything on test.
+
+We compare four things on the same 423 test documents (numbers in `results/metrics.json`, key `comparison`):
+
+- **majority**: always answers "mainstream" (the most common class in training);
+- **lr_words**: logistic regression on word TF-IDF; this is also the "best LR" because validation did not show a clear gain for the extended features (`ablation.chosen_lr`);
+- **lr_extended**: the logistic regression with n-grams, epistemic and style features (reported, but not chosen);
+- **llm_haiku**: Claude Haiku 5.5 zero-shot, with the prompt chosen on validation, **pass 1** (the official one).
+
+Hypothesis: see the header.
+
+## Explanation
+
+**Open question 3: is the LLM the baseline?** No. Because an LLM does not always answer the same way, we never treat its answer as the truth. **Both** approaches are compared against the **dataset labels** (conspiracy-oriented or mainstream website). The LLM's answers are one more set of predictions that gets scored, exactly like the logistic regression's. The only baseline is the majority rule.
+
+**How stable is the LLM?** We sent the same test documents a second time with the same prompt (pass 2). The two passes agree on the share of documents given in `comparison.llm_stability.agreement`, the number of documents whose answer flipped is `flipped_docs`, and Cohen's kappa (agreement beyond chance) is `cohen_kappa`:
+
+<!-- output: results/metrics.json#comparison.llm_stability -->
+
+Roughly 95% agreement and a kappa near 0.89 mean the answers are mostly stable but not identical, so single-run LLM scores carry a small extra uncertainty. The scored F1 of pass 2 (`llm.test_pass2`) is within the pass-1 interval. Some of the instability comes from replies that could not be parsed (`parse_errors_pass1`/`pass2`): they count as "not conspiracy" and so lower recall.
+
+**Metrics, in plain words.** For the conspiracy class: *precision* is the share of pages called "conspiracy" that really are; *recall* is the share of real conspiracy pages that were found; *F1* balances both. *Macro-F1* averages the F1 of both classes; *balanced accuracy* averages recall on both classes, so a model that ignores the small class cannot look good.
+
+**Confidence intervals by bootstrap** (defined in section 05). We redraw the test set 2,000 times with replacement and recompute the score. The *document* bootstrap redraws articles; the *website* bootstrap redraws whole websites with all their articles, which is more honest because articles from one site resemble each other. Both are in the table, and the website interval is the one to trust.
+
+**McNemar exact test** (first met in section 08). Take only the documents where exactly one of two models is right. If the models were equally good, these "discordant" documents would split about 50/50. The test turns the actual split into a p-value; a small p-value means the models really differ on these documents. A **paired bootstrap** of delta-F1 resamples the *same* documents for both models and reports the interval of the F1 difference; an interval containing 0 means the data cannot separate them.
+
+### Results table
+
+<!-- cell: src/fml/pipeline.py#comparison_stage -->
+
+<!-- cell: src/fml/comparison.py#model_row -->
+
+<!-- output: results/tables/comparison_test.csv -->
+
+<!-- output: results/figures/comparison_f1.png | Conspiracy-class F1 on test with document and website 95% intervals -->
+
+<!-- output: results/figures/comparison_confusion.png | Confusion matrices on test: rows are the true website type -->
+
+**H1 verdict.** The majority baseline finds no conspiracy page, so its conspiracy F1 is 0. Both lr_words and llm_haiku are above it and the website-bootstrap interval of their F1 stays above 0 (`comparison.h1`: `site_ci_excludes_majority` is true for both). **H1 holds on test.** That is a low bar, however; macro-F1 and balanced accuracy show the real gap (majority 0.50 balanced accuracy).
+
+**Who wins on which class.** The LLM has much higher precision (`winner_by_metric`: llm_haiku for precision, recall and F1) and only 2 false alarms, and it is also right on 99% of mainstream pages versus 95% for lr_words (`comparison.mainstream_accuracy`). Its recall on conspiracy pages (0.53) is only a little above lr_extended (0.52) and above lr_words (0.45). In short: the LLM is the more careful judge of mainstream pages and has the higher F1; the logistic regression's mistakes are mostly false alarms on mainstream pages (15 for lr_words, 26 for lr_extended) and misses on conspiracy pages. Neither finds even 60% of the conspiracy pages.
+
+### Is the difference real?
+
+<!-- output: results/metrics.json#comparison.mcnemar -->
+
+*lr_words vs llm_haiku:* the LLM is right and the LR wrong on 28 documents, the other way round on 7 (McNemar p = 0.0005). The paired delta-F1 is +0.124; its document interval is 0.041 to 0.207 and its **website interval is 0.024 to 0.334**. By documents the LLM is clearly better; by websites the interval barely excludes 0 and is very wide, so the honest statement is "the LLM is probably better here, by an amount we cannot pin down".
+
+*lr_words vs lr_extended:* 22 vs 18 discordant documents, p = 0.64, delta-F1 +0.022 with interval -0.131 to 0.091 across websites. No evidence that the hand-made features help, which agrees with the validation result in section 08.
+
+### Where do the models differ? Length, thresholds and websites
+
+<!-- output: results/tables/comparison_length_buckets.csv -->
+
+The length table has only 27 and 32 documents in the two short buckets (5 and 7 conspiracy pages), so it shows no reliable length effect.
+
+<!-- output: results/figures/comparison_pr.png | Precision-recall curves on test for lr_words and the LLM confidence -->
+
+The precision-recall figure ranks documents by the logistic regression's probability and by the LLM's stated confidence (conspiracy confidence if it answered "conspiracy", 1 - confidence otherwise; unparsable replies get 0). The LLM's confidence is not a calibrated probability and has few distinct values, so its curve is coarse. Average precision is in `comparison.average_precision`: the logistic regression's ranking is the slightly better one even though the LLM's hard decisions score higher F1.
+
+<!-- output: results/tables/per_website_test.csv -->
+
+The per-website table is the most important caution. The test split has only **6 conspiracy websites** (`test_conspiracy_websites`), and one of them (neonnettle.com, 44 pages) is the large majority of the misses for all three models: accuracy there is about 0.16 to 0.20 even for the LLM. One oye.news page counts as a whole website. A different website draw could move every number in the table, which is exactly what the wide website intervals say.
+
+## What could go wrong
+
+- **Few test websites.** 18 websites, only 6 conspiracy. Intervals by website are wide (F1 for the LLM: 0.37 to 0.93). Treat rankings as indications, not as proof.
+- **Distribution shift between validation and test.** Prompt and LR settings were chosen on validation (19 websites), where the LLM reached a much higher recall (0.91) than on test (0.53). Different websites behave differently; part of the drop is tuning to validation sites.
+- **LLM non-determinism.** `claude-haiku-5-5` rejects `temperature`, so the run uses default sampling. Pass 1 is scored, pass 2 is a sensitivity check (see stability above).
+- **Parse errors.** 61 replies were unparsable and counted as "not conspiracy"; this lowers LLM recall and is a formatting issue more than a judgement issue.
+- **Prior knowledge.** Haiku may have seen these sites or articles; the logistic regression saw only our training data. The LLM score may not carry over to other topics.
+- **Multiple comparisons.** We ran two McNemar tests on test; the second is secondary, and none of this was used to choose a model.
+
+## Technical infrastructure
+
+- Code: `src/fml/comparison.py` (`model_row`, `pairwise`, `per_website_table`, `length_bucket_f1`), `src/fml/pipeline.py#comparison_stage`; statistics from `src/fml/evaluate.py` (`bootstrap_ci`, `paired_delta_ci`, `mcnemar_exact`).
+- Inputs: `results/tables/predictions_lr.csv`, `results/tables/predictions_llm.csv` (written by `evaluate_final`); outputs: `results/tables/comparison_test.csv`, `per_website_test.csv`, `comparison_length_buckets.csv`, figures `comparison_f1.png`, `comparison_confusion.png`, `comparison_pr.png`, and `metrics.json#comparison`.
+- Tests: `tests/test_comparison.py` recomputes the McNemar counts and p-values by hand on a synthetic example and from the saved prediction files.

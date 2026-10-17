@@ -21,6 +21,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from sklearn.metrics import average_precision_score  # noqa: E402
 
+from . import errors  # noqa: E402
 from .clean import clean_corpus, website_names  # noqa: E402
 from .data import load_corpus, on_topic_mask  # noqa: E402
 from .evaluate import (BOOTSTRAP_SEED, N_BOOTSTRAP, bootstrap_ci, classification_metrics, confusion,  # noqa: E402
@@ -809,10 +810,257 @@ def llm_stage() -> dict:
     return values
 
 
+# ---------------------------------------------------------------- stage: comparison
+
+def _score_from_llm(p1: pd.DataFrame) -> np.ndarray:
+    """LLM confidence as a conspiracy score: confidence if it said conspiracy, 1 - confidence otherwise."""
+    conf = p1["confidence"].astype(float).fillna(0.0).to_numpy()
+    return np.where(p1["llm_label"].to_numpy() == "conspiracy", conf, 1 - conf)
+
+
+def _nan_to_none_deep(obj):
+    if isinstance(obj, float) and obj != obj:
+        return None
+    if isinstance(obj, dict):
+        return {k: _nan_to_none_deep(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_nan_to_none_deep(v) for v in obj]
+    return obj
+
+
+def plot_comparison_f1(table: pd.DataFrame):
+    fig, ax = plt.subplots(figsize=(7, 4))
+    x = np.arange(len(table))
+    f1 = table["f1"].to_numpy()
+    doc = table[["f1_ci_doc_low", "f1_ci_doc_high"]].to_numpy()
+    site = table[["f1_ci_site_low", "f1_ci_site_high"]].to_numpy()
+    ax.bar(x, f1, color=CONSPIRACY_COLOUR, width=0.55)
+    ax.errorbar(x - 0.08, f1, yerr=[f1 - doc[:, 0], doc[:, 1] - f1], fmt="none", ecolor="black", capsize=4,
+                label="95% CI, documents resampled")
+    ax.errorbar(x + 0.08, f1, yerr=[f1 - site[:, 0], site[:, 1] - f1], fmt="none", ecolor=MAINSTREAM_COLOUR,
+                capsize=4, label="95% CI, websites resampled")
+    ax.set_xticks(x, table["model"])
+    ax.set_ylabel("Conspiracy-class F1 (test)")
+    ax.set_ylim(0, 1.05)
+    ax.legend(loc="upper left", fontsize=8)
+    ax.set_title("Test F1 with two kinds of confidence interval")
+    return fig
+
+
+def plot_comparison_confusion(table: pd.DataFrame):
+    fig, axes = plt.subplots(1, len(table), figsize=(3.4 * len(table), 3.6))
+    for ax, (_, r) in zip(axes, table.iterrows()):
+        mat = np.array([[r["tn"], r["fp"]], [r["fn"], r["tp"]]])
+        ax.imshow(mat, cmap="Greens")
+        for (i, j), v in np.ndenumerate(mat):
+            ax.text(j, i, str(v), ha="center", va="center", fontsize=12,
+                    color="white" if v > mat.max() / 2 else "black")
+        ax.set_xticks([0, 1], ["main.", "consp."])
+        ax.set_yticks([0, 1], ["main.", "consp."])
+        ax.set_xlabel("Predicted")
+        ax.set_title(r["model"], fontsize=10)
+    axes[0].set_ylabel("True website type")
+    fig.tight_layout()
+    return fig
+
+
+def plot_comparison_pr(curves: dict[str, tuple[dict, float]], base_rate: float):
+    fig, ax = plt.subplots(figsize=(5.5, 4))
+    for (name, (c, ap)), colour in zip(curves.items(), (CONSPIRACY_COLOUR, MAINSTREAM_COLOUR)):
+        ax.plot(c["recall"], c["precision"], color=colour, label=f"{name} (AP {ap:.2f})")
+    ax.axhline(base_rate, color="grey", linestyle="--", label=f"always conspiracy ({base_rate:.2f})")
+    ax.set_xlabel("Recall (conspiracy)")
+    ax.set_ylabel("Precision (conspiracy)")
+    ax.set_ylim(0, 1.02)
+    ax.set_title("Test: score threshold behaviour")
+    ax.legend(loc="lower left", fontsize=8)
+    return fig
+
+
+def comparison_stage() -> dict:
+    """Compare majority, lr_words, lr_extended and llm_haiku (pass 1) on the same test documents.
+
+    Reads only the prediction files written by `evaluate_final` (plus website and length metadata of
+    the same documents). No model is fitted or scored here, so this stage cannot select anything on test.
+    """
+    from .comparison import length_bucket_f1, model_row, pairwise, per_website_table
+
+    frame = analysis_frame()
+    split = load_split().set_index("doc_id")["split"]
+    train_y = frame.loc[frame["doc_id"].map(split) == "train", "label"].to_numpy()
+    lr = pd.read_csv(results_dir() / "tables" / "predictions_lr.csv")
+    llm_all = pd.read_csv(results_dir() / "tables" / "predictions_llm.csv")
+    p1 = llm_all[llm_all["pass"] == 1].set_index("doc_id")
+    ids = p1.index
+    for m in (LR_WORDS_ID, LR_EXTENDED_ID):
+        if set(lr.loc[lr["model_id"] == m, "doc_id"]) != set(ids):
+            raise RuntimeError(f"{m} and the LLM were not scored on the same test documents")
+    meta = frame.set_index("doc_id").loc[ids]
+    y, sites = p1["label"].to_numpy(dtype=bool), meta["website"].to_numpy()
+    if not (meta["label"].to_numpy(dtype=bool) == y).all() or (split.loc[ids] != "test").any():
+        raise RuntimeError("prediction files disagree with split_v1 / dataset labels")
+    words = meta["txt"].str.split().map(len).to_numpy()
+
+    metrics = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))
+    chosen_lr = metrics["ablation"]["chosen_lr"]["chosen"]
+    lr_by = {m: lr[lr["model_id"] == m].set_index("doc_id").loc[ids] for m in (LR_WORDS_ID, LR_EXTENDED_ID)}
+    majority = bool(np.mean(train_y) >= 0.5)
+    preds = {"majority": np.full(len(y), majority), LR_WORDS_ID: lr_by[LR_WORDS_ID]["pred"].to_numpy(dtype=bool),
+             LR_EXTENDED_ID: lr_by[LR_EXTENDED_ID]["pred"].to_numpy(dtype=bool), LLM_ID: p1["pred"].to_numpy(dtype=bool)}
+    table = pd.DataFrame([model_row(n, y, p, sites) for n, p in preds.items()])
+    write_table("comparison_test", table.round(4))
+    savefig(plot_comparison_f1(table), "comparison_f1")
+    savefig(plot_comparison_confusion(table), "comparison_confusion")
+
+    scores = {chosen_lr: lr_by[chosen_lr]["proba"].to_numpy(), LLM_ID: _score_from_llm(p1)}
+    curves = {n: (pr_curve_data(y, s), float(average_precision_score(y, s))) for n, s in scores.items()}
+    savefig(plot_comparison_pr(curves, float(y.mean())), "comparison_pr")
+
+    model_preds = {k: v for k, v in preds.items() if k != "majority"}
+    lengths = length_bucket_f1(words, y, model_preds, LENGTH_BUCKETS)
+    write_table("comparison_length_buckets", lengths.round(4))
+    write_table("per_website_test", per_website_table(sites, y, model_preds).round(4))
+
+    tests = {"lr_best_vs_llm": pairwise(y, preds[chosen_lr], preds[LLM_ID], sites, chosen_lr, LLM_ID),
+             "lr_words_vs_lr_extended": pairwise(y, preds[LR_WORDS_ID], preds[LR_EXTENDED_ID], sites,
+                                                 LR_WORDS_ID, LR_EXTENDED_ID)}
+    conspiracy_sites = int(len(set(sites[y])))
+    f1_of = {r["model"]: r for r in table.to_dict("records")}
+    h1 = {}
+    for m in (chosen_lr, LLM_ID):
+        h1[m] = {"f1": f1_of[m]["f1"], "majority_f1": f1_of["majority"]["f1"],
+                 "delta_f1_vs_majority_sites": paired_delta_ci(y, preds["majority"], preds[m], groups=sites),
+                 "beats_majority": bool(f1_of[m]["f1"] > f1_of["majority"]["f1"]),
+                 "site_ci_excludes_majority": bool(f1_of[m]["f1_ci_site_low"] > f1_of["majority"]["f1"])}
+    pair = (chosen_lr, LLM_ID)
+    wins = {k: max(pair, key=lambda m: f1_of[m][k]) for k in ("precision", "recall", "f1")}
+    values = {"data": "filtered documents, split_v1, TEST rows; predictions from evaluate_final files only",
+              "models": list(preds), "lr_best": chosen_lr,
+              "lr_best_rule": "chosen on validation (ablation.chosen_lr)", "llm_pass_scored": 1,
+              "bootstrap": {"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95},
+              "test_documents": int(len(y)), "test_conspiracy": int(y.sum()), "test_websites": int(len(set(sites))),
+              "test_conspiracy_websites": conspiracy_sites, "few_conspiracy_websites": conspiracy_sites < 3,
+              "table": table.to_dict("records"), "mcnemar": tests, "h1": h1, "winner_by_metric": wins,
+              "mainstream_accuracy": {m: float((preds[m][~y] == y[~y]).mean()) for m in pair},
+              "average_precision": {n: c[1] for n, c in curves.items()},
+              "length_buckets": lengths.to_dict("records"), "llm_stability": metrics["llm"]["stability"]}
+    write_metrics("comparison", round_floats(_nan_to_none_deep(values), 4))
+    return values
+
+
+# ---------------------------------------------------------------- stage: errors
+
+def _example_candidates(coded: pd.DataFrame) -> pd.DataFrame:
+    """Worked-example documents, chosen by rule (not by hand) so a rerun picks the same ones:
+    a mainstream false positive that debunks, a conspiracy site without a claim, an endorsing conspiracy
+    article both models missed, a mainstream article that endorses (label problem), plus one LR-only and
+    one LLM-only error. First match by (set order, doc_id)."""
+    wants = [("debunking mainstream false positive", lambda d: (~d["true_label"]) & (d["claude_stance"] == "rejects_or_debunks")),
+             ("conspiracy site without a claim", lambda d: d["true_label"] & (d["claude_stance"] == "no_claim")),
+             ("endorsing conspiracy article missed", lambda d: d["true_label"] & (d["claude_stance"] == "endorses")),
+             ("mainstream site endorsing a claim", lambda d: (~d["true_label"]) & (d["claude_stance"] == "endorses")),
+             ("LR-only error", lambda d: d["set"] == "lr_only_wrong"),
+             ("LLM-only error", lambda d: d["set"] == "llm_only_wrong")]
+    rows, used = [], set()
+    for kind, rule in wants:
+        d = coded[rule(coded) & ~coded["doc_id"].isin(used)]
+        d = d.assign(_o=d["set"].map(errors.SETS.index)).sort_values(["_o", "doc_id"]).drop(columns="_o")
+        if len(d):
+            rows.append({**d.iloc[0].to_dict(), "kind": kind})
+            used.add(d.iloc[0]["doc_id"])
+    return pd.DataFrame(rows)
+
+
+def errors_stage() -> dict:
+    """Disagreement sets on TEST predictions -> stance coding (Sonnet, cached) -> verdicts -> tables.
+
+    Reads only the prediction files written by `evaluate_final`; the LR is refitted on TRAIN only, solely to
+    explain individual predictions (coef * tf-idf). Nothing is scored or selected on test.
+    """
+    cfg = errors.stance_config()
+    seed = project_config()["split"]["seed"]
+    lr_all = pd.read_csv(results_dir() / "tables" / "predictions_lr.csv")
+    chosen = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))["comparison"]["lr_best"]
+    lr = lr_all[lr_all["model_id"] == chosen]
+    llm_p = pd.read_csv(results_dir() / "tables" / "predictions_llm.csv")
+    llm_p = llm_p[llm_p["pass"] == 1]
+    sets = errors.disagreement_sets(lr, llm_p)
+    frame = analysis_frame().set_index("doc_id")
+    sets["website"] = sets["doc_id"].map(frame["website"])
+    to_code = errors.select_for_coding(sets, cfg["max_per_other_set"], seed)
+    missing = errors.missing_stances(to_code["doc_id"])
+    client = None
+    if missing:
+        client = errors.stance_client(cfg)          # raises loudly: no key and no complete cache
+    stance = errors.code_stances(to_code.assign(txt=to_code["doc_id"].map(frame["txt"])), client=client)
+    coded = to_code.merge(stance, on="doc_id")
+    coded["verdict"] = [errors.classify_error(bool(t), s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
+    table = errors.error_classification_table(coded, sets)
+    write_table("error_classification", table)
+
+    usable = coded[coded["claude_stance"] != errors.PARSE_ERROR]
+    sample = errors.stratified_sample(usable, cfg["human_sample_size"], seed)
+    sample_path = results_dir() / "tables" / "stance_check_sample.csv"
+    written = errors.write_check_sample(sample, sample_path)
+    human = errors.human_agreement(sample_path)
+
+    sel = _ablation_selected()[chosen]
+    split = load_split().set_index("doc_id")["split"]
+    f = frame.reset_index()
+    train = f[f["doc_id"].map(split) == "train"]
+    pipe = build_pipeline(sel["features"], C=sel["C"], class_weight=None if sel["class_weight"] == "none" else sel["class_weight"]
+                          ).fit(train, train["label"])
+    ex = _example_candidates(coded)
+    contrib = errors.top_contributions(pipe, f.set_index("doc_id").loc[ex["doc_id"]].reset_index()) if len(ex) else []
+    reasons = llm_p.set_index("doc_id")
+    from . import llm as llm_mod
+    cache = llm_mod.read_cache(llm_mod.cache_path())
+    key = llm_mod.cache_key(reasons["variant"].iloc[0], 1)
+    ex = pd.concat([ex.reset_index(drop=True), pd.DataFrame(contrib)], axis=1)
+    ex["llm_label"] = ex["doc_id"].map(reasons["llm_label"])
+    ex["llm_reason"] = [cache[(d, key)]["reason"] for d in ex["doc_id"]]
+    ex["true_label"] = ex["true_label"].map(CLASS_NAMES)
+    write_table("error_examples", ex[["kind", "doc_id", "website", "set", "true_label", "error_type", "claude_stance",
+                                      "claude_justification", "verdict", "llm_label", "llm_reason",
+                                      "lr_top_conspiracy", "lr_top_mainstream"]])
+
+    def share(mask_all, mask_hit):
+        n = int(mask_all.sum())
+        return {"n": n, "hit": int(mask_hit.sum()), "share": float(mask_hit.sum() / n) if n else None}
+
+    fp, fn = ~usable["true_label"], usable["true_label"]
+    nonendorse = usable["claude_stance"] != "endorses"
+    h6 = {"fp_mainstream_not_endorsing_but_discusses": share(
+              fp, fp & usable["claude_stance"].isin(["rejects_or_debunks", "reports_neutrally"])),
+          "fp_mainstream_debunking": share(fp, fp & (usable["claude_stance"] == "rejects_or_debunks")),
+          "fn_conspiracy_no_claim": share(fn, fn & (usable["claude_stance"] == "no_claim")),
+          "fn_conspiracy_not_endorsing": share(fn, fn & nonendorse),
+          "label_problem_overall": share(usable["verdict"].notna(), usable["verdict"] == errors.LABEL_PROBLEM)}
+    totals = sets.groupby(["set", "error_type"]).size()
+    values = {"data": "TEST rows, filtered documents; predictions from evaluate_final files only",
+              "lr_model": chosen, "llm_pass": 1, "stance_model": cfg["model"],
+              "counts": {s: {"total": int((sets["set"] == s).sum()),
+                             "conspiracy": int(((sets["set"] == s) & sets["true_label"]).sum()),
+                             "mainstream": int(((sets["set"] == s) & ~sets["true_label"]).sum()),
+                             "false_positive": int(totals.get((s, "false positive"), 0)),
+                             "false_negative": int(totals.get((s, "false negative"), 0)),
+                             "coded": int((coded["set"] == s).sum())} for s in errors.SETS},
+              "coded_documents": int(len(coded)), "stance_parse_errors": int((coded["claude_stance"] == errors.PARSE_ERROR).sum()),
+              "stance_counts": usable["claude_stance"].value_counts().to_dict(),
+              "verdict_counts": usable["verdict"].value_counts().to_dict(),
+              "rule": "conspiracy site + (rejects|neutral|no_claim) -> label problem; mainstream site + endorses -> label problem; else model wrong",
+              "h6": h6, "human_check": {**human, "sample_file": "results/tables/stance_check_sample.csv",
+                                        "file_rewritten_this_run": written}}
+    write_metrics("errors", round_floats(values, 4))
+    return values
+
+
 STAGES: list[tuple[str, Callable[[], object]]] = [("baseline_all_docs", baseline_all_docs), ("topic_filter", topic_filter),
                                                   ("baseline", baseline_filtered), ("features", feature_summary_stage),
-                                                  ("ablation", ablation), ("llm", llm_stage)]
-PENDING_STAGES = ["comparison", "errors"]
+                                                  ("ablation", ablation), ("llm", llm_stage),
+                                                  ("comparison", comparison_stage),
+                                                  ("errors", errors_stage)]
+PENDING_STAGES: list[str] = []
 
 
 def run_all() -> None:

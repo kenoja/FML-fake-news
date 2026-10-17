@@ -1,0 +1,4 @@
+bucket,documents,conspiracy,f1_lr_words,f1_lr_extended,f1_llm_haiku
+0-149 words,27,5,0.5714,0.5,1.0
+150-249 words,32,7,0.6154,0.6667,0.7273
+>= 250 words,364,86,0.5547,0.5806,0.6565
