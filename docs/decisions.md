@@ -89,10 +89,21 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 
 - **Licence of the LOCO texts.** Unconfirmed (see above). Conservative reading chosen: texts not
   redistributable; private data repo only; excerpt limits apply.
-- **LLM API key in the cloud environment.** It is unknown whether `LLM_CLASSIFIER_API_KEY` is set when
-  the agent runs. Conservative reading: assume it is not; the LLM stage must fail loudly without key
-  and cache, and never fall back to `ANTHROPIC_API_KEY`. Without a key the LLM results stay missing and
-  are reported as missing, not invented.
+- **LLM API key in the cloud environment.** It was unknown whether `LLM_CLASSIFIER_API_KEY` is set when
+  the agent runs. In the T8 run it was set, so the three validation variants and both test passes were
+  produced (numbers: `metrics.json` key `llm`). The committed cache `results/llm_cache.jsonl` is
+  complete for those runs, so `fml run-all` needs no key; without key and cache the stage still fails
+  loudly with exact missing counts, and never falls back to `ANTHROPIC_API_KEY`.
+- **LLM parse errors from the 150-token output limit (T8).** Many replies (validation: 44 of 398 for the
+  chosen prompt v2; see `metrics.json`) were cut off at `max_output_tokens: 150` before the JSON closed
+  and are counted as parse errors, scored as "not conspiracy" (lowers recall). Raising the limit now
+  would be a re-run after seeing test results, so it was not done. Team decision: accept, or approve a
+  new documented run with a larger limit (new model id on test).
+- **Parallel LLM runs left duplicate lines (T8).** Two interrupted-attempt processes ran the stage at the
+  same time, which duplicated cache lines (1,059 dropped; first answer per `doc_id`+`prompt_hash` kept,
+  `read_cache` now does the same) and wrote the `llm_haiku` test-access entry twice (the second,
+  identical line was removed). Test data was classified once per configuration; the numbers in
+  `metrics.json` were regenerated from the deduplicated cache and are reproducible without a key.
 - **Near-duplicate removal vs the expected 2,608.** If near-duplicate removal is applied after the
   topic filter, the count will fall below 2,608 and that is the number used downstream. Conservative
   reading (T2 measured 63 near-duplicate pairs, 53 documents would go, 36 pairs cross splits): report 2,608 after the topic filter first, then the count after near-duplicate removal

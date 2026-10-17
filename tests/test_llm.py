@@ -104,6 +104,19 @@ def test_missing_count_reports_exact_gap(tmp_path):
     assert len(llm.cached_records(df, "v1", 1, cache_file=cache, cfg=CFG)) == 3
 
 
+def test_duplicate_cache_lines_first_answer_wins_and_dedupe(tmp_path):
+    """Two parallel runs may write the same key; numbers must not depend on which line is read."""
+    import json
+
+    cache = tmp_path / "c.jsonl"
+    base = {"doc_id": "d0", "prompt_hash": "h", "confidence": 0.5, "reason": ""}
+    cache.write_text(json.dumps({**base, "label": "conspiracy"}) + "\n" +
+                     json.dumps({**base, "label": "mainstream"}) + "\n")
+    assert llm.read_cache(cache)[("d0", "h")]["label"] == "conspiracy"
+    assert llm.dedupe_cache(cache) == 1
+    assert len(cache.read_text().splitlines()) == 1
+
+
 def test_stage_error_names_exact_missing_counts():
     from fml import pipeline
 

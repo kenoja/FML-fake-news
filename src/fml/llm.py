@@ -206,8 +206,18 @@ def read_cache(path: Path) -> dict[tuple[str, str], dict]:
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.strip():
             rec = json.loads(line)
-            out[(rec["doc_id"], rec["prompt_hash"])] = rec
+            # First answer wins: if two runs wrote the same key (parallel runs), numbers must not
+            # depend on which line a reader happens to see last.
+            out.setdefault((rec["doc_id"], rec["prompt_hash"]), rec)
     return out
+
+
+def dedupe_cache(path: Path) -> int:
+    """Rewrite the cache keeping the first record per (doc_id, prompt_hash); returns lines dropped."""
+    lines = [ln for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    kept = list(read_cache(path).values())
+    path.write_text("".join(json.dumps(r) + "\n" for r in kept), encoding="utf-8")
+    return len(lines) - len(kept)
 
 
 def append_cache(path: Path, rec: dict) -> None:

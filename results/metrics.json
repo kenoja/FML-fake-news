@@ -1591,12 +1591,12 @@
           }
         },
         "n_docs": 398,
-        "parse_errors": 90,
+        "parse_errors": 91,
         "truncated_docs": 36,
         "max_input_words": 3000,
         "input_tokens": 922930,
-        "output_tokens": 44433,
-        "cost_usd": 0.1145
+        "output_tokens": 43533,
+        "cost_usd": 0.1141
       }
     },
     "chosen": "v2",
@@ -1613,6 +1613,153 @@
       "resamples": 2000,
       "seed": 20261016,
       "level": 0.95
+    },
+    "test": {
+      "model_id": "llm_haiku",
+      "config_hash": "56d18291d053bf3a",
+      "n_docs": 423,
+      "confusion": {
+        "tp": 52,
+        "fn": 46,
+        "fp": 2,
+        "tn": 323
+      },
+      "metrics_documents": {
+        "precision": {
+          "estimate": 0.963,
+          "ci_low": 0.9016,
+          "ci_high": 1.0
+        },
+        "recall": {
+          "estimate": 0.5306,
+          "ci_low": 0.4285,
+          "ci_high": 0.6292
+        },
+        "f1": {
+          "estimate": 0.6842,
+          "ci_low": 0.5917,
+          "ci_high": 0.7625
+        },
+        "macro_f1": {
+          "estimate": 0.8075,
+          "ci_low": 0.7543,
+          "ci_high": 0.8543
+        },
+        "balanced_accuracy": {
+          "estimate": 0.7622,
+          "ci_low": 0.7113,
+          "ci_high": 0.811
+        }
+      },
+      "metrics_websites": {
+        "precision": {
+          "estimate": 0.963,
+          "ci_low": 0.793,
+          "ci_high": 1.0
+        },
+        "recall": {
+          "estimate": 0.5306,
+          "ci_low": 0.24,
+          "ci_high": 0.8923
+        },
+        "f1": {
+          "estimate": 0.6842,
+          "ci_low": 0.3713,
+          "ci_high": 0.9333
+        },
+        "macro_f1": {
+          "estimate": 0.8075,
+          "ci_low": 0.6212,
+          "ci_high": 0.9617
+        },
+        "balanced_accuracy": {
+          "estimate": 0.7622,
+          "ci_low": 0.6171,
+          "ci_high": 0.9435
+        }
+      },
+      "test_websites": 18,
+      "test_conspiracy": 98,
+      "pass_scored": "pass 1 (official; pass 2 is a sensitivity check)",
+      "parse_errors": 61,
+      "truncated_docs": 28,
+      "max_input_words": 3000,
+      "input_tokens": 820815,
+      "output_tokens": 38067,
+      "cost_usd": 0.1011
+    },
+    "test_pass2": {
+      "confusion": {
+        "tp": 52,
+        "fn": 46,
+        "fp": 2,
+        "tn": 323
+      },
+      "metrics_documents": {
+        "precision": {
+          "estimate": 0.963,
+          "ci_low": 0.902,
+          "ci_high": 1.0
+        },
+        "recall": {
+          "estimate": 0.5306,
+          "ci_low": 0.4272,
+          "ci_high": 0.6303
+        },
+        "f1": {
+          "estimate": 0.6842,
+          "ci_low": 0.5902,
+          "ci_high": 0.7654
+        },
+        "macro_f1": {
+          "estimate": 0.8075,
+          "ci_low": 0.7539,
+          "ci_high": 0.8559
+        },
+        "balanced_accuracy": {
+          "estimate": 0.7622,
+          "ci_low": 0.7105,
+          "ci_high": 0.8117
+        }
+      },
+      "metrics_websites": {
+        "precision": {
+          "estimate": 0.963,
+          "ci_low": 0.7895,
+          "ci_high": 1.0
+        },
+        "recall": {
+          "estimate": 0.5306,
+          "ci_low": 0.278,
+          "ci_high": 0.8816
+        },
+        "f1": {
+          "estimate": 0.6842,
+          "ci_low": 0.4142,
+          "ci_high": 0.9184
+        },
+        "macro_f1": {
+          "estimate": 0.8075,
+          "ci_low": 0.6439,
+          "ci_high": 0.9518
+        },
+        "balanced_accuracy": {
+          "estimate": 0.7622,
+          "ci_low": 0.6348,
+          "ci_high": 0.9375
+        }
+      },
+      "input_tokens": 820815,
+      "output_tokens": 38626,
+      "cost_usd": 0.1014
+    },
+    "stability": {
+      "documents": 423,
+      "agreement": 0.9504,
+      "flipped_docs": 21,
+      "cohen_kappa": 0.8871,
+      "parse_errors_pass1": 61,
+      "parse_errors_pass2": 66
     }
   },
   "comparison": {},
