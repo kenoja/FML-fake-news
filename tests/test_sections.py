@@ -12,13 +12,12 @@ from sitegen import build as sitegen
 
 REPO = Path(__file__).resolve().parents[1]
 SECTIONS = REPO / "content" / "sections"
-SLUGS = ["00-overview", "01-research-questions", "02-data-and-labels", "03-split-by-website",
-         "04-tfidf-and-logistic-regression", "05-first-run-all-documents", "06-off-topic-filter",
-         "07-feature-engineering", "08-do-the-features-help", "09-llm-classifier", "10-head-to-head",
-         "11-error-analysis", "12-limitations", "13-how-we-used-ai", "99-glossary"]
-NO_CODE = {"00-overview", "99-glossary"}
-HEADINGS = ["## Goal and hypothesis", "## Explanation", "## What could go wrong",
-            "## Technical infrastructure"]
+SLUGS = ["00-how-to-use", "01-question-and-hypotheses", "02-data-and-cleaning", "03-split-by-website",
+         "04-word-counts", "05-tf-idf", "06-feature-engineering", "07-llm", "08-results",
+         "09-where-they-fail", "10-limitations", "11-conclusion", "12-how-we-used-ai", "99-glossary"]
+REWRITTEN = ["04-word-counts", "05-tf-idf"]       # slugs already in the four-part format
+NO_CODE = {"00-how-to-use", "99-glossary"}
+HEADINGS = ["## Explained simply", "## The code", "## Report", "## Check yourself"]
 KEYS = ["title", "part", "hypothesis"]
 
 
@@ -80,7 +79,7 @@ def excerpts(body: str) -> list[str]:
 
 def test_all_sections_exist_and_every_reference_resolves():
     # The same checks the strict site build makes, run in one place with readable messages.
-    assert problems(SECTIONS) == []
+    assert problems(SECTIONS, slugs=REWRITTEN) == []
 
 
 def test_excerpt_limits_come_from_the_config():
@@ -95,8 +94,8 @@ def write(tmp_path, body, slug="01-demo", front="title: T\npart: P\nhypothesis: 
     return d
 
 
-GOOD = ("## Goal and hypothesis\nx\n## Explanation\nx\n## What could go wrong\nx\n"
-        "## Technical infrastructure\nx\n<!-- cell: src/fml/split.py#make_split -->\n")
+GOOD = ("## Explained simply\nx\n## The code\n<!-- cell: src/fml/split.py#make_split -->\n## Report\nx\n"
+        "## Check yourself\nQ: a?\nA: b\n")
 
 
 def check(d, **kw):
@@ -128,7 +127,7 @@ def test_a_missing_json_key_fails(tmp_path):
 
 
 def test_a_missing_heading_or_front_matter_key_or_code_cell_fails(tmp_path):
-    assert any("heading" in p for p in check(write(tmp_path, GOOD.replace("## Explanation", "## Notes"))))
+    assert any("heading" in p for p in check(write(tmp_path, GOOD.replace("## Report", "## Notes"))))
     assert any("'hypothesis'" in p for p in check(write(tmp_path, GOOD, front="title: T\npart: P\n")))
     no_cell = GOOD.replace("<!-- cell: src/fml/split.py#make_split -->\n", "")
     assert any("no code cell" in p for p in check(write(tmp_path, no_cell)))
@@ -146,6 +145,6 @@ def test_missing_section_file_fails(tmp_path):
     assert problems(tmp_path / "sections_missing", slugs=["01-demo"]) == ["01-demo: file missing"]
 
 
-@pytest.mark.parametrize("slug", SLUGS)
+@pytest.mark.parametrize("slug", REWRITTEN)
 def test_slug_files_are_present(slug):
     assert (SECTIONS / f"{slug}.md").is_file()

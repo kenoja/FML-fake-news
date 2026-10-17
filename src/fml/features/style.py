@@ -1,8 +1,7 @@
-"""Group 3: style features computed from the cleaned text only.
+"""Style features: capitals, punctuation, quotes, sentence length and repetition.
 
 Why: Horne & Adali (2017) found more all-caps words, fewer quotes and more repetition in fake-news
-bodies; Perez-Rosas et al. (2018) found punctuation and readability features strong within a domain
-but weak across domains. Hence the website-held-out split matters for judging them.
+bodies; Perez-Rosas et al. (2018) found such features weak across domains.
 """
 from __future__ import annotations
 
@@ -23,7 +22,7 @@ QUOTE_CHARS = ('"', "“", "”")
 
 
 def allcaps_share(tokens: list[str]) -> float:
-    """Share of words with at least 2 letters that are written entirely in capitals ("FBI", "WAKE")."""
+    """Share of words (2+ letters) written in capitals, like "FBI" or "WAKE"."""
     n_cand = n_upper = 0
     for t, k in Counter(tokens).items():
         kind = _token_kind(t)
@@ -35,34 +34,26 @@ def allcaps_share(tokens: list[str]) -> float:
 
 @lru_cache(maxsize=None)
 def _token_kind(token: str) -> int:
-    """0 = fewer than 2 letters (not counted), 1 = counted word, 2 = counted word written in capitals.
-
-    Memoised: the same words recur across thousands of articles, and the per-character check is slow.
-    """
+    """0 = fewer than 2 letters (skipped), 1 = normal word, 2 = word in capitals (cached: it is slow)."""
     if sum(c.isalpha() for c in token) < 2:
         return 0
     return 2 if token.isupper() else 1
 
 
 def mean_sentence_length(text: str, n_words: int) -> float:
-    """Words per sentence; sentences end at . ! ? or a line break. 0.0 for an empty text."""
+    """Words per sentence (a sentence ends at . ! ? or a line break)."""
     sentences = [s for s in SENTENCE_END.split(normalise_quotes(text)) if words(s)]
     return n_words / len(sentences) if sentences else 0.0
 
 
 def mattr(tokens: list[str], window: int) -> float:
-    """Moving-average type-token ratio: mean share of distinct words over every `window`-word span.
-
-    Plain type-token ratio falls as texts get longer, so it would mostly measure length. Averaging over
-    fixed-size windows removes that effect. Texts not longer than the window use the whole text.
-    """
+    """Share of distinct words, averaged over every `window`-word span (so length does not matter)."""
     toks = [t.lower() for t in tokens]
     if not toks:
         return 0.0
     if len(toks) <= window:
         return len(set(toks)) / len(toks)
-    # Vectorised: a token at position i is the first of its word in window [s, s+window) exactly when its
-    # previous occurrence is before s, so summing those windows over all i gives the sum of distinct counts.
+    # a word counts once per window if its previous occurrence lies before the window starts
     n = len(toks)
     ids = np.unique(np.asarray(toks), return_inverse=True)[1].ravel()
     order = np.argsort(ids, kind="stable")
@@ -77,7 +68,7 @@ def mattr(tokens: list[str], window: int) -> float:
 
 
 class StyleFeatures(BaseEstimator, TransformerMixin):
-    """Text -> 6 style columns. Stateless; rates use `features.per_n_words`, the window `features.mattr_window`."""
+    """Text -> 6 style columns. Nothing is learned."""
 
     def fit(self, X, y=None):
         return self

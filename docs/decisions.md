@@ -369,3 +369,10 @@ Checks done by T12 (not a full run):
 - Short texts (team question 5): shortest article has 102 words, none under 50, so no minimum length (`cleaning.short_texts`).
 - Removed: the all-documents run, the off-topic comparison tables/figures and `src/fml/topic.py`. Content sections 01, 04, 05, 06, 12 still describe the old run; the queued section tasks rewrite them. Until then `test_sections`/sitegen checks may fail on missing outputs.
 - `baseline_filtered` stays for now (words-only model on the cleaned set) because the ablation and comparison stages read its grid; the analysis tasks replace it.
+
+## Cycle 2, T5: analysis 3 (TF-IDF plus engineered features)
+
+- Five models only (TF-IDF alone, + n-grams 1-3, + certainty words, + style, + all three), same C grid and class-weight choice, validation F1 only. Dropped: bootstrap intervals, McNemar here, drop-one rows, coefficient tables, the negation check (`epistemic_negation`, `count_markers_negation`, `VARIANT_GROUPS`), and `epistemic_negation.csv`, `top_ngrams.csv`, `dense_coefficients.csv`. Kept: the lexicon coverage table (it supports the "why so little" explanation).
+- Decision rule without intervals (team may change): a group "helps" if validation F1 rises by at least `ablation.HELPS_BY` = 0.01; the chosen model is the best row only if it helps, else plain TF-IDF. Result: certainty words +0.017 (chosen, `lr_plus_epistemic`), n-grams +0.002, style -0.001, all three -0.018. The report calls this "no reliable help" because 376 validation articles cannot separate 1-2 points from chance.
+- **Test scoring removed from this stage** (AGENTS.md: all runs first, then compare). `lr_words_v2` and `lr_extended` keep their frozen ids and configs; their old test predictions are still in `predictions_lr.csv`. `lr_plus_epistemic` has no test scores yet. **The comparison stage still looks for the chosen model in `predictions_lr.csv` and will fail until the queued "final run" and "comparison" tasks score the final models and update it.**
+- Section 06 replaces 07 and 08 (deleted). Numbers in it come from `results/tables/ablation.csv`, `epistemic_coverage.csv`, `feature_summary.csv`.

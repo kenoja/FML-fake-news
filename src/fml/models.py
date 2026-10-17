@@ -10,7 +10,7 @@ import pandas as pd
 from joblib import Parallel, delayed
 from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.compose import ColumnTransformer
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -141,3 +141,46 @@ def top_coefficients(pipe: Pipeline, k: int = 25) -> pd.DataFrame:
     mainstream = table.sort_values(["coefficient", "feature"], ascending=[True, True]).head(k)
     both = [conspiracy.assign(direction="conspiracy"), mainstream.assign(direction="mainstream")]
     return pd.concat(both)[["direction", "feature", "coefficient"]].reset_index(drop=True)
+
+
+# ---------------------------------------------------------------- analyses 1 and 2 (shared helpers)
+
+def fit_logistic(X_train, y_train, C: float, class_weight) -> LogisticRegression:
+    """Fit one logistic regression on the training rows."""
+    seed = project_config()["split"]["seed"]
+    model = LogisticRegression(C=C, class_weight=class_weight, solver="liblinear", random_state=seed)
+    return model.fit(X_train, y_train)
+
+
+def choose_c(X_train, y_train, X_valid, y_valid) -> tuple[LogisticRegression, pd.DataFrame]:
+    """Try each C on train, score on validation, return the best model and the grid."""
+    lr = project_config()["lr"]
+    rows = []
+    for C in lr["c_grid"]:
+        model = fit_logistic(X_train, y_train, C, lr["class_weight"])
+        scores = classification_metrics(y_valid, model.predict(X_valid))
+        rows.append({"C": C, "precision": scores["precision"], "recall": scores["recall"], "f1": scores["f1"]})
+    grid = pd.DataFrame(rows)
+    best = int(grid["f1"].to_numpy().argmax())          # ties go to the smaller C
+    grid["chosen"] = grid.index == best
+    model = fit_logistic(X_train, y_train, float(grid.loc[best, "C"]), lr["class_weight"])
+    return model, grid
+
+
+def word_counts_vectorizer() -> CountVectorizer:
+    """Analysis 1: how often each word occurs (words in at least 2 articles)."""
+    return CountVectorizer(lowercase=True, min_df=2)
+
+
+def tfidf_vectorizer() -> TfidfVectorizer:
+    """Analysis 2: the same words, weighted by TF-IDF."""
+    return TfidfVectorizer(lowercase=True, min_df=2, sublinear_tf=True)
+
+
+def top_words(vectorizer, model: LogisticRegression, k: int = 25) -> pd.DataFrame:
+    """The k words pushing most towards conspiracy and the k most towards mainstream."""
+    table = pd.DataFrame({"word": vectorizer.get_feature_names_out(), "weight": model.coef_[0]})
+    conspiracy = table.sort_values(["weight", "word"], ascending=[False, True]).head(k)
+    mainstream = table.sort_values(["weight", "word"], ascending=[True, True]).head(k)
+    both = [conspiracy.assign(direction="conspiracy"), mainstream.assign(direction="mainstream")]
+    return pd.concat(both)[["direction", "word", "weight"]].reset_index(drop=True)
