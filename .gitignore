@@ -8,3 +8,4 @@ data/raw/
 *.jsonl.gz
 # built site is published by the Pages workflow, not committed
 site/
+results/cache/

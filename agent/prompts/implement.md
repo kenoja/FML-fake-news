@@ -16,8 +16,12 @@ How to work:
 2. Make the smallest change that fully meets `acceptance`. Match the existing code style.
 3. Tests encode WHY a rule matters (e.g. "TF-IDF must be fitted on train only, otherwise test
    vocabulary leaks into training"), and must fail if that rule is broken.
-4. Run what you changed: `python -m pytest -q` and, if analysis code changed, the relevant
-   `fml` command. Do not claim success for anything you did not run.
+4. Run what you changed, quickly: the test files you touched (`python -m pytest -q tests/test_x.py`)
+   and the one stage or function you changed. Prefix every command with `timeout 300` (5 minutes).
+   Do NOT run `fml run-all` or the whole test suite inside a task: the harness runs both right
+   after the task, and a task that runs out of time is lost work. If a stage is too slow to check in
+   5 minutes, making it faster is part of the task (see AGENTS.md, "Performance").
+   Do not claim success for anything you did not run.
 5. If the task produces numbers, write them to `results/` (JSON/CSV) and never type numbers into
    prose by hand: sections and the report reference values from `results/`.
 6. If you touch a notebook section in `content/sections/`, keep all required headings and real
