@@ -1,0 +1,9 @@
+category,list_size,class,train_documents,share_plain,share_negation_aware,share_any_negated,negated_hit_share
+hedges,13,conspiracy,551,0.702,0.695,0.049,0.02
+hedges,13,mainstream,1236,0.456,0.456,0.013,0.013
+boosters,12,conspiracy,551,0.499,0.497,0.025,0.024
+boosters,12,mainstream,1236,0.176,0.171,0.011,0.046
+hidden_truth,11,conspiracy,551,0.456,0.45,0.033,0.024
+hidden_truth,11,mainstream,1236,0.032,0.031,0.002,0.06
+debunking,11,conspiracy,551,0.278,0.272,0.024,0.039
+debunking,11,mainstream,1236,0.099,0.099,0.003,0.015

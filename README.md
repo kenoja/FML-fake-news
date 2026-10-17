@@ -30,14 +30,52 @@ config/      project settings, agent limits, the 10/10 rubric
 
 ## Run it yourself
 
+**Setup** (Python 3.11 or newer):
+
 ```bash
 pip install -e ".[dev]"
-export FML_DATA_DIR=/path/to/FML-data          # the private data repo
-fml data-summary                               # check the data is found
-fml run-all                                    # reproduce every result
-python -m sitegen build && open site/index.html
-python -m agent run --no-git                   # one agent step locally (needs Claude Code)
+export FML_DATA_DIR=/path/to/data-repo            # the private data repo (article texts are not in this repo)
+export LLM_CLASSIFIER_API_KEY=...                # only needed if results/llm_cache.jsonl lacks entries
+fml data-summary                                 # check the data is found
 ```
+
+`LLM_CLASSIFIER_API_KEY` is the only key the LLM classifier reads (never `ANTHROPIC_API_KEY`). With the
+committed cache `results/llm_cache.jsonl`, `fml run-all` makes no API calls. With neither key nor cache entry
+it stops and prints how many entries are missing.
+
+```bash
+fml run-all                                      # reproduce metrics.json, tables and figures in results/ (< 8 min)
+fml evaluate-final <model_id>                    # the ONLY way to score a model on the locked test split (logged)
+python -m pytest -q                              # tests; those marked needs_data skip when FML_DATA_DIR is missing
+python -m sitegen build && open site/index.html  # build the walkthrough site from content/
+python -m agent run --no-git                     # one agent step locally (needs Claude Code)
+```
+
+### Exact versions
+
+`pyproject.toml` keeps version ranges so that CI and newer machines can install the project;
+**`requirements-lock.txt` is the authoritative exact pin** (see `docs/decisions.md`, "Pin policy"). The exact
+versions the committed results were produced with (Python 3.11.17; numpy 2.4.6, pandas 3.0.6, scipy 1.17.1,
+scikit-learn 1.9.1, matplotlib 3.11.2, anthropic 1.15.0, pyyaml 6.0.1, as recorded in
+`results/run_info.json`) are pinned in `requirements-lock.txt`:
+
+```bash
+pip install -r requirements-lock.txt && pip install -e . --no-deps
+```
+
+### Reproducibility check
+
+`results/run_info.json` records the last `fml run-all` time (217.3 s, limit 8 min). `fml run-all` does not
+append to `results/test_access_log.jsonl`: `evaluate_final` writes a line only when the model id has no
+entry yet and refuses a different config hash (checked by reading `src/fml/pipeline.py`).
+
+Double-run diff: **still not done (2026-10-17).** The attempt in task T5 was blocked: the sandbox denied
+running `fml run-all` (no approval possible), so no two-run comparison of `metrics.json` exists. To do it: run
+`fml run-all`, copy `results/metrics.json` aside, run again, and compare the two files, ignoring
+timestamps and `run_info.json`. Record the outcome here.
+
+Results are in `results/` (`metrics.json`, `tables/`, `figures/`); the written report is
+[`reports/report.md`](reports/report.md); `tests/test_report_numbers.py` checks that its numbers match `results/`.
 
 The article texts are not in this repository; they come from the LOCO corpus (Miani, Hills &
 Bangerter, 2022), available at https://osf.io/snpcg/.

@@ -1,0 +1,31 @@
+{
+  "lessons": [
+    "Cycle 1 ended below target; open issues: Human stance verification has not been done: 40 blank human_stance cells, kappa ; LOCO licence is still unconfirmed because the OSF page was unreachable on three ; Requirements 2 and 7 are only partly met (see the errors and resources items). T; The test set was looked at four times, including a stale lr_words and a second w; No automated check ties every number in prose to results/*.json. Some rounding i"
+  ],
+  "cycles": {
+    "01": {
+      "reached_target": false,
+      "rounds": 4,
+      "scores": {
+        "question": 8,
+        "resources": 7,
+        "approach": 8,
+        "evaluation": 7,
+        "results": 8,
+        "interpretation": 8,
+        "features": 8,
+        "errors": 5,
+        "ai_use": 7,
+        "teaching": 7,
+        "reproducibility": 7,
+        "report": 8,
+        "privacy": 9,
+        "feedback_compliance": 6
+      }
+    }
+  },
+  "runs": {
+    "01": 29
+  },
+  "timeouts": 0
+}

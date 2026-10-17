@@ -1,0 +1,13 @@
+set,error_type,errors_total,coded,model wrong,label does not describe the text,unparsed,not_sampled,stance_endorses,stance_rejects_or_debunks,stance_reports_neutrally,stance_no_claim
+lr_only_wrong,false positive,22,22,20,1,1,0,1,3,5,12
+lr_only_wrong,false negative,10,10,1,9,0,0,1,0,0,9
+lr_only_wrong,all,32,32,21,10,1,0,2,3,5,21
+llm_only_wrong,false positive,1,1,1,0,0,0,0,0,0,1
+llm_only_wrong,false negative,8,8,1,7,0,0,1,0,3,4
+llm_only_wrong,all,9,9,2,7,0,0,1,0,3,5
+both_wrong,false positive,1,1,1,0,0,0,0,0,0,1
+both_wrong,false negative,38,38,0,37,1,0,0,1,1,35
+both_wrong,all,39,39,1,37,1,0,0,1,1,36
+all,false positive,24,24,22,1,1,0,1,3,5,14
+all,false negative,56,56,2,53,1,0,2,1,4,48
+all,all,80,80,24,54,2,0,3,4,9,62

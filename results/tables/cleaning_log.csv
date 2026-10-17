@@ -1,0 +1,7 @@
+step,documents_before,documents_after,words_before,words_after,note
+start,3146,3146,3401456,3401456,
+exact duplicates (normalised-text hash),3146,3144,3401456,3391801,
+"near-duplicates (TF-IDF cosine >= 0.9): detected, not removed",3144,3144,3391801,3391801,63 pairs (10 within one website); 53 documents would go
+URLs and e-mail-like strings removed,3144,3144,3391801,3390849,
+website names removed,3144,3144,3390849,3382029,
+lines repeated in >= 3 documents of one website removed,3144,3144,3382029,3364113,

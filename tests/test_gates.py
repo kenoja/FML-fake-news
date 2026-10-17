@@ -74,3 +74,40 @@ def test_copied_article_text_is_detected(tmp_path, monkeypatch):
     assert tools.gate_no_article_text() == []
     (repo / "content" / "a.md").write_text("long copy: " + " ".join(words[3:48]))
     assert tools.gate_no_article_text()
+
+
+# ---- public CSV cells: justifications and excerpts stay short (privacy: no article text in public tables)
+
+def _long_cells(folder, max_cell_words, max_just_words):
+    import pandas as pd
+
+    bad = []
+    for f in sorted(folder.glob("*.csv")):
+        df = pd.read_csv(f, dtype=str, keep_default_na=False)
+        for col in df.columns:
+            limit = max_just_words if "justification" in col or col == "llm_reason" else max_cell_words
+            for i, cell in enumerate(df[col]):
+                if len(cell.split()) > limit:
+                    bad.append(f"{f.name}:{col}:row{i} has {len(cell.split())} words")
+    return bad
+
+
+def _limits():
+    from fml.paths import project_config
+
+    return project_config()["excerpts"]["max_words"]
+
+
+def test_public_csv_cells_obey_excerpt_limits():
+    from pathlib import Path
+
+    tables = Path(__file__).resolve().parents[1] / "results" / "tables"
+    limit = _limits()
+    assert _long_cells(tables, limit, limit) == []
+    assert _long_cells(tables, limit, 25) == [], "justifications must be at most 25 words"
+
+
+def test_gate_catches_an_injected_60_word_cell(tmp_path):
+    # A long justification is usually copied article text; the gate must see it.
+    (tmp_path / "x.csv").write_text("doc_id,claude_justification\nA1," + " ".join(["w"] * 60) + "\n")
+    assert _long_cells(tmp_path, _limits(), _limits())

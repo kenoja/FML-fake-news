@@ -1,0 +1,3 @@
+snippet,n_words,epistemic_hedges,epistemic_boosters,epistemic_hidden_truth,epistemic_debunking,style_allcaps_share,style_exclaim_per_n,style_question_per_n,style_quotes_per_n,style_mean_sentence_len,style_mattr
+invented_A,28,0.0,34.483,172.414,0.0,0.069,34.483,34.483,0.0,7.25,0.862
+invented_B,22,43.478,0.0,43.478,86.957,0.0,0.0,0.0,0.0,11.5,1.0

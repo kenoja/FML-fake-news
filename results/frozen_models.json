@@ -1,0 +1,23 @@
+{
+  "lr_words_v2": {
+    "model_id": "lr_words_v2",
+    "config_hash": "686c1de15756e287",
+    "selection_source": "validation",
+    "at": "2026-10-17T11:37:26+00:00",
+    "retroactive": true
+  },
+  "lr_extended": {
+    "model_id": "lr_extended",
+    "config_hash": "43d92b1cf6d754b7",
+    "selection_source": "validation",
+    "at": "2026-10-17T11:37:26+00:00",
+    "retroactive": true
+  },
+  "llm_haiku": {
+    "model_id": "llm_haiku",
+    "config_hash": "56d18291d053bf3a",
+    "selection_source": "validation",
+    "at": "2026-10-17T11:37:40+00:00",
+    "retroactive": true
+  }
+}

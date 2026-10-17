@@ -1,0 +1,11 @@
+feature,n_train_docs,mean_conspiracy,mean_mainstream,std_difference,n_conspiracy,n_mainstream
+epistemic_hedges,1787,1.578,1.228,0.184,551,1236
+epistemic_boosters,1787,0.753,0.301,0.473,551,1236
+epistemic_hidden_truth,1787,1.091,0.055,0.854,551,1236
+epistemic_debunking,1787,0.425,0.318,0.074,551,1236
+style_allcaps_share,1787,0.018,0.01,0.608,551,1236
+style_exclaim_per_n,1787,0.92,0.214,0.34,551,1236
+style_question_per_n,1787,2.234,1.123,0.29,551,1236
+style_quotes_per_n,1787,20.026,18.424,0.098,551,1236
+style_mean_sentence_len,1787,22.033,21.665,0.059,551,1236
+style_mattr,1787,0.734,0.741,-0.171,551,1236

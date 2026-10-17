@@ -18,7 +18,7 @@ This file will live in the repo as `docs/PROJECT_PLAN.md`. It is the agent's mas
 | The report documents **what the AI produced, what we checked or changed, and what we learned** | Course feedback; assignment ("Use of LLMs and other AI tools") |
 | JFK transfer test: **parked** (not in scope for now) | Team decision |
 | Everything in English | Team decision |
-| **Public** analysis repo (`kenoja/FML-fake-news`) + **private** data repo (`kenoja/FML-data`). No names, institutions, course codes or other personal data anywhere public | Team decision |
+| **Public** analysis repo (`<owner>/<repo>`) + **private** data repo (`<owner>/<data-repo>`). No names, institutions, course codes or other personal data anywhere public | Team decision |
 | The agent runs in **Anthropic's cloud** as a routine started by hand (uses the cloud-session credit); GitHub Actions only publishes the site and collects feedback | Team decision |
 | Off-topic documents (no mention of 9/11) are removed **after** the first words-only run, with an explanation | Team decision |
 | LLM is asked the **source question** (conspiracy-oriented vs mainstream website), the same target LR is scored on | Team decision |
@@ -44,7 +44,7 @@ Hypotheses (each one becomes a notebook section with its test):
 ## 2. Data
 
 - **Corpus:** LOCO, the Language of Conspiracy corpus (Miani, Hills & Bangerter, 2022). Fields used: `doc_id`, `website`, `seeds`, `subcorpus`, `title`, `txt`, `txt_nwords`.
-- **Where it lives:** the private repo `kenoja/FML-data` holds the full LOCO download (compressed, split into parts under 100 MB, with checksums) and the extracted 9/11 subset `loco_911/loco_911.jsonl.gz`. The public repo never contains article texts.
+- **Where it lives:** the private repo `<owner>/<data-repo>` holds the full LOCO download (compressed, split into parts under 100 MB, with checksums) and the extracted 9/11 subset `loco_911/loco_911.jsonl.gz`. The public repo never contains article texts.
 - **Subset (checked 16 Oct 2026):** 3,146 documents whose `seeds` contain `september.11.attack`: 939 conspiracy and 2,207 mainstream, from 39 conspiracy and 79 mainstream websites. No empty texts, no exact duplicate texts; median length 661 words (min 101, 90th percentile 2,489).
 - **Label:** `subcorpus` (conspiracy / mainstream). This is **source-based**: it says which kind of website published the text.
   - The authors' own blind check of 60 documents per subcorpus found 85% of conspiracy and 92% of mainstream documents correctly labelled.
