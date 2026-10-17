@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import pandas as pd
 
-from .models import tune_variant
+from .models import feature_matrix, fit_features, tune_on_validation
+from .paths import project_config
 
 THRESHOLD = 0.01     # a group counts as "above threshold" only if validation F1 rises by this much
 
@@ -18,16 +19,18 @@ def verdict(delta_f1):
 
 
 def run_ablation(train, valid, variants, reference, c_grid=None):
-    """Tune every variant on validation; return the table (one row each) and the fitted pipelines."""
-    pipes, rows = {}, []
-    for model_id in variants:
-        pipe, row = tune_variant(train, valid, variants[model_id]["features"], c_grid)
-        row["model_id"] = model_id
-        row["label"] = variants[model_id]["label"]
-        pipes[model_id] = pipe
-        rows.append(row)
+    """Tune every variant on validation; return the table (one row each)."""
+    class_weight = project_config()["lr"]["class_weight"]
+    rows = []
+    for model_id, variant in variants.items():
+        blocks = fit_features(train, variant["features"])       # fitted on training articles only
+        X_train, X_valid = feature_matrix(blocks, train), feature_matrix(blocks, valid)
+        _, grid = tune_on_validation(X_train, train["label"], X_valid, valid["label"], c_grid)
+        best = grid[grid["chosen"]].iloc[0]
+        rows.append({"model_id": model_id, "label": variant["label"], "C": float(best["C"]),
+                     "class_weight": str(class_weight or "none"), "f1": float(best["f1"])})
     table = pd.DataFrame(rows, columns=["model_id", "label", "C", "class_weight", "f1"])
-    return add_verdicts(table, reference), pipes
+    return add_verdicts(table, reference)
 
 
 def add_verdicts(table, reference):

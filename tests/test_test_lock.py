@@ -55,14 +55,16 @@ def test_selection_never_reads_test_rows(frames):
     def run(frame):
         f = models.split_frames(frame, ("train", "validation"))
         assert not set(f["train"]["doc_id"]) & set(f["validation"]["doc_id"])
-        pipe, grid = models.tune_on_validation(f["train"], f["validation"], {"min_df": 1}, c_grid=(0.1, 1.0, 10.0))
-        return pipe, grid
+        blocks = models.fit_features(f["train"], {"min_df": 1})
+        X_train, X_valid = models.feature_matrix(blocks, f["train"]), models.feature_matrix(blocks, f["validation"])
+        _, grid = models.tune_on_validation(X_train, f["train"]["label"], X_valid, f["validation"]["label"],
+                                            c_grid=(0.1, 1.0, 10.0))
+        return blocks, grid
 
-    (pipe_a, grid_a), (pipe_b, grid_b) = run(df), run(poisoned)
+    (_, grid_a), (blocks_b, grid_b) = run(df), run(poisoned)
     pd.testing.assert_frame_equal(grid_a, grid_b)
-    vec = pipe_b.named_steps["features"].named_transformers_["tfidf"]
-    assert "poisonword" not in vec.vocabulary_
-    assert len(grid_a) == 3 and set(grid_a["class_weight"]) == {"balanced"} and grid_a["selected"].sum() == 1
+    assert "poisonword" not in blocks_b[0][1].vocabulary_
+    assert len(grid_a) == 3 and grid_a["chosen"].sum() == 1
 
 
 def builders(C: float = 1.0):
@@ -70,7 +72,9 @@ def builders(C: float = 1.0):
 
     def build():
         def fit_predict(train, test):
-            return models.build_pipeline(cfg["features"], C=C).fit(train, train["label"]).predict(test)
+            blocks = models.fit_features(train, cfg["features"])
+            model = models.fit_logistic(models.feature_matrix(blocks, train), train["label"], C, None)
+            return model.predict(models.feature_matrix(blocks, test))
         return pipeline.ModelSpec(cfg, fit_predict)
     return {"toy": build}
 

@@ -26,7 +26,7 @@ The vectorizer is the only thing that changes compared with the word-count analy
 
 The same helpers as before choose the setting and fit the model.
 
-<!-- cell: src/fml/models.py#choose_c -->
+<!-- cell: src/fml/models.py#tune_on_validation -->
 
 The analysis function is shared, so both analyses run in exactly the same way.
 

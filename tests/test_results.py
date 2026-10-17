@@ -25,17 +25,17 @@ def test_metrics_top_level_keys_are_exactly_the_agreed_ones():
                                    "llm", "comparison", "errors")
 
 
-def test_top_coefficients_break_ties_by_word(tmp_path):
+def test_top_words_break_ties_by_word():
     """Why: equal weights in a different order would change a table between two identical runs."""
-    import pandas as pd
-    from fml.models import build_pipeline, top_coefficients
+    import numpy as np
+    from sklearn.linear_model import LogisticRegression
+    from fml.models import top_words
 
-    pipe = build_pipeline({"min_df": 1})
-    pipe.fit(pd.DataFrame({"txt": ["bb aa", "dd cc", "bb aa", "dd cc"], "label": [True, False, True, False]}), [True, False, True, False])
-    pipe.named_steps["clf"].coef_ = pipe.named_steps["clf"].coef_ * 0 + 1.0     # make every weight equal
-    table = top_coefficients(pipe, k=4)
-    assert table[table["direction"] == "conspiracy"]["feature"].tolist() == ["aa", "bb", "cc", "dd"]
-    assert table[table["direction"] == "mainstream"]["feature"].tolist() == ["aa", "bb", "cc", "dd"]
+    model = LogisticRegression()
+    model.coef_ = np.ones((1, 4))                                     # make every weight equal
+    table = top_words(["dd", "bb", "cc", "aa"], model, k=4)
+    assert table[table["direction"] == "conspiracy"]["word"].tolist() == ["aa", "bb", "cc", "dd"]
+    assert table[table["direction"] == "mainstream"]["word"].tolist() == ["aa", "bb", "cc", "dd"]
 
 
 def test_write_metrics_rejects_unknown_key(tmp_path):

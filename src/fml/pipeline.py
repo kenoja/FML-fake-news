@@ -27,7 +27,7 @@ from . import errors  # noqa: E402
 from .clean import clean_documents, website_names  # noqa: E402
 from .comparison import compact_table, mcnemar_pair, model_row  # noqa: E402
 from .evaluate import BOOTSTRAP_SEED, N_BOOTSTRAP, bootstrap_ci, classification_metrics, confusion  # noqa: E402
-from .models import (build_pipeline, choose_c, fit_logistic, split_frames, tfidf_vectorizer, top_words,
+from .models import (feature_matrix, fit_features, fit_logistic, split_frames, tfidf_vectorizer, top_words,
                      tune_on_validation, word_counts_vectorizer)  # noqa: E402
 from .paths import project_config  # noqa: E402
 from .results import CONSPIRACY_COLOUR, MAINSTREAM_COLOUR, results_dir, savefig, write_metrics, write_table  # noqa: E402
@@ -121,9 +121,9 @@ def run_logistic_analysis(name, make_vectorizer, title):
     vectorizer = make_vectorizer()
     X_train = vectorizer.fit_transform(train["txt"])        # vocabulary (and IDF): training articles only
     X_valid = vectorizer.transform(valid["txt"])
-    model, grid = choose_c(X_train, train["label"], X_valid, valid["label"])
+    model, grid = tune_on_validation(X_train, train["label"], X_valid, valid["label"])
     counts = confusion(valid["label"], model.predict(X_valid))
-    write_analysis_files(name, title, grid, top_words(vectorizer, model), counts)
+    write_analysis_files(name, title, grid, top_words(vectorizer.get_feature_names_out(), model), counts)
     return build_metrics_dict(grid, counts, vectorizer, train, valid)
 
 
@@ -360,8 +360,10 @@ def _features_spec(model_id: str) -> ModelSpec:
     config = _final_config(model_id, feature_set=name, features=sel["features"], C=sel["C"], class_weight=cw)
 
     def fit_predict_proba(train: pd.DataFrame, test: pd.DataFrame):
-        pipe = build_pipeline(config["features"], C=config["C"], class_weight=cw).fit(train, train["label"])
-        return pipe.predict(test), pipe.predict_proba(test)[:, 1]
+        blocks = fit_features(train, config["features"])      # vocabulary and scalers: training articles only
+        model = fit_logistic(feature_matrix(blocks, train), train["label"], config["C"], cw)
+        X_test = feature_matrix(blocks, test)
+        return model.predict(X_test), model.predict_proba(X_test)[:, 1]
 
     return ModelSpec(config, lambda train, test: fit_predict_proba(train, test)[0], fit_predict_proba)
 
@@ -374,7 +376,7 @@ def ablation() -> dict:
     frames = split_frames(analysis_frame(), ("train", "validation"))
     train, valid = frames["train"], frames["validation"]
     variants = ablation_variants()
-    table, _ = run_ablation(train, valid, variants, reference=LR_WORDS_ID)
+    table = run_ablation(train, valid, variants, reference=LR_WORDS_ID)
     chosen = choose_best(table, LR_WORDS_ID)
     write_table("ablation", table.round(4))
     savefig(plot_ablation(table, chosen["chosen"]), "ablation_f1")

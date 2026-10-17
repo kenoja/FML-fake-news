@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from fml.models import build_pipeline
+from fml.models import feature_matrix, fit_features, fit_logistic
 
 TRAIN_WORDS = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot"]
 HELD_OUT_WORDS = ["zulu", "yankee", "xray"]          # appear only outside the training rows
@@ -40,9 +40,9 @@ def assert_no_vocabulary_leak(vectorizer: TfidfVectorizer, train: pd.DataFrame) 
 
 def test_pipeline_vocabulary_comes_from_train_only():
     train, valid = make_frames()
-    pipe = build_pipeline({"min_df": 1}).fit(train, train["label"])
-    pipe.predict(valid)                                   # scoring validation must not change anything
-    vec = pipe.named_steps["features"].named_transformers_["tfidf"]
+    blocks = fit_features(train, {"min_df": 1})
+    fit_logistic(feature_matrix(blocks, train), train["label"], 1.0, None).predict(feature_matrix(blocks, valid))
+    vec = blocks[0][1]                                    # scoring validation must not change anything
     assert_no_vocabulary_leak(vec, train)
     assert not set(vec.vocabulary_) & set(HELD_OUT_WORDS)
 
@@ -56,8 +56,8 @@ def test_leaky_fit_is_detected():
 
 def test_idf_weights_do_not_depend_on_validation_text():
     train, valid = make_frames()
-    a = build_pipeline({"min_df": 1}).fit(train, train["label"]).named_steps["features"].named_transformers_["tfidf"]
+    a = fit_features(train, {"min_df": 1})[0][1]
     changed = valid.assign(txt="completely different words")
-    _ = build_pipeline({"min_df": 1}).fit(train, train["label"]).predict(changed)
-    b = build_pipeline({"min_df": 1}).fit(train, train["label"]).named_steps["features"].named_transformers_["tfidf"]
-    assert np.allclose(a.idf_, b.idf_)
+    blocks = fit_features(train, {"min_df": 1})
+    feature_matrix(blocks, changed)                       # transforming other text must not change the weights
+    assert np.allclose(a.idf_, blocks[0][1].idf_)

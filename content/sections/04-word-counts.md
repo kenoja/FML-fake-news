@@ -27,9 +27,9 @@ One function fits a single logistic regression.
 
 <!-- cell: src/fml/models.py#fit_logistic -->
 
-This helper fits one model per cautiousness setting and keeps the best on validation.
+This function fits one model per cautiousness setting and keeps the best on validation.
 
-<!-- cell: src/fml/models.py#choose_c -->
+<!-- cell: src/fml/models.py#tune_on_validation -->
 
 This function runs the whole analysis and writes the results.
 

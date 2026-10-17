@@ -6,6 +6,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+import fml.models as models
 import fml.pipeline as pipeline
 from fml.ablation import THRESHOLD, choose_best, run_ablation, verdict, verdict_sentence
 
@@ -36,7 +37,7 @@ def variants() -> dict:
 def run(df: pd.DataFrame) -> pd.DataFrame:
     site = df["website"].str[4:].astype(int)
     train, valid = df[site < 160].reset_index(drop=True), df[site >= 160].reset_index(drop=True)
-    return run_ablation(train, valid, variants(), reference="words", c_grid=C_GRID)[0]
+    return run_ablation(train, valid, variants(), reference="words", c_grid=C_GRID)
 
 
 def test_planted_informative_feature_helps():
@@ -86,8 +87,10 @@ def test_test_log_has_one_entry_per_model(tmp_path, monkeypatch):
 
     def spec(model_id):
         def fit(train, test):
-            pipe = pipeline.build_pipeline({"min_df": 1}, C=1.0).fit(train, train["label"])
-            return pipe.predict(test), pipe.predict_proba(test)[:, 1]
+            blocks = models.fit_features(train, {"min_df": 1})
+            model = models.fit_logistic(models.feature_matrix(blocks, train), train["label"], 1.0, None)
+            X_test = models.feature_matrix(blocks, test)
+            return model.predict(X_test), model.predict_proba(X_test)[:, 1]
         return pipeline.ModelSpec({"model_id": model_id}, lambda tr, te: fit(tr, te)[0], fit)
 
     builders = {m: (lambda m=m: spec(m)) for m in ("lr_words", "lr_extended")}
