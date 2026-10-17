@@ -57,7 +57,7 @@ python -m agent run --no-git                     # one agent step locally (needs
 **`requirements-lock.txt` is the authoritative exact pin** (see `docs/decisions.md`, "Pin policy"). The exact
 versions the committed results were produced with (Python 3.11.17; numpy 2.4.6, pandas 3.0.6, scipy 1.17.1,
 scikit-learn 1.9.1, matplotlib 3.11.2, anthropic 1.15.0, pyyaml 6.0.1, as recorded in
-`results/run_info.json`) are pinned in `requirements-lock.txt`:
+`results/run_info.json`) are pinned in `requirements-lock.txt`, which is the authoritative exact pin (the ranges in `pyproject.toml` only say what may work):
 
 ```bash
 pip install -r requirements-lock.txt && pip install -e . --no-deps

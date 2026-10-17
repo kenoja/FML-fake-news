@@ -20,8 +20,6 @@ from .paths import project_config
 from .split import load_split
 
 TEXT_COLUMN = "txt"
-C_GRID = (0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0)
-CLASS_WEIGHTS = (None, "balanced")
 SELECTION_METRIC = "f1"          # conspiracy-class F1 on validation
 DEFAULT_FEATURES = {"ngram_range": (1, 1), "min_df": 2, "max_features": None, "sublinear_tf": True,
                     "numeric_columns": [], "dense_groups": []}
@@ -108,8 +106,11 @@ def split_frames(df: pd.DataFrame, which: tuple[str, ...] = ("train", "validatio
 
 
 def tune_on_validation(train: pd.DataFrame, valid: pd.DataFrame, feature_cfg: dict | None = None,
-                       c_grid=C_GRID, class_weights=CLASS_WEIGHTS) -> tuple[Pipeline, pd.DataFrame]:
+                       c_grid=None, class_weights=None) -> tuple[Pipeline, pd.DataFrame]:
     """Try every (C, class weight) on train, score on validation, return the best pipeline and the grid."""
+    lr = project_config()["lr"]
+    c_grid = lr["c_grid"] if c_grid is None else c_grid         # same small grid as analyses 1 and 2
+    class_weights = [lr["class_weight"]] if class_weights is None else class_weights
     features = build_pipeline(feature_cfg).named_steps["features"]
     features.fit(train, train["label"])             # vocabulary and scalers: training rows only
     X_train = features.transform(train)
@@ -129,6 +130,14 @@ def tune_on_validation(train: pd.DataFrame, valid: pd.DataFrame, feature_cfg: di
     class_weight = None if best["class_weight"] == "none" else best["class_weight"]
     classifier = make_classifier(float(best["C"]), class_weight).fit(X_train, y_train)
     return Pipeline([("features", features), ("clf", classifier)]), grid
+
+
+def tune_variant(train, valid, features, c_grid=None):
+    """Tune one feature set on validation; return the pipeline and its best (C, class weight, F1)."""
+    pipe, grid = tune_on_validation(train, valid, features, c_grid=c_grid)
+    best = grid.query("selected").iloc[0]
+    row = {"C": float(best["C"]), "class_weight": best["class_weight"], "f1": float(best["f1"])}
+    return pipe, row
 
 
 def top_coefficients(pipe: Pipeline, k: int = 25) -> pd.DataFrame:

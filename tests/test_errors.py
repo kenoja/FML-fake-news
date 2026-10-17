@@ -40,9 +40,14 @@ def test_mismatched_documents_fail_loudly():
     (True, "reports_neutrally", errors.LABEL_PROBLEM), (True, "no_claim", errors.LABEL_PROBLEM),
     (False, "endorses", errors.LABEL_PROBLEM), (False, "rejects_or_debunks", errors.MODEL_WRONG),
     (False, "reports_neutrally", errors.MODEL_WRONG), (False, "no_claim", errors.MODEL_WRONG),
-    (True, "unreadable", errors.UNCODED)])
+    ])
 def test_error_rule(true_label, stance, verdict):
     assert errors.classify_error(true_label, stance) == verdict
+
+
+def test_unreadable_stance_is_not_judged():
+    with pytest.raises(ValueError):
+        errors.classify_error(True, errors.UNREADABLE)
 
 
 def test_both_wrong_always_coded_and_others_capped_with_seed():
@@ -100,14 +105,15 @@ def test_classification_table_rows_sum_to_errors():
     """Every error must appear in exactly one column, or a reader cannot reconcile the table with the error count."""
     sets = pd.DataFrame({"doc_id": list("abcdef"), "set": ["both_wrong"] * 4 + ["lr_only_wrong"] * 2,
                          "error_type": ["false negative"] * 3 + ["false positive"] * 3})
-    coded = sets.iloc[:5].copy()
-    coded["claude_stance"] = ["endorses", "no_claim", "unreadable", "endorses", "rejects_or_debunks"]
-    coded["true_label"] = [True, True, True, False, False]
+    coded = sets.iloc[[0, 1, 3, 4]].copy()          # the other errors have no usable stance
+    coded["claude_stance"] = ["endorses", "no_claim", "endorses", "rejects_or_debunks"]
+    coded["true_label"] = [True, True, False, False]
     coded["verdict"] = [errors.classify_error(t, s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
     table = errors.error_classification_table(coded, sets)
-    parts = [errors.MODEL_WRONG, errors.LABEL_PROBLEM, "unparsed", "not_sampled"]
+    assert "unparsed" not in table.columns
+    parts = [errors.MODEL_WRONG, errors.LABEL_PROBLEM, "not_sampled"]
     assert (table[parts].sum(axis=1) == table["errors_total"]).all()
-    assert table.loc[(table["set"] == "all") & (table["error_type"] == "all"), "unparsed"].item() == 1
+    assert table.loc[(table["set"] == "all") & (table["error_type"] == "all"), "not_sampled"].item() == 2
 
 
 def _sample(tmp_path, human):
@@ -124,20 +130,25 @@ def test_justification_is_shortened_and_names_are_stripped():
     assert "Jane" not in out and "Wolter" not in out and "[name]" in out and "WTC" in out
 
 
-def test_fresh_check_sample_has_empty_human_column(tmp_path):
+def test_check_sheet_is_blind_and_claude_answers_are_separate(tmp_path):
+    """The team must not see Claude's stance while coding, or their check is not independent."""
     p = tmp_path / "new.csv"
-    sample = pd.DataFrame({"doc_id": list("ab"), "claude_stance": ["no_claim", "endorses"], "set": ["x", "y"]})
+    sample = pd.DataFrame({"doc_id": list("ab"), "website": ["x.com", "y.org"], "claude_stance": ["no_claim", "endorses"],
+                           "claude_justification": ["j1", "j2"], "set": ["x", "y"]})
     assert errors.write_check_sample(sample, p) is True
     out = pd.read_csv(p, dtype=str, keep_default_na=False)
-    assert list(out.columns) == ["doc_id", "claude_stance", "human_stance"]
+    assert list(out.columns) == ["doc_id", "website", "human_stance"]
     assert (out["human_stance"] == "").all()
+    errors.write_claude_answers(sample, tmp_path / "answers.csv")
+    assert list(pd.read_csv(tmp_path / "answers.csv").columns) == ["doc_id", "claude_stance", "claude_justification"]
 
 
-def test_rerun_never_overwrites_human_work(tmp_path):
-    p = _sample(tmp_path, ["endorses", "", "", ""])
-    sample = pd.DataFrame({"doc_id": ["x"], "claude_stance": ["no_claim"]})
-    assert errors.write_check_sample(sample, p) is False
-    assert "endorses" in p.read_text()
+def test_examples_cover_every_error_cell_and_a_correct_contrast():
+    sets = errors.disagreement_sets(LR, LLM)
+    correct = pd.DataFrame({"doc_id": ["f", "z"], "true_label": [False, True]})
+    ex = errors.pick_examples(sets, correct)
+    assert set(ex["cell"]) == {"lr_only_wrong", "llm_only_wrong", "both_wrong", "correct_mainstream", "correct_conspiracy"}
+    assert ex["doc_id"].is_unique
 
 
 # ---------------------------------------------------------------- excerpt discipline (AGENTS.md hard rule)

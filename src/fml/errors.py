@@ -24,7 +24,7 @@ from .paths import REPO_ROOT, project_config
 STANCES = ("endorses", "rejects_or_debunks", "reports_neutrally", "no_claim")
 UNREADABLE = llm.UNREADABLE
 SETS = ("lr_only_wrong", "llm_only_wrong", "both_wrong")
-MODEL_WRONG, LABEL_PROBLEM, UNCODED = "model wrong", "label does not describe the text", "unparsed"
+MODEL_WRONG, LABEL_PROBLEM = "model wrong", "label does not describe the text"
 JUSTIFICATION_MAX_WORDS = 25
 NAME_ALLOWLIST = {
     "The", "This", "That", "These", "Those", "It", "Its", "A", "An", "Both", "Although", "While", "Written",
@@ -35,7 +35,9 @@ NAME_ALLOWLIST = {
     "Congress", "Senate", "Arabia", "Arab", "Middle", "East", "Taliban", "ISIS", "UK", "EU", "NATO",
 }
 _CAP_TOKEN = re.compile(r"[A-Z][\w'’-]*")
-CHECK_COLUMNS = ["doc_id", "claude_stance", "human_stance"]
+CHECK_COLUMNS = ["doc_id", "website", "human_stance"]     # no Claude stance: the team reads blind
+EXCERPT_WORDS = 25
+EXAMPLE_KINDS = ("lr_only_wrong", "llm_only_wrong", "both_wrong")
 
 STANCE_PROMPT = (
     "You code how a web article treats CONSPIRACY CLAIMS about the 9/11 attacks (for example: the attacks "
@@ -218,7 +220,7 @@ def classify_error(true_label: bool, stance: str) -> str:
       (it reacted to the topic), even though it explains the error.
     """
     if stance not in STANCES:
-        return UNCODED
+        raise ValueError(f"unknown stance {stance!r}: drop unreadable answers before applying the rule")
     if true_label:
         return MODEL_WRONG if stance == "endorses" else LABEL_PROBLEM
     return LABEL_PROBLEM if stance == "endorses" else MODEL_WRONG
@@ -227,9 +229,8 @@ def classify_error(true_label: bool, stance: str) -> str:
 def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
     """Counts by set x error type: all errors, coded, and the coded ones per verdict.
 
-    Columns `model wrong` + `label does not describe the text` + `unparsed` (stance reply could not be
-    parsed) + `not_sampled` (error not sent to coding) always add up to `errors_total`, so no error
-    silently disappears from the table.
+    `coded` holds only readable stances. Columns `model wrong` + `label does not describe the text` +
+    `not_sampled` (error without a usable stance) always add up to `errors_total`.
     """
     rows = []
     for s in (*SETS, "all"):
@@ -237,7 +238,7 @@ def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.
             sel = lambda d: d[((d["set"] == s) | (s == "all")) & ((d["error_type"] == et) | (et == "all"))]  # noqa: E731
             c = sel(coded)
             rows.append({"set": s, "error_type": et, "errors_total": len(sel(totals)), "coded": len(c),
-                         **{v: int((c["verdict"] == v).sum()) for v in (MODEL_WRONG, LABEL_PROBLEM, UNCODED)},
+                         **{v: int((c["verdict"] == v).sum()) for v in (MODEL_WRONG, LABEL_PROBLEM)},
                          "not_sampled": len(sel(totals)) - len(c),
                          **{f"stance_{st}": int((c["claude_stance"] == st).sum()) for st in STANCES}})
     return pd.DataFrame(rows)
@@ -254,7 +255,7 @@ def has_human_input(path: Path) -> bool:
 
 
 def write_check_sample(sample: pd.DataFrame, path: Path) -> bool:
-    """Write the CSV for the team. Never overwrite one a human has started to fill: returns False then."""
+    """Write the blind CSV for the team (doc_id, website, empty human_stance). False if a human started it."""
     if has_human_input(path):
         return False
     out = sample.copy()
@@ -262,3 +263,29 @@ def write_check_sample(sample: pd.DataFrame, path: Path) -> bool:
     path.parent.mkdir(parents=True, exist_ok=True)
     out[CHECK_COLUMNS].to_csv(path, index=False)
     return True
+
+
+def write_claude_answers(sample: pd.DataFrame, path: Path) -> None:
+    """Claude's stance for the same documents, kept in a separate file so the team does not see it."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    sample[["doc_id", "claude_stance", "claude_justification"]].to_csv(path, index=False)
+
+
+# ---------------------------------------------------------------- examples
+
+def pick_examples(sets: pd.DataFrame, correct: pd.DataFrame) -> pd.DataFrame:
+    """One document per error cell, plus one correctly handled mainstream and conspiracy article.
+
+    `sets` comes from `disagreement_sets`; `correct` (doc_id, true_label) holds articles both models got right.
+    The first doc_id in each cell is taken, so a rerun shows the same examples.
+    """
+    rows = []
+    for kind in EXAMPLE_KINDS:
+        sub = sets[sets["set"] == kind].sort_values("doc_id")
+        if len(sub):
+            rows.append({"cell": kind, "doc_id": sub.iloc[0]["doc_id"], "true_label": sub.iloc[0]["true_label"]})
+    for label, name in ((False, "correct_mainstream"), (True, "correct_conspiracy")):
+        sub = correct[correct["true_label"] == label].sort_values("doc_id")
+        if len(sub):
+            rows.append({"cell": name, "doc_id": sub.iloc[0]["doc_id"], "true_label": label})
+    return pd.DataFrame(rows)

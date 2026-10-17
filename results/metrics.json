@@ -569,7 +569,6 @@
       "split": "validation"
     },
     "lr_model": "final_tfidf_features",
-    "llm_pass": 1,
     "stance_model": "claude-sonnet-5-5",
     "counts": {
       "lr_only_wrong": {
@@ -578,7 +577,7 @@
         "mainstream": 18,
         "false_positive": 18,
         "false_negative": 16,
-        "coded": 34
+        "coded": 33
       },
       "llm_only_wrong": {
         "total": 3,
@@ -594,11 +593,11 @@
         "mainstream": 0,
         "false_positive": 0,
         "false_negative": 30,
-        "coded": 30
+        "coded": 29
       }
     },
-    "coded_documents": 67,
-    "stance_unreadable": 2,
+    "coded_documents": 65,
+    "footnote_unreadable_codes": 2,
     "stance_counts": {
       "no_claim": 55,
       "reports_neutrally": 5,
@@ -608,6 +607,11 @@
     "verdict_counts": {
       "label does not describe the text": 47,
       "model wrong": 18
+    },
+    "label_problem_share": {
+      "label_problems": 47,
+      "of_coded": 65,
+      "source": "Claude stance coding only, not checked by people"
     },
     "rule": "conspiracy site + (rejects|neutral|no_claim) -> label problem; mainstream site + endorses -> label problem; else model wrong",
     "human_check": {

@@ -1,13 +1,13 @@
-set,error_type,errors_total,coded,model wrong,label does not describe the text,unparsed,not_sampled,stance_endorses,stance_rejects_or_debunks,stance_reports_neutrally,stance_no_claim
-lr_only_wrong,false positive,18,18,16,1,1,0,1,2,3,11
-lr_only_wrong,false negative,16,16,1,15,0,0,1,0,0,15
-lr_only_wrong,all,34,34,17,16,1,0,2,2,3,26
-llm_only_wrong,false positive,1,1,1,0,0,0,0,0,0,1
-llm_only_wrong,false negative,2,2,0,2,0,0,0,1,1,0
-llm_only_wrong,all,3,3,1,2,0,0,0,1,1,1
-both_wrong,false positive,0,0,0,0,0,0,0,0,0,0
-both_wrong,false negative,30,30,0,29,1,0,0,0,1,28
-both_wrong,all,30,30,0,29,1,0,0,0,1,28
-all,false positive,19,19,17,1,1,0,1,2,3,12
-all,false negative,48,48,1,46,1,0,1,1,2,43
-all,all,67,67,18,47,2,0,2,3,5,55
+set,error_type,errors_total,coded,model wrong,label does not describe the text,not_sampled,stance_endorses,stance_rejects_or_debunks,stance_reports_neutrally,stance_no_claim
+lr_only_wrong,false positive,18,17,16,1,1,1,2,3,11
+lr_only_wrong,false negative,16,16,1,15,0,1,0,0,15
+lr_only_wrong,all,34,33,17,16,1,2,2,3,26
+llm_only_wrong,false positive,1,1,1,0,0,0,0,0,1
+llm_only_wrong,false negative,2,2,0,2,0,0,1,1,0
+llm_only_wrong,all,3,3,1,2,0,0,1,1,1
+both_wrong,false positive,0,0,0,0,0,0,0,0,0
+both_wrong,false negative,30,29,0,29,1,0,0,1,28
+both_wrong,all,30,29,0,29,1,0,0,1,28
+all,false positive,19,18,17,1,1,1,2,3,12
+all,false negative,48,47,1,46,1,1,1,2,43
+all,all,67,65,18,47,2,2,3,5,55

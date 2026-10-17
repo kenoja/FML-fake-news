@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import pandas as pd
 
-from .models import C_GRID, tune_on_validation
+from .models import tune_variant
 
 HELPS_BY = 0.01      # a group "helps" only if validation F1 rises by at least this much
 
 
-def verdict(delta_f1: float) -> str:
+def verdict(delta_f1):
     """Plain label for a change in validation F1."""
     if delta_f1 >= HELPS_BY:
         return "helps"
@@ -17,22 +17,26 @@ def verdict(delta_f1: float) -> str:
     return "no clear gain"
 
 
-def run_ablation(train: pd.DataFrame, valid: pd.DataFrame, variants: dict[str, dict], reference: str,
-                 c_grid=C_GRID) -> tuple[pd.DataFrame, dict]:
+def run_ablation(train, valid, variants, reference, c_grid=None):
     """Tune every variant on validation; return the table (one row each) and the fitted pipelines."""
     pipes, rows = {}, []
-    for model_id, variant in variants.items():
-        pipe, grid = tune_on_validation(train, valid, variant["features"], c_grid=c_grid)
-        best = grid.query("selected").iloc[0]               # the (C, class weight) with the best F1
+    for model_id in variants:
+        pipe, row = tune_variant(train, valid, variants[model_id]["features"], c_grid)
+        row["model_id"] = model_id
+        row["label"] = variants[model_id]["label"]
         pipes[model_id] = pipe
-        rows.append({"model_id": model_id, "label": variant["label"], "C": float(best["C"]),
-                     "class_weight": best["class_weight"], "f1": float(best["f1"])})
-    table = pd.DataFrame(rows)
-    reference_f1 = float(table.loc[table["model_id"] == reference, "f1"].iloc[0])
-    table["delta_f1"] = table["f1"] - reference_f1
+        rows.append(row)
+    table = pd.DataFrame(rows, columns=["model_id", "label", "C", "class_weight", "f1"])
+    return add_verdicts(table, reference), pipes
+
+
+def add_verdicts(table, reference):
+    """Compare every model with the reference model and label the change."""
+    is_reference = table["model_id"] == reference
+    table["delta_f1"] = table["f1"] - table.loc[is_reference, "f1"].iloc[0]
     table["verdict"] = [verdict(d) for d in table["delta_f1"]]
-    table.loc[table["model_id"] == reference, "verdict"] = "reference"
-    return table, pipes
+    table.loc[is_reference, "verdict"] = "reference"
+    return table
 
 
 def choose_best(table: pd.DataFrame, reference: str) -> dict:

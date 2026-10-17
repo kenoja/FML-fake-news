@@ -62,7 +62,7 @@ def test_selection_never_reads_test_rows(frames):
     pd.testing.assert_frame_equal(grid_a, grid_b)
     vec = pipe_b.named_steps["features"].named_transformers_["tfidf"]
     assert "poisonword" not in vec.vocabulary_
-    assert len(grid_a) == 6 and grid_a["selected"].sum() == 1
+    assert len(grid_a) == 3 and set(grid_a["class_weight"]) == {"balanced"} and grid_a["selected"].sum() == 1
 
 
 def builders(C: float = 1.0):

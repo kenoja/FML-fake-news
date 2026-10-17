@@ -109,7 +109,7 @@ def website_name_tokens(df: pd.DataFrame, min_len: int = 4) -> set[str]:
 
 # ---------------------------------------------------------------- stages: word counts and TF-IDF
 
-def run_logistic_analysis(name: str, make_vectorizer, title: str) -> dict:
+def run_logistic_analysis(name, make_vectorizer, title):
     """Fit the vectorizer on train, choose C on validation, write tables, figure and metrics."""
     frames = split_frames(analysis_frame(), ("train", "validation"))
     train, valid = frames["train"], frames["validation"]
@@ -117,17 +117,28 @@ def run_logistic_analysis(name: str, make_vectorizer, title: str) -> dict:
     X_train = vectorizer.fit_transform(train["txt"])        # vocabulary (and IDF): training articles only
     X_valid = vectorizer.transform(valid["txt"])
     model, grid = choose_c(X_train, train["label"], X_valid, valid["label"])
-    write_table(f"{name}_grid", grid)
-    write_table(f"{name}_top_words", top_words(vectorizer, model))
     counts = confusion(valid["label"], model.predict(X_valid))
+    write_analysis_files(name, title, grid, top_words(vectorizer, model), counts)
+    return build_metrics_dict(grid, counts, vectorizer, train, valid)
+
+
+def write_analysis_files(name, title, grid, words, counts):
+    """Write the grid, the top words and the validation confusion matrix."""
+    write_table(f"{name}_grid", grid)
+    write_table(f"{name}_top_words", words)
     savefig(plot_confusion(counts, f"{title} (validation)"), f"{name}_validation_confusion")
+
+
+def build_metrics_dict(grid, counts, vectorizer, train, valid):
+    """Collect the numbers for metrics.json, rounded to 3 digits."""
     chosen = grid[grid["chosen"]].iloc[0]
-    values = {"chosen_C": float(chosen["C"]), "class_weight": project_config()["lr"]["class_weight"],
-              "validation": {"precision": float(chosen["precision"]), "recall": float(chosen["recall"]),
-                             "f1": float(chosen["f1"])},
-              "confusion": counts, "vocabulary_size": int(len(vectorizer.vocabulary_)),
-              "documents": {"train": int(len(train)), "validation": int(len(valid))},
-              "grid": grid.drop(columns="chosen").to_dict("records")}
+    values = {"chosen_C": float(chosen["C"]), "class_weight": project_config()["lr"]["class_weight"]}
+    values["validation"] = {"precision": float(chosen["precision"]), "recall": float(chosen["recall"]),
+                            "f1": float(chosen["f1"])}
+    values["confusion"] = counts
+    values["vocabulary_size"] = int(len(vectorizer.vocabulary_))
+    values["documents"] = {"train": int(len(train)), "validation": int(len(valid))}
+    values["grid"] = grid.drop(columns="chosen").to_dict("records")
     return round_floats(values)
 
 
@@ -271,17 +282,23 @@ def _summary_from_predictions(model_id: str, digest: str, table: pd.DataFrame) -
 LR_WORDS_ID, LR_EXTENDED_ID = "lr_words_v2", "lr_extended"
 
 
-def ablation_variants() -> dict[str, dict]:
+def ablation_variants():
     """The five models to compare: TF-IDF alone, plus each extra group, and plus all three."""
-    ng = project_config()["features"]
-    ngrams = {"ngram_range": list(ng["ngram_range"]), "min_df": ng["ngram_min_df"], "max_features": ng["ngram_max_features"]}
-    words = dict(M1_FEATURES)
-    models = {LR_WORDS_ID: ("TF-IDF alone", words | {"dense_groups": []}),
-              "lr_plus_ngrams": ("+ n-grams (1-3)", words | ngrams | {"dense_groups": []}),
-              "lr_plus_epistemic": ("+ certainty words", words | {"dense_groups": ["epistemic"]}),
-              "lr_plus_style": ("+ style", words | {"dense_groups": ["style"]}),
-              LR_EXTENDED_ID: ("+ all three", words | ngrams | {"dense_groups": ["epistemic", "style"]})}
-    return {model_id: {"label": label, "features": features} for model_id, (label, features) in models.items()}
+    settings = project_config()["features"]
+    ngrams = {"ngram_range": list(settings["ngram_range"]), "min_df": settings["ngram_min_df"],
+              "max_features": settings["ngram_max_features"]}
+    plain = dict(M1_FEATURES, dense_groups=[])
+    with_ngrams = dict(plain, **ngrams)
+    return {LR_WORDS_ID: variant("TF-IDF alone", plain),
+            "lr_plus_ngrams": variant("+ n-grams (1-3)", with_ngrams),
+            "lr_plus_epistemic": variant("+ certainty words", dict(plain, dense_groups=["epistemic"])),
+            "lr_plus_style": variant("+ style", dict(plain, dense_groups=["style"])),
+            LR_EXTENDED_ID: variant("+ all three", dict(with_ngrams, dense_groups=["epistemic", "style"]))}
+
+
+def variant(label, features):
+    """One model to compare: a name for the table and its feature settings."""
+    return {"label": label, "features": features}
 
 
 def plot_ablation(table: pd.DataFrame, chosen: str):
@@ -363,7 +380,7 @@ def ablation() -> dict:
     selected = {row["model_id"]: {"features": variants[row["model_id"]]["features"], "C": row["C"],
                                   "class_weight": row["class_weight"]} for row in table.to_dict("records")}
     values = {"data": "filtered documents, split_v1, validation rows only",
-              "protocol": "per model: C in C_GRID x class_weight in (none, balanced), best conspiracy-F1 on validation",
+              "protocol": "per model: C and class weight from config lr (same grid as word counts and TF-IDF), best conspiracy-F1 on validation",
               "documents": {"train": int(len(train)), "validation": int(len(valid))},
               "selected": selected, "models": {row["model_id"]: row for row in table.to_dict("records")},
               "chosen_lr": chosen, "verdict_sentence": verdict_sentence(table, LR_WORDS_ID),
@@ -547,24 +564,6 @@ def comparison_stage() -> dict:
 
 # ---------------------------------------------------------------- stage: errors
 
-EXCERPT_WORDS = 25                      # article excerpts stay below the 30-word gate window
-
-def _example_candidates(coded: pd.DataFrame) -> pd.DataFrame:
-    """Four example documents, chosen by rule (first match by set order, doc_id) so a rerun picks the same ones."""
-    wants = [("debunking mainstream false positive", lambda d: (~d["true_label"]) & (d["claude_stance"] == "rejects_or_debunks")),
-             ("conspiracy site without a claim", lambda d: d["true_label"] & (d["claude_stance"] == "no_claim")),
-             ("endorsing conspiracy article missed", lambda d: d["true_label"] & (d["claude_stance"] == "endorses")),
-             ("LLM-only error", lambda d: d["set"] == "llm_only_wrong")]
-    rows, used = [], set()
-    for kind, rule in wants:
-        d = coded[rule(coded) & ~coded["doc_id"].isin(used)]
-        d = d.assign(_o=d["set"].map(errors.SETS.index)).sort_values(["_o", "doc_id"]).drop(columns="_o")
-        if len(d):
-            rows.append({**d.iloc[0].to_dict(), "kind": kind})
-            used.add(d.iloc[0]["doc_id"])
-    return pd.DataFrame(rows)
-
-
 def errors_stage() -> dict:
     """Test articles where the best LR and the LLM disagree -> stance coding (cached) -> tables."""
     cfg = errors.stance_config()
@@ -582,18 +581,24 @@ def errors_stage() -> dict:
         client = errors.stance_client(cfg)          # raises loudly: no key and no complete cache
     stance = errors.code_stances(to_code.assign(txt=to_code["doc_id"].map(frame["txt"])), client=client)
     coded = to_code.merge(stance, on="doc_id")
-    coded["verdict"] = [errors.classify_error(bool(t), s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
-    write_table("error_classification", errors.error_classification_table(coded, sets))
 
-    usable = coded[coded["claude_stance"] != errors.UNREADABLE]
+    unreadable = int((coded["claude_stance"] == errors.UNREADABLE).sum())
+    coded = coded[coded["claude_stance"] != errors.UNREADABLE].reset_index(drop=True)   # footnote: these are dropped
+    coded["verdict"] = [errors.classify_error(bool(t), s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
+    usable = coded
+    write_table("error_classification", errors.error_classification_table(coded, sets))
     sample = errors.stratified_sample(usable, cfg["human_sample_size"], seed)
     written = errors.write_check_sample(sample, results_dir() / "tables" / "stance_check_sample.csv")
 
-    ex = _example_candidates(coded)
-    ex["excerpt"] = [" ".join(frame.loc[d, "txt"].split()[:EXCERPT_WORDS]) + " ..." for d in ex["doc_id"]]
+    errors.write_claude_answers(sample, results_dir() / "tables" / "stance_claude_answers.csv")
+
+    both_right = lr[["doc_id", "label", "pred"]].merge(llm_p[["doc_id", "pred"]], on="doc_id", suffixes=("_lr", "_llm"))
+    both_right = both_right[(both_right["pred_lr"] == both_right["label"]) & (both_right["pred_llm"] == both_right["label"])]
+    ex = errors.pick_examples(sets, both_right.rename(columns={"label": "true_label"}))
+    ex["website"] = ex["doc_id"].map(frame["website"])
+    ex["excerpt"] = [" ".join(frame.loc[d, "txt"].split()[:errors.EXCERPT_WORDS]) + " ..." for d in ex["doc_id"]]
     ex["true_label"] = ex["true_label"].map(CLASS_NAMES)
-    write_table("error_examples", ex[["kind", "doc_id", "website", "set", "true_label", "error_type", "claude_stance",
-                                      "verdict", "excerpt"]])
+    write_table("error_examples", ex[["cell", "doc_id", "website", "true_label", "excerpt"]])
 
     from . import llm as llm_mod
     split = load_split().set_index("doc_id")["split"]
@@ -606,16 +611,20 @@ def errors_stage() -> dict:
     totals = sets.groupby(["set", "error_type"]).size()
     values = {"data": "TEST rows, filtered documents; predictions from evaluate_final files only",
               "prior_knowledge_probe": probe,
-              "lr_model": chosen, "llm_pass": 1, "stance_model": cfg["model"],
+              "lr_model": chosen, "stance_model": cfg["model"],
               "counts": {s: {"total": int((sets["set"] == s).sum()),
                              "conspiracy": int(((sets["set"] == s) & sets["true_label"]).sum()),
                              "mainstream": int(((sets["set"] == s) & ~sets["true_label"]).sum()),
                              "false_positive": int(totals.get((s, "false positive"), 0)),
                              "false_negative": int(totals.get((s, "false negative"), 0)),
                              "coded": int((coded["set"] == s).sum())} for s in errors.SETS},
-              "coded_documents": int(len(coded)), "stance_unreadable": int((coded["claude_stance"] == errors.UNREADABLE).sum()),
+              "coded_documents": int(len(coded)),
+              "footnote_unreadable_codes": unreadable,
               "stance_counts": usable["claude_stance"].value_counts().to_dict(),
               "verdict_counts": usable["verdict"].value_counts().to_dict(),
+              "label_problem_share": {"label_problems": int((coded["verdict"] == errors.LABEL_PROBLEM).sum()),
+                                      "of_coded": int(len(coded)),
+                                      "source": "Claude stance coding only, not checked by people"},
               "rule": "conspiracy site + (rejects|neutral|no_claim) -> label problem; mainstream site + endorses -> label problem; else model wrong",
               "human_check": {"sample_file": "results/tables/stance_check_sample.csv", "rows": int(len(sample)),
                               "file_rewritten_this_run": written, "status": "to be filled by the team"}}
