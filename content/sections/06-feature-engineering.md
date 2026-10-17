@@ -61,7 +61,7 @@ A family counts as helping only with a gain of at least 0.01.
 
 ## Report
 
-The third analysis asks whether hand-made features improve the TF-IDF model. We added three groups, each motivated by earlier work. N-grams of one to three words capture phrases such as "inside job"; word and bigram features are a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short hand-made lists (hedges, boosters, hidden-truth phrases, debunking words), following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020), although evidence on certainty is mixed (Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and repetition; fake-news bodies use more capitals and repetition (Horne and Adali, 2017), but such features generalise poorly across domains (Perez-Rosas et al., 2018). We added no emotion scores, as explained earlier: they lie outside the question and their word lists are unreliable here.
+The third analysis asks whether hand-made features improve the TF-IDF model. We added three groups, each motivated by earlier work. N-grams of one to three words capture phrases such as "inside job"; word and bigram features are a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short hand-made lists (hedges, boosters, hidden-truth phrases, debunking words), following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020), although evidence on certainty is mixed (Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and repetition; fake-news bodies use more capitals and repetition (Horne and Adali, 2017), but such features generalise poorly across domains (Perez-Rosas et al., 2018).
 
 We compared five logistic regressions on the same cleaned articles and split: TF-IDF alone, with each group, and with all three. Each feature matrix was built once on the training articles, numeric groups were standardised with training statistics only, and every model chose the regularisation strength (C) and the class weight from the same grid by validation F1 of the conspiracy class. A group passes the threshold if it raises validation F1 by at least 0.01; otherwise plain TF-IDF is kept. With 376 validation articles, smaller differences cannot be told from chance.
 
@@ -75,11 +75,11 @@ The table lists the validation F1 of every model and its change against TF-IDF a
 | + style | 0.894 | -0.020 |
 | + all three groups | 0.887 | -0.027 |
 
-The final tested model therefore contains the certainty words alone. On test its F1 was 0.610 against 0.582 for TF-IDF alone, but the intervals overlap widely and the McNemar test gives p = 0.332, so the chosen model rests on a gain within noise. Style and the full combination made the model worse, probably because many weak clues add noise.
+The final tested model therefore contains the certainty words alone. On test its gain (F1 0.610 against 0.582) was within noise (p = 0.332). Style and the full combination made the model worse, probably because many weak clues add noise.
 
 <!-- output: results/figures/ablation_f1.png | Validation F1 of the five models -->
 
-Three reasons explain why the groups add so little. First, the information is already in the words: "cover-up" is a TF-IDF feature as soon as it is a word. Second, the lists reach only part of the data: the hidden-truth list has 11 entries and occurs in 45% of training conspiracy articles against 3% of mainstream ones, but it is absent from more than half of the conspiracy articles. Third, the lists count words and ignore meaning, so an article that denies a cover-up still scores as hidden-truth vocabulary.
+Three reasons explain why the groups add so little. First, the information is already in the words: "cover-up" is a TF-IDF feature as soon as it is a word. Second, the lists reach only part of the data: the hidden-truth list occurs in 45% of training conspiracy articles against 3% of mainstream ones, but is absent from more than half of the conspiracy articles. Third, the lists count words and ignore meaning, so an article that denies a cover-up still scores as hidden-truth vocabulary.
 
 ## Check yourself
 

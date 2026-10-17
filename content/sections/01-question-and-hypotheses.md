@@ -41,7 +41,7 @@ The real analysis code starts in the next sections.
 
 ## Report
 
-This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, and how four methods compare on this task. The methods are logistic regression on word counts, logistic regression on TF-IDF weights, logistic regression on TF-IDF weights plus hand-made features, and one low-cost large language model (LLM) used without any training on our data. The hypotheses were chosen from the literature and fixed before the final test run; the exact date on which they were written down cannot be shown.
+On the 410 held-out test articles, the best method was the large language model Claude Haiku 5.5, which reached an F1 score of 0.795 for the conspiracy class (95% confidence interval 0.723 to 0.857), against 0.610 for the best logistic regression. This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, and how four methods compare on this task. The methods are logistic regression on word counts, logistic regression on TF-IDF weights, logistic regression on TF-IDF weights plus hand-made features, and one low-cost large language model (LLM) used without any training on our data. The hypotheses were chosen from the literature and fixed before the final test run; the exact date on which they were written down cannot be shown.
 
 H1. Weighting words by their distinctiveness (TF-IDF) improves on plain word counts.
 

@@ -63,21 +63,19 @@ The stage puts it all together and writes the tables.
 
 ## Report
 
-We examined the test articles on which the best logistic regression and the LLM disagree with the label. The groups are articles missed only by the logistic regression, only by the LLM, and by both. A false positive is a mainstream article called conspiracy, a false negative the reverse. The counts per group are given in the first table of this part. The stance codes come from a single language model and no person has checked them yet.
+We examined the test articles on which the best logistic regression and the LLM disagree with the label. The groups are articles missed only by the logistic regression, only by the LLM, and by both. A false positive is a mainstream article called conspiracy, a false negative the reverse.
 
-The labels describe websites, not articles. To separate model errors from label problems, a second model (Claude Sonnet 5.5) coded the stance of every disagreement article towards conspiracy claims about 9/11: endorses, rejects or debunks, reports neutrally, or no claim. The question did not mention the website. A fixed rule, written before the results were read, turns label and stance into a verdict. A conspiracy-site article that does not endorse a claim, or a mainstream article that endorses one, is counted as a label problem. All other cases are model errors. A mainstream article that debunks a theory counts as a model error, because it is still mainstream content. By this rule, a conspiracy-site article that makes no conspiracy claim is a label problem by definition, so the share of label problems follows partly from the rule.
+The labels describe websites, not articles. To separate model errors from label problems, a second model (Claude Sonnet 5.5) coded the stance of every disagreement article towards conspiracy claims about 9/11: endorses, rejects or debunks, reports neutrally, or no claim. The question did not mention the website. A fixed rule, written before the results were read, turns label and stance into a verdict. A conspiracy-site article that does not endorse a claim, or a mainstream article that endorses one, is counted as a label problem. All other cases are model errors. A mainstream article that debunks a theory counts as a model error, because it is still mainstream content.
 
 <!-- output: results/tables/error_classification.csv -->
 
-By this rule most of the errors are label problems, especially missed conspiracy-site articles. Many of them are ordinary news or commentary with no conspiracy claim, so a model that reads only the text has little to find. Mistakes on mainstream articles are mostly model errors, since the rule counts a mainstream article that does not endorse a claim as correctly labelled. We did not test why the models call these articles conspiracy. These shares depend on the automatic coding. Of the 67 articles with an error, 65 received a readable stance and 2 an answer that could not be read; the shares use the 65.
+By this rule most of the errors are label problems, especially missed conspiracy-site articles. Many of them are ordinary news or commentary with no conspiracy claim, so a model that reads only the text has little to find. Mistakes on mainstream articles are mostly model errors, since the rule counts a mainstream article that does not endorse a claim as correctly labelled. Of the 67 articles with an error, 65 received a readable stance and 2 an answer that could not be read; the shares use the 65.
 
 Four examples show what these cases look like.
 
 <!-- output: results/tables/error_examples_plain.csv -->
 
-The 40 articles of the human check come from 19 websites, 6 conspiracy-oriented and 13 mainstream, with at most 4 articles from any one website.
-
-The automatic stance coding is not verified: no person has checked it yet, and the team will check 40 articles by hand. Each teammate returns the file `results/tables/stance_check_sample.csv` with the column `human_stance` filled in, through a pull request or by email to the project lead, and agreement with Claude's stance is computed as Cohen's kappa. The label-problem share (47 of 65 readable codings) is therefore an estimate from one unchecked source.
+The automatic stance coding is not verified: no person has checked it yet, and the team will check 40 articles by hand. The label-problem share (47 of 65 readable codings) is therefore an estimate from one unchecked source.
 
 ## Check yourself
 

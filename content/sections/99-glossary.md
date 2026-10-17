@@ -34,11 +34,6 @@ Also: Saved answers
 
 A file that stores each answer the first time it is computed, so a rerun reads the file instead of paying again. Like writing a result in a notebook so you need not recalculate. It stores ids and codes, never article text.
 
-### Epistemic marker
-Also: Epistemic markers, Epistemic words, certainty and uncertainty words, certainty and doubt words, doubt words
-
-Words that show how sure a writer is ("epistemic" means "about knowing"): "clearly" and "proves" for certainty, "maybe" and "allegedly" for doubt. We count them with a short hand-made list. Like noticing whether a friend says "I know" or "I guess".
-
 ### Class weight
 Also: Balanced class weight
 
@@ -71,6 +66,16 @@ A big collection of texts used for a study. Ours is the LOCO corpus, a set of we
 ### Cosine similarity
 
 A number from 0 to 1 that says how alike two articles are, based on their word vectors. Near 1 means almost the same words in the same proportions. Like comparing two shopping baskets by what they contain.
+
+### Epistemic marker
+Also: Epistemic markers, Epistemic words, certainty and uncertainty words, certainty and doubt words, doubt words
+
+Words that show how sure a writer is ("epistemic" means "about knowing"): "clearly" and "proves" for certainty, "maybe" and "allegedly" for doubt. We count them with a short hand-made list. Like noticing whether a friend says "I know" or "I guess".
+
+### Exact test
+Also: Exact tests
+
+A significance test that works out the chance directly from counting every possible outcome, instead of using a rough formula. It stays reliable when the numbers are small. Like finding the odds of ten heads in twelve coin flips by listing all the ways it can happen.
 
 ### F1 score
 Also: F1
@@ -131,19 +136,19 @@ The correct answer we know for each article: conspiracy-oriented or mainstream w
 Labels that do not fit the article they are attached to. A mainstream site may publish a conspiracy-style piece, and the label still says mainstream. Like a shelf labelled "cookbooks" holding one novel.
 
 ### Leakage
-Also: Data leakage
+Also: Data leakage, leak
 
 When information from the test articles sneaks into training, so the scores look better than they are. Like a student who has seen the exam questions in advance.
-
-### Lexicon
-Also: Hand-made word list, Lexicons
-
-A hand-made list of words that belong to one theme, such as doubt words. We count how many of an article's words are on the list. Like a highlighter pen used only on one kind of word.
 
 ### LLM
 Also: Large language model, language model
 
 A program trained on huge amounts of text that writes answers to written questions. Ours is Claude Haiku 5.5. Like a very well-read assistant who has never met our corpus.
+
+### Logarithm
+Also: Log, Logarithmic
+
+A way to squash big numbers so that growth slows down: 1, 10 and 100 become 0, 1 and 2. We use it so a word repeated fifty times does not count fifty times more than a word used once. Like counting the digits of a number instead of its size.
 
 ### Logistic regression
 Also: Logistic regressions, Regressions
@@ -199,14 +204,15 @@ Also: Penalty
 
 A penalty that keeps weights small so the model cannot memorise too much. In scikit-learn, C is the inverse strength: small C means strong penalty. Like a teacher asking for short, simple answers. We choose C on validation.
 
+### Sample
+Also: Samples, Resample, Resamples
+
+A smaller group picked from a bigger one. Our test articles are a sample of all articles, so scores on them are only an estimate. Like tasting one spoonful of soup to judge the whole pot.
+
 ### Sampling
 Also: Temperature, default sampling
 
 The randomness a language model uses when picking its next word. We keep the model's default settings, because it rejects a temperature setting. Like a die the model rolls, with a default weighting.
-
-### Solver
-
-The calculation method a program uses to find the best weights. Different solvers suit different data sizes. Like choosing between a hand saw and a power saw: both cut, one is faster for big jobs.
 
 ### Stance coding
 Also: Stance, stance code
@@ -242,24 +248,29 @@ Also: Term frequency, inverse document frequency, document frequency
 
 A way to turn text into numbers that gives high scores to words frequent in one article but rare across all articles, and low scores to words like "the". Like a stamp collector who finds a rare stamp more telling than a common one.
 
+### Threshold
+
+A cut-off number that decides a yes or no. Our rule is a threshold: a group of clues counts as helping only if F1 rises by at least 0.01. Like a pass mark in an exam: 50 points pass, 49 do not.
+
 ### Token
 Also: Tokens
 
 A small piece of text a language model reads, often a word or part of one. Models limit how many tokens they may read and write. Like counting syllables instead of words.
-
-### Tokenise
-Also: Tokenisation
-
-Splitting a text into small pieces, usually words, so they can be counted. "Inside job!" becomes two pieces: "inside" and "job". Like cutting a sentence into word cards.
 
 ### Training set
 Also: Train split
 
 The articles the model learns from. All learned quantities, such as the word list and the weights, come from these articles only. Like the practice questions a student studies before the exam.
 
-### Type-token ratio
+### Two-sided test
+Also: two-sided
 
-The number of different words divided by the number of all words in a text. A low value means the same words repeat a lot. A text saying "go, go, go" has few different words for its length.
+A test that asks whether two things differ in either direction, not only in the direction we hoped for. Like checking whether a new recipe tastes different from the old one, better or worse, rather than only checking whether it is better.
+
+### Unit length
+Also: length normalisation, Unit-length
+
+Scaling each article's list of numbers so that its overall size is exactly 1. Then a long article and a short one can be compared by their mix of words, not by how much they say. Like converting every recipe to "per 100 grams" so a big pot and a small pot compare fairly.
 
 ### Validation set
 Also: Validation split
@@ -288,17 +299,3 @@ How many times each word appears in an article. "Inside" three times and "job" t
 ### Zero-shot
 
 Asking a language model to do a task without showing it any worked examples first. Like asking a stranger to sort the letters after only one sentence of instructions.
-
-### Threshold
-
-A cut-off number that decides a yes or no. Our rule is a threshold: a group of clues counts as helping only if F1 rises by at least 0.01. Like a pass mark in an exam: 50 points pass, 49 do not.
-
-### Logarithm
-Also: Log, Logarithmic
-
-A way to squash big numbers so that growth slows down: 1, 10 and 100 become 0, 1 and 2. We use it so a word repeated fifty times does not count fifty times more than a word used once. Like counting the digits of a number instead of its size.
-
-### Sample
-Also: Samples, Resample, Resamples
-
-A smaller group picked from a bigger one. Our test articles are a sample of all articles, so scores on them are only an estimate. Like tasting one spoonful of soup to judge the whole pot.

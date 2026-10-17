@@ -158,3 +158,17 @@ def test_report_has_no_internal_model_ids():
     text = report.read_text(encoding="utf-8")
     for name in ("final_tfidf_features", "lr_words_v2", "lr_extended"):
         assert name not in text
+
+
+def test_explained_simply_limit_is_exactly_450_words(tmp_path, monkeypatch):
+    # Long explanations get skipped by the team, so 451 words must fail and 450 must pass.
+    monkeypatch.setattr(tools, "REPO", tmp_path)
+    sec = tmp_path / "content" / "sections"
+    sec.mkdir(parents=True)
+    (sec / "99-glossary.md").write_text("### Term\nmeaning\n")
+    template = ("## Explained simply\n{}\n## The code\n<!-- cell: a.py#f -->\n## Report\ntext\n"
+                "## Check yourself\nQ: one?\nA: yes\nQ: two?\nA: yes\n")
+    (sec / "03-split-by-website.md").write_text(template.format("word " * 450))
+    assert tools.gate_sections() == []
+    (sec / "03-split-by-website.md").write_text(template.format("word " * 451))
+    assert "451 words" in " | ".join(tools.gate_sections())
