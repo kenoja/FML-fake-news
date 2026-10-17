@@ -1,7 +1,7 @@
 doc_id,website,true_label,lr_pred,llm_pred,claude_stance,claude_justification,human_stance,human_note
 C00a99,thelibertybeacon.com,conspiracy,mainstream,conspiracy,no_claim,The article is political commentary about where [name] and [name] were on 9/11; it makes and discusses no conspiracy claims about the attacks being an,,
 C031c8,conspiracydailyupdate.com,conspiracy,mainstream,conspiracy,no_claim,"The article only introduces [name] and teases a discussion of a hidden history; it makes no claim about 9/11 attacks, an inside job, or",,
-C03a8b,conspiracydailyupdate.com,conspiracy,mainstream,conspiracy,no_claim,The article only mentions 9/11 as a death-toll comparison for the [name] outbreak and makes no conspiracy claims about the 9/11 attacks.,,
+C03a8b,conspiracydailyupdate.com,conspiracy,mainstream,conspiracy,no_claim,The article only mentions 9/11 as a death-toll comparison for the COVID-19 outbreak and makes no conspiracy claims about the 9/11 attacks.,,
 C04a8a,neonnettle.com,conspiracy,mainstream,conspiracy,no_claim,The article covers [name] 'some people did something' 9/11 remark and a [name] rally; it makes no claims that 9/11 was an inside job,,
 C07292,conspiracydailyupdate.com,conspiracy,mainstream,conspiracy,no_claim,The article is a show blurb about [name] and the [name] alleged pre-[name] presence in [name]; it contains no discussion of 9/11 conspiracy claims.,,
 M0784e,politico.eu,mainstream,conspiracy,mainstream,reports_neutrally,"The article covers the dispute over alleged Saudi complicity in 9/11, giving both the victims' lawyers' claims and Saudi refutations without taking a side.",,
@@ -35,7 +35,7 @@ C04d14,needtoknow.news,conspiracy,mainstream,mainstream,no_claim,"The article co
 C050be,neonnettle.com,conspiracy,mainstream,mainstream,no_claim,"The article concerns [name] remarks on white men, [name] and her 9/11 comment; it contains no conspiracy claims about 9/11 being an inside job",,
 C05353,neonnettle.com,conspiracy,mainstream,mainstream,no_claim,"The article criticizes [name] wording about 9/11 and affirms Al Qaeda hijackers were responsible, but it discusses no conspiracy claims about the attacks.",,
 C0568d,neonnettle.com,conspiracy,mainstream,mainstream,no_claim,The article covers a 9/11 memorial speech criticizing [name] remark and affirms the official account (19 al Qaeda terrorists). It discusses no conspiracy claim.,,
-C05ee5,conspiracydailyupdate.com,conspiracy,mainstream,mainstream,no_claim,"The article covers [name] comparison of the [name] economic impact to [name] and 9/11, plus congressional action against [name]. It makes no 9/11 conspiracy",,
+C05ee5,conspiracydailyupdate.com,conspiracy,mainstream,mainstream,no_claim,"The article covers [name] comparison of the COVID-19 economic impact to [name] and 9/11, plus congressional action against [name]. It makes no 9/11 conspiracy",,
 C06220,neonnettle.com,conspiracy,mainstream,mainstream,no_claim,"The article covers [name] remarks about 9/11 and its aftermath; it makes and discusses no conspiracy claims about the attacks (inside job, cover-up, explosives).",,
 C06a37,neonnettle.com,conspiracy,mainstream,mainstream,no_claim,The article covers [name] demand that [name] apologize for her remarks about 9/11. It makes and discusses no conspiracy claims about the attacks.,,
 M1cf5f,foxnews.com,mainstream,conspiracy,conspiracy,no_claim,"The article covers the Russia investigation, [name] probe, and [name]/[name] matters. It makes and discusses no claims about the 9/11 attacks.",,

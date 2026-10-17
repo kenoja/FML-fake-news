@@ -235,7 +235,7 @@ By stance, 62 articles make no claim, 9 report neutrally, 3 endorse a conspiracy
 
 **What was learned.** Rules in files and automatic gates work better than telling an agent to be careful. An agent reports conflicts between a rule and reality only if told to write them down. AI output sounds equally confident when right and wrong, so the checks that mattered were comparisons with outside facts and with the data. The main scientific findings, that many "errors" are label problems and that extra features do not help, came from looking at predictions after the first run, as the feedback advised.
 
-**What is skipped or still open.** The licence is unconfirmed, the stance codes are unchecked by people, and the temperature and output-limit decisions are open. Without the LLM cache and a key, `fml run-all` fails loudly with the count of missing entries. `docs/ai-log.md` lists what a person must still check.
+**What is skipped or still open.** The licence is unconfirmed, the stance codes are unchecked by people, and the temperature and output-limit decisions are open. Without the LLM cache and a key, `fml run-all` fails loudly with the count of missing entries. `docs/ai-log.md` lists what a person must still check. Its human-verification table (Members A to E) is entirely pending.
 
 ## References
 

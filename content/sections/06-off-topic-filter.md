@@ -3,6 +3,14 @@ title: Removing off-topic documents
 part: Data preparation and evaluation
 hypothesis: Documents that never mention 9/11 are easy to separate by topic alone, so removing them lowers the words-only score a little and makes the remaining task more honest; the filter removes both website types about equally.
 ---
+**In short**
+
+1. Some documents in the corpus never mention 9/11, so we remove them with a keyword pattern fixed before we saw results.
+2. 3,146 documents become 2,608 (777 conspiracy, 1,831 mainstream); both classes lose about 17%.
+3. The loss is uneven inside splits: the test split loses 43 of its 141 conspiracy documents, mostly from one website.
+4. The words-only model scores about the same before and after (like-for-like F1 0.936 against 0.914, inside the intervals).
+5. Details (term-by-term check, removed-title words, model rows A/B/C) follow below; read them only if you need them.
+
 ## Goal and hypothesis
 
 The corpus was collected with 9/11 as a search seed, but some documents never mention it (a medical dictionary entry, a cooking page). We remove them with the **topic filter**: a document stays only if its title or text matches the pattern in `config/project.yaml` (`data.topic_filter_pattern`: "9/11", "september 11", "world trade center", "pentagon", "ground zero", "wtc" and a few more, ignoring upper/lower case). The pattern is a team decision and was not changed after seeing results.

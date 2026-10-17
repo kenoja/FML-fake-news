@@ -48,6 +48,20 @@ The agent also reports against its own wishes: section 11 says that the stance c
 - **Whether the explanations are understandable** for someone without an ML background (that is what the feedback threads are for).
 - **Whether the epistemic word list** is sensible. It is a short hand-picked list, not a published one.
 
+### Two pieces of code that make the AI parts auditable
+
+An **API response cache** is a file that stores each answer the first time it is paid for, so that rerunning the pipeline reads the file instead of calling the model again. The cache is only trustworthy if its key changes whenever anything that could change the answer changes. The key below combines the prompt text, the model name, the settings and the pass number into one fingerprint (a **hash**: a short code that changes completely if any input changes). A document is looked up by its `doc_id` plus this key, never by its text.
+
+<!-- cell: src/fml/llm.py#cache_key -->
+
+The second piece is **stance coding**: we asked a second model (Sonnet 5.5) how each disagreement article treats conspiracy claims, without telling it the website. This function runs that step, reads from the cache first, and fails loudly when there is neither a cache entry nor an API key. Its answers are the unchecked part of the error analysis, so the code is short and the cache is public (ids, hashes and answers, no article text).
+
+<!-- cell: src/fml/errors.py#code_stances -->
+
+Last, the rule that turns a stance code into a verdict ("model wrong" or "label does not describe the text") is a plain table in code, so a teammate can check it without trusting the agent:
+
+<!-- cell: src/fml/errors.py#classify_error -->
+
 ### Lessons
 
 - Rules in files (`AGENTS.md`, `config/project.yaml`) plus automatic gates work better than telling an agent "be careful". The gates failed loudly in tests, which is what we wanted.
@@ -60,7 +74,7 @@ The agent also reports against its own wishes: section 11 says that the stance c
 
 - Believing a test suite proves correctness. The tests encode the rules we thought of.
 - The same model family writing the code and being evaluated by it may share blind spots. Human checks are part of the plan, not an extra.
-- The log is only useful if humans add what they checked. At the time of writing, `docs/ai-log.md` has the setup entry; the per-cycle entry is still to be added.
+- The log is only useful if humans add what they checked. `docs/ai-log.md` has the setup entry, the cycle-1 entries and a human-verification table (Members A to E). Every cell is `pending`, because no human check is recorded in the repository yet.
 
 ## Technical infrastructure
 

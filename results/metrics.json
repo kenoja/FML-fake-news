@@ -1614,6 +1614,28 @@
       "seed": 20261016,
       "level": 0.95
     },
+    "token_limit_sensitivity": {
+      "status": "run",
+      "split": "validation",
+      "variant": "v2",
+      "n_docs": 150,
+      "limit_default": 150,
+      "limit_large": 400,
+      "default": {
+        "parse_errors": 20,
+        "parse_error_rate": 0.1333,
+        "f1": 0.9425
+      },
+      "large": {
+        "parse_errors": 18,
+        "parse_error_rate": 0.12,
+        "f1": 0.9545
+      },
+      "f1_difference": 0.012,
+      "parse_error_rate_difference": -0.0133,
+      "label_flips": 4,
+      "pass": 3
+    },
     "test": {
       "model_id": "llm_haiku",
       "config_hash": "56d18291d053bf3a",
@@ -1760,28 +1782,6 @@
       "cohen_kappa": 0.8871,
       "parse_errors_pass1": 61,
       "parse_errors_pass2": 66
-    },
-    "token_limit_sensitivity": {
-      "status": "run",
-      "split": "validation",
-      "variant": "v2",
-      "n_docs": 150,
-      "limit_default": 150,
-      "limit_large": 400,
-      "default": {
-        "parse_errors": 20,
-        "parse_error_rate": 0.1333,
-        "f1": 0.9425
-      },
-      "large": {
-        "parse_errors": 18,
-        "parse_error_rate": 0.12,
-        "f1": 0.9545
-      },
-      "f1_difference": 0.012,
-      "parse_error_rate_difference": -0.0133,
-      "label_flips": 4,
-      "pass": 3
     }
   },
   "comparison": {
@@ -2025,7 +2025,7 @@
       "llm_haiku": 0.9938
     },
     "average_precision": {
-      "lr_words_v2": 0.6764,
+      "lr_words_v2": 0.6762,
       "llm_haiku": 0.6409
     },
     "length_buckets": [
@@ -2192,7 +2192,7 @@
       "basis": "Claude-coded stance, not yet checked by humans"
     },
     "human_check": {
-      "status": "not yet verified",
+      "status": "pending: 0/40 filled",
       "rows": 40,
       "human_filled": 0,
       "kappa": null,

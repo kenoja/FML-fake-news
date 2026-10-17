@@ -48,3 +48,21 @@ after every cycle; team members add what they checked or changed by hand.
 - Gate fix (run-all timeout): AI added a per-process feature-block cache and a parallel C-grid in
   `src/fml/models.py`, renamed the words-only LR to `lr_words_v2` after the test lock rejected the stale
   `lr_words` config, and refreshed the quoted numbers. Humans: please re-check the numbers in the report.
+
+## Cycle 1, review round (17 Oct 2026)
+
+- **Tool:** the same AI coding agent (Claude Code, Sonnet 5.5), working through the review tasks one by one.
+- **What changed:** the review tasks revised the off-topic section (summary box at the top), the report and section 13 (code cells for the cache key, stance coding and the error rule), and this log. This task added the human-verification table below and mirrored it in report section 7 and section 13. No result numbers were changed by hand.
+- **Unchecked outputs:** the 40 stance codes (Claude-written, no human codes, kappa = null); the licence of the LOCO texts; the prior-knowledge probe (not run unless a key is set); every number in the report (checked by `tests/test_report_numbers.py` against `results/`, not by a person).
+
+### Human verification
+
+Only checks recorded in this repository are entered. None are recorded yet, so every cell is pending. A member replaces `pending` with the date and what they checked.
+
+| Member | Stance codes (40 rows) | Report numbers vs `results/` | Read for article text / personal data | Licence and open decisions |
+|---|---|---|---|---|
+| Member A | pending | pending | pending | pending |
+| Member B | pending | pending | pending | pending |
+| Member C | pending | pending | pending | pending |
+| Member D | pending | pending | pending | pending |
+| Member E | pending | pending | pending | pending |

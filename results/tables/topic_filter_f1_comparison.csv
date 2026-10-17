@@ -1,4 +1,4 @@
 setting,trained_on,evaluated_on,documents,conspiracy,websites,precision,recall,f1,macro_f1,balanced_accuracy,f1_ci_doc_low,f1_ci_doc_high,f1_ci_site_low,f1_ci_site_high
-"A: all-docs model, all validation docs (first run)",all,all validation,471,140,20,0.9615384615384616,0.8928571428571429,0.9259259259259259,0.9480820105820106,0.938875701337937,0.8921933085501859,0.9568345323741008,0.7906670746634027,0.9567901234567902
-"B: all-docs model, filtered validation docs (like-for-like)",all,filtered validation,398,128,19,0.9590163934426229,0.9140625,0.936,0.9533479853479854,0.9477719907407407,0.9032258064516129,0.9638626218019488,0.8148148148148148,0.9649680716283895
-"C: filtered model, filtered validation docs",filtered,filtered validation,398,128,19,0.9140625,0.9140625,0.9140625,0.9366608796296296,0.9366608796296296,0.8769123505976095,0.9461538461538461,0.7423675733715105,0.9568106312292359
+"A: all-docs model, all validation docs (first run)",all,all validation,471,140,20,0.962,0.893,0.926,0.948,0.939,0.892,0.957,0.791,0.957
+"B: all-docs model, filtered validation docs (like-for-like)",all,filtered validation,398,128,19,0.959,0.914,0.936,0.953,0.948,0.903,0.964,0.815,0.965
+"C: filtered model, filtered validation docs",filtered,filtered validation,398,128,19,0.914,0.914,0.914,0.937,0.937,0.877,0.946,0.742,0.957
