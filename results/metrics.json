@@ -1386,7 +1386,235 @@
       }
     }
   },
-  "llm": {},
+  "llm": {
+    "variants": {
+      "v1": {
+        "prompt_words": 42,
+        "confusion": {
+          "tp": 97,
+          "fn": 31,
+          "fp": 0,
+          "tn": 270
+        },
+        "validation": {
+          "precision": {
+            "estimate": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "recall": {
+            "estimate": 0.7578,
+            "ci_low": 0.6807,
+            "ci_high": 0.8289
+          },
+          "f1": {
+            "estimate": 0.8622,
+            "ci_low": 0.81,
+            "ci_high": 0.9064
+          },
+          "macro_f1": {
+            "estimate": 0.904,
+            "ci_low": 0.8714,
+            "ci_high": 0.9335
+          },
+          "balanced_accuracy": {
+            "estimate": 0.8789,
+            "ci_low": 0.8403,
+            "ci_high": 0.9144
+          }
+        },
+        "validation_website_bootstrap": {
+          "precision": {
+            "estimate": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "recall": {
+            "estimate": 0.7578,
+            "ci_low": 0.6097,
+            "ci_high": 0.9024
+          },
+          "f1": {
+            "estimate": 0.8622,
+            "ci_low": 0.7575,
+            "ci_high": 0.9487
+          },
+          "macro_f1": {
+            "estimate": 0.904,
+            "ci_low": 0.8236,
+            "ci_high": 0.9669
+          },
+          "balanced_accuracy": {
+            "estimate": 0.8789,
+            "ci_low": 0.8049,
+            "ci_high": 0.9512
+          }
+        },
+        "n_docs": 398,
+        "parse_errors": 64,
+        "truncated_docs": 36,
+        "max_input_words": 3000,
+        "input_tokens": 873180,
+        "output_tokens": 38573,
+        "cost_usd": 0.1066
+      },
+      "v2": {
+        "prompt_words": 102,
+        "confusion": {
+          "tp": 116,
+          "fn": 12,
+          "fp": 0,
+          "tn": 270
+        },
+        "validation": {
+          "precision": {
+            "estimate": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "recall": {
+            "estimate": 0.9062,
+            "ci_low": 0.8547,
+            "ci_high": 0.9531
+          },
+          "f1": {
+            "estimate": 0.9508,
+            "ci_low": 0.9217,
+            "ci_high": 0.976
+          },
+          "macro_f1": {
+            "estimate": 0.9645,
+            "ci_low": 0.944,
+            "ci_high": 0.9826
+          },
+          "balanced_accuracy": {
+            "estimate": 0.9531,
+            "ci_low": 0.9274,
+            "ci_high": 0.9766
+          }
+        },
+        "validation_website_bootstrap": {
+          "precision": {
+            "estimate": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "recall": {
+            "estimate": 0.9062,
+            "ci_low": 0.7727,
+            "ci_high": 1.0
+          },
+          "f1": {
+            "estimate": 0.9508,
+            "ci_low": 0.8718,
+            "ci_high": 1.0
+          },
+          "macro_f1": {
+            "estimate": 0.9645,
+            "ci_low": 0.9123,
+            "ci_high": 1.0
+          },
+          "balanced_accuracy": {
+            "estimate": 0.9531,
+            "ci_low": 0.8864,
+            "ci_high": 1.0
+          }
+        },
+        "n_docs": 398,
+        "parse_errors": 44,
+        "truncated_docs": 36,
+        "max_input_words": 3000,
+        "input_tokens": 922532,
+        "output_tokens": 35521,
+        "cost_usd": 0.11
+      },
+      "v3": {
+        "prompt_words": 107,
+        "confusion": {
+          "tp": 88,
+          "fn": 40,
+          "fp": 0,
+          "tn": 270
+        },
+        "validation": {
+          "precision": {
+            "estimate": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "recall": {
+            "estimate": 0.6875,
+            "ci_low": 0.6066,
+            "ci_high": 0.7643
+          },
+          "f1": {
+            "estimate": 0.8148,
+            "ci_low": 0.7551,
+            "ci_high": 0.8664
+          },
+          "macro_f1": {
+            "estimate": 0.8729,
+            "ci_low": 0.8338,
+            "ci_high": 0.9076
+          },
+          "balanced_accuracy": {
+            "estimate": 0.8438,
+            "ci_low": 0.8033,
+            "ci_high": 0.8821
+          }
+        },
+        "validation_website_bootstrap": {
+          "precision": {
+            "estimate": 1.0,
+            "ci_low": 1.0,
+            "ci_high": 1.0
+          },
+          "recall": {
+            "estimate": 0.6875,
+            "ci_low": 0.5,
+            "ci_high": 0.8438
+          },
+          "f1": {
+            "estimate": 0.8148,
+            "ci_low": 0.6667,
+            "ci_high": 0.9153
+          },
+          "macro_f1": {
+            "estimate": 0.8729,
+            "ci_low": 0.7768,
+            "ci_high": 0.9449
+          },
+          "balanced_accuracy": {
+            "estimate": 0.8438,
+            "ci_low": 0.75,
+            "ci_high": 0.9219
+          }
+        },
+        "n_docs": 398,
+        "parse_errors": 90,
+        "truncated_docs": 36,
+        "max_input_words": 3000,
+        "input_tokens": 922930,
+        "output_tokens": 44433,
+        "cost_usd": 0.1145
+      }
+    },
+    "chosen": "v2",
+    "selection_rule": "chosen prompt = highest conspiracy-F1 on filtered VALIDATION documents (rounded to 4 digits); tie -> fewer input tokens (cheaper). Fixed and written to metrics.json before any test document is classified.",
+    "validation_documents": 398,
+    "validation_conspiracy": 128,
+    "validation_websites": 19,
+    "model_id": "llm_haiku",
+    "question": "source: conspiracy-oriented or mainstream website",
+    "model": "claude-haiku-5-5",
+    "temperature": 0,
+    "max_input_words": 3000,
+    "bootstrap": {
+      "resamples": 2000,
+      "seed": 20261016,
+      "level": 0.95
+    }
+  },
   "comparison": {},
   "errors": {}
 }
