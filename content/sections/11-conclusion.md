@@ -29,7 +29,11 @@ The study compared four methods for deciding whether a full 9/11 article comes f
 
 H1 (TF-IDF improves on word counts) is not confirmed. TF-IDF reached an F1 score of 0.582 and plain word counts 0.559. The direction agrees with the hypothesis, but the intervals overlap almost completely and the McNemar test is not significant (p = 0.087).
 
-H2 (certainty and style features improve the TF-IDF model) is not confirmed on test. F1 rose from 0.582 to 0.610, mostly through fewer false alarms, but the difference is within chance (p = 0.332). On validation, the certainty words were the only feature group with a gain of 0.01 or more; n-grams and style features gave no clear gain, and using all three groups together lowered the score.
+H2a (certainty words improve the TF-IDF model) is not confirmed. On validation they lifted F1 from 0.914 to 0.930, but on test F1 rose only from 0.582 to 0.610, mostly through fewer false alarms, and the difference is within chance (p = 0.332).
+
+H2b (style features improve it) is not supported: validation F1 fell to 0.894.
+
+H2c (phrases of two or three words improve it) is not supported: validation F1 was 0.916 against 0.914, no clear gain. Using all three groups together lowered the validation score further.
 
 H3 (the LLM beats the best logistic regression) is confirmed. The LLM reached an F1 score of 0.795 against 0.610 for TF-IDF with features, the intervals do not overlap, and the difference is significant (p < 0.0001). The gain comes from precision (0.985) and not from recall (0.667): the LLM almost never labels a mainstream article as conspiracy but misses one third of the conspiracy articles.
 
@@ -38,7 +42,7 @@ We did not fine-tune a language model or use other classifiers or emotion featur
 ## Check yourself
 
 Q: Which hypotheses were confirmed and which were not?
-A: Only H3 (the LLM beats the best trained model) was confirmed. H1 and H2 moved in the expected direction, but the differences could be due to chance.
+A: Only H3 (the LLM beats the best trained model) was confirmed. H1 and H2a moved in the expected direction, but the differences could be due to chance.
 
 Q: What does "not confirmed" mean here?
 A: The data do not show the effect clearly. It does not prove that the effect is absent.

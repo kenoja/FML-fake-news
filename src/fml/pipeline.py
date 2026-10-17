@@ -32,7 +32,7 @@ from .models import (feature_matrix, fit_features, fit_logistic, split_frames, t
 from .paths import project_config  # noqa: E402
 from .results import CONSPIRACY_COLOUR, MAINSTREAM_COLOUR, results_dir, savefig, write_metrics, write_table  # noqa: E402
 from .data_report import plot_split_sizes  # noqa: E402
-from .split import SPLITS, load_split, split_path, split_summary  # noqa: E402
+from .split import SPLITS, load_split, split_path, split_summary, websites_per_split  # noqa: E402
 
 M1_FEATURES = {"ngram_range": [1, 1], "min_df": 2, "sublinear_tf": True, "numeric_columns": []}
 CLASS_NAMES = {True: "conspiracy", False: "mainstream"}
@@ -84,6 +84,8 @@ def cleaning_stage() -> dict:
     summ = split_summary(frame, load_split())       # the split file predates cleaning; count what is left
     write_table("split_summary", summ)
     savefig(plot_split_sizes(summ), "split_sizes")
+    split_metrics = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))["split"]
+    write_metrics("split", {**split_metrics, "websites_per_split_after_cleaning": websites_per_split(summ)})
     info = {**info, "split_after_cleaning": {s: int(summ.loc[summ["split"] == s, "documents"].sum()) for s in SPLITS}}
     savefig(plot_cleaning(log), "cleaning_before_after")
     write_metrics("cleaning", round_floats(info, 4))

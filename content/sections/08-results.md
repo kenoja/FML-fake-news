@@ -63,9 +63,7 @@ Three McNemar tests (exact, two-sided) compare pairs of models. Word counts agai
 
 **H1: TF-IDF weighting beats plain word counts.** Not confirmed. TF-IDF has a higher F1 (0.582 against 0.559), but the intervals overlap almost completely and the McNemar test is not significant (p = 0.087). The direction fits the hypothesis; the evidence is too weak to claim it.
 
-**H2: Adding certainty and style features improves the TF-IDF model.** Not confirmed on test. F1 rises from 0.582 to 0.610, mainly through fewer false alarms (precision 0.735 against 0.696), but the difference is within chance (p = 0.332).
-
-**Do the hand-made features help on test?** Slightly, and not provably. The model with the certainty features, the only group that passed the validation threshold, scores a little higher than TF-IDF alone. The intervals overlap and the McNemar test does not separate the two models (p = 0.332), so we cannot say that the features help.
+**H2: Adding hand-made features improves the TF-IDF model.** Each kind was tried alone on validation (TF-IDF alone: F1 0.914). **H2a, certainty words:** the only group above our threshold (F1 0.930), so it went to the test set. There F1 rises from 0.582 to 0.610, mainly through fewer false alarms (precision 0.735 against 0.696), but the intervals overlap and the difference is within chance (p = 0.332). Not confirmed. **H2b, style features:** not supported; validation F1 falls to 0.894, so this model was not scored on test. **H2c, phrases (n-grams):** not supported; validation F1 is 0.916, no clear gain, so it was not scored on test either.
 
 **H3: The LLM beats the best logistic regression.** Confirmed. F1 is 0.795 against 0.610, the intervals do not overlap, and the test is clearly significant (p < 0.0001). The gain comes from precision, not from recall.
 

@@ -2,11 +2,11 @@
 
 ## Question and hypotheses
 
-This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, and how four methods compare on this task. The methods are logistic regression on word counts, logistic regression on TF-IDF weights, logistic regression on TF-IDF weights plus hand-made features, and one low-cost large language model (LLM) used without any training on our data. The following hypotheses were formulated before the final evaluation.
+This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, and how four methods compare on this task. The methods are logistic regression on word counts, logistic regression on TF-IDF weights, logistic regression on TF-IDF weights plus hand-made features, and one low-cost large language model (LLM) used without any training on our data. The hypotheses were chosen from the literature and fixed before the final test run; the exact date on which they were written down cannot be shown.
 
 H1. Weighting words by their distinctiveness (TF-IDF) improves on plain word counts.
 
-H2. Adding features about certainty and writing style improves the TF-IDF model.
+H2. Adding hand-made features improves the TF-IDF model. This is tested separately for three kinds of features: H2a, certainty words; H2b, style features; H2c, phrases of two or three words (n-grams).
 
 H3. The LLM does better than the best logistic regression.
 
@@ -34,7 +34,7 @@ After cleaning, 2,554 documents remain: 755 from conspiracy-oriented and 1,799 f
 
 ## Splitting by website
 
-The documents were divided into a training set, a validation set and a test set with target shares of 70%, 15% and 15%. The division was made by website: all documents of one website were assigned to the same set, so that no website appears in more than one set. This prevents a model from being rewarded for recognising the layout, vocabulary or topics of a website it has already seen, and it mimics the practical situation of classifying articles from unknown websites. The division was stratified by label: conspiracy and mainstream websites were assigned separately, from the largest to the smallest website, to the set that was furthest short of its target share. A fixed random seed resolved ties. The assignment was made once, before any model was fitted, and stored in a file that was never changed; the cleaning steps only remove documents from it. The split file was made before cleaning, on all 3,146 documents; cleaning then removed documents from it without moving any to another set. The table shows the numbers of websites and documents that remain in each set after cleaning, and the second table the totals per set.
+The documents were divided into a training set, a validation set and a test set with target shares of 70%, 15% and 15%. The division was made by website: all documents of one website were assigned to the same set, so that no website appears in more than one set. This prevents a model from being rewarded for recognising the layout, vocabulary or topics of a website it has already seen, and it mimics the practical situation of classifying articles from unknown websites. The division was stratified by label: conspiracy and mainstream websites were assigned separately, from the largest to the smallest website, to the set that was furthest short of its target share. A fixed random seed resolved ties. The assignment was made once, before any model was fitted, and stored in a file that was never changed; the cleaning steps only remove documents from it. The split file was made before cleaning, on all 3,146 documents; cleaning then removed documents from it without moving any to another set. Cleaning runs after the split and before any model is fitted. Of a near-duplicate pair across two sets, the copy in the later set (training, validation, test) is dropped. The table shows the numbers of websites and documents that remain in each set after cleaning.
 
 
 
@@ -51,7 +51,7 @@ The documents were divided into a training set, a validation set and a test set 
 
 
 
-Because websites cannot be divided, the shares only approximate the targets. Each set contains at least three conspiracy websites, and the number of websites in more than one set is zero. Validation and test sets still contain only a few conspiracy websites, so scores depend to some extent on which websites ended up there. All model settings were chosen on the validation set, and the test set was used only for the final comparison.
+Because websites cannot be divided, the shares only approximate the targets. After cleaning, the training, validation and test sets contain 25, 6 and 6 conspiracy websites, and the number of websites in more than one set is zero. The 7 conspiracy websites in validation and test in metrics.json (per_split) are counted before cleaning, the 6 here after it. Validation and test sets still contain only a few conspiracy websites, so scores depend to some extent on which websites ended up there. All model settings were chosen on the validation set, and the test set was used only for the final comparison.
 
 ## Word counts
 
@@ -158,9 +158,7 @@ Three McNemar tests (exact, two-sided) compare pairs of models. Word counts agai
 
 **H1: TF-IDF weighting beats plain word counts.** Not confirmed. TF-IDF has a higher F1 (0.582 against 0.559), but the intervals overlap almost completely and the McNemar test is not significant (p = 0.087). The direction fits the hypothesis; the evidence is too weak to claim it.
 
-**H2: Adding certainty and style features improves the TF-IDF model.** Not confirmed on test. F1 rises from 0.582 to 0.610, mainly through fewer false alarms (precision 0.735 against 0.696), but the difference is within chance (p = 0.332).
-
-**Do the hand-made features help on test?** Slightly, and not provably. The model with the certainty features, the only group that passed the validation threshold, scores a little higher than TF-IDF alone. The intervals overlap and the McNemar test does not separate the two models (p = 0.332), so we cannot say that the features help.
+**H2: Adding hand-made features improves the TF-IDF model.** Each kind was tried alone on validation (TF-IDF alone: F1 0.914). **H2a, certainty words:** the only group above our threshold (F1 0.930), so it went to the test set. There F1 rises from 0.582 to 0.610, mainly through fewer false alarms (precision 0.735 against 0.696), but the intervals overlap and the difference is within chance (p = 0.332). Not confirmed. **H2b, style features:** not supported; validation F1 falls to 0.894, so this model was not scored on test. **H2c, phrases (n-grams):** not supported; validation F1 is 0.916, no clear gain, so it was not scored on test either.
 
 **H3: The LLM beats the best logistic regression.** Confirmed. F1 is 0.795 against 0.610, the intervals do not overlap, and the test is clearly significant (p < 0.0001). The gain comes from precision, not from recall.
 
@@ -223,7 +221,7 @@ Second, the number of websites is small: the validation and test sets each conta
 
 Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites. This cannot be excluded. A part of its performance may therefore rest on prior knowledge that the trained models do not have. Moreover, the LLM saw only the first 3,000 words of each article, and 30 validation articles were longer and were cut, so it may have missed later passages that the logistic regressions, which read the full text, could use.
 
-Fourth, the certainty and doubt features are counts of words from a hand-made list and ignore negation: "no evidence of a cover-up" counts like "a cover-up". Fifth, although names, addresses and repeated lines of the websites were removed, the typical style of a website can remain and can serve as a shortcut for the models. Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer. The test set was used during development; every final model was chosen on validation and scored on test once.
+Fourth, the certainty and doubt features are counts of words from a hand-made list and ignore negation: "no evidence of a cover-up" counts like "a cover-up". Fifth, although names, addresses and repeated lines of the websites were removed, the typical style of a website can remain and can serve as a shortcut for the models. The licence of the corpus has not been confirmed, so the texts are used for study only and are not redistributed. Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer. The test set was used during development; every final model was chosen on validation and scored on test once.
 
 ## Conclusion
 
@@ -231,7 +229,11 @@ The study compared four methods for deciding whether a full 9/11 article comes f
 
 H1 (TF-IDF improves on word counts) is not confirmed. TF-IDF reached an F1 score of 0.582 and plain word counts 0.559. The direction agrees with the hypothesis, but the intervals overlap almost completely and the McNemar test is not significant (p = 0.087).
 
-H2 (certainty and style features improve the TF-IDF model) is not confirmed on test. F1 rose from 0.582 to 0.610, mostly through fewer false alarms, but the difference is within chance (p = 0.332). On validation, the certainty words were the only feature group with a gain of 0.01 or more; n-grams and style features gave no clear gain, and using all three groups together lowered the score.
+H2a (certainty words improve the TF-IDF model) is not confirmed. On validation they lifted F1 from 0.914 to 0.930, but on test F1 rose only from 0.582 to 0.610, mostly through fewer false alarms, and the difference is within chance (p = 0.332).
+
+H2b (style features improve it) is not supported: validation F1 fell to 0.894.
+
+H2c (phrases of two or three words improve it) is not supported: validation F1 was 0.916 against 0.914, no clear gain. Using all three groups together lowered the validation score further.
 
 H3 (the LLM beats the best logistic regression) is confirmed. The LLM reached an F1 score of 0.795 against 0.610 for TF-IDF with features, the intervals do not overlap, and the difference is significant (p < 0.0001). The gain comes from precision (0.985) and not from recall (0.667): the LLM almost never labels a mainstream article as conspiracy but misses one third of the conspiracy articles.
 

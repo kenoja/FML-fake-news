@@ -114,7 +114,7 @@ Hedges are words that soften a claim ("perhaps", "seems"); boosters make it stro
 ### Hypothesis
 Also: Hypotheses
 
-A clear guess about what we will find, written down before we look at the results. It can turn out wrong. Like predicting that a new recipe tastes better before anyone tastes it.
+A clear guess about what we will find, that the results can prove wrong. It is chosen before the final test run, from earlier studies, not from the results. Like predicting that a new recipe tastes better before anyone tastes it.
 
 ### Label
 Also: Class, Labels

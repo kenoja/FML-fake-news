@@ -23,40 +23,41 @@ WAIT_SECONDS = 5.0
 MAX_WAIT_SECONDS = 60.0
 PARALLEL_CALLS = 4
 
-ANSWER_FORMAT = ('Answer with strict JSON only, no other text: '
-                 '{"label": "conspiracy" or "mainstream", "confidence": a number from 0 to 1, '
-                 '"reason": "at most 25 words"}')
+def prompt_variants() -> dict[str, str]:
+    """The three prompts we try: bare question, with definitions, step by step."""
+    answer_format = ('Answer with strict JSON only, no other text: '
+                     '{"label": "conspiracy" or "mainstream", "confidence": a number from 0 to 1, '
+                     '"reason": "at most 25 words"}')
+    # prompt 1: just the question
+    v1 = (
+        "Read the article below. Would it have been published on a conspiracy-oriented website or on a "
+        "mainstream website?\n" + answer_format
+    )
+    # prompt 2: the question plus a short definition of both website types
+    v2 = (
+        "You classify web articles by the kind of website that published them.\n"
+        "A conspiracy-oriented website mainly promotes alternative explanations of events, claims that "
+        "official accounts are lies or cover-ups, and distrusts mainstream institutions and media.\n"
+        "A mainstream news website is an established news, reference or magazine outlet that reports "
+        "events through sourced reporting and accepts official findings unless evidence contradicts them.\n"
+        "Would the article below have been published on a conspiracy-oriented website or on a mainstream "
+        "news website?\n" + answer_format
+    )
+    # prompt 3: step-by-step advice and a warning not to decide by topic alone
+    v3 = (
+        "You classify web articles by the kind of website that published them: conspiracy-oriented or "
+        "mainstream news.\n"
+        "Work step by step before you answer: (1) note how the article treats sources, evidence and "
+        "official accounts; (2) note its tone and how certain it sounds; (3) decide which kind of "
+        "website would publish it.\n"
+        "Do not decide by topic alone: mainstream sites also write about 9/11 and its conspiracy "
+        "theories, and conspiracy sites also publish other stories. Judge how the article is written "
+        "and argued.\n" + answer_format
+    )
+    return {"v1": v1, "v2": v2, "v3": v3}
 
-# prompt 1: just the question
-PROMPT_V1 = (
-    "Read the article below. Would it have been published on a conspiracy-oriented website or on a "
-    "mainstream website?\n" + ANSWER_FORMAT
-)
 
-# prompt 2: the question plus a short definition of both website types
-PROMPT_V2 = (
-    "You classify web articles by the kind of website that published them.\n"
-    "A conspiracy-oriented website mainly promotes alternative explanations of events, claims that "
-    "official accounts are lies or cover-ups, and distrusts mainstream institutions and media.\n"
-    "A mainstream news website is an established news, reference or magazine outlet that reports "
-    "events through sourced reporting and accepts official findings unless evidence contradicts them.\n"
-    "Would the article below have been published on a conspiracy-oriented website or on a mainstream "
-    "news website?\n" + ANSWER_FORMAT
-)
-
-# prompt 3: step-by-step advice and a warning not to decide by topic alone
-PROMPT_V3 = (
-    "You classify web articles by the kind of website that published them: conspiracy-oriented or "
-    "mainstream news.\n"
-    "Work step by step before you answer: (1) note how the article treats sources, evidence and "
-    "official accounts; (2) note its tone and how certain it sounds; (3) decide which kind of "
-    "website would publish it.\n"
-    "Do not decide by topic alone: mainstream sites also write about 9/11 and its conspiracy "
-    "theories, and conspiracy sites also publish other stories. Judge how the article is written "
-    "and argued.\n" + ANSWER_FORMAT
-)
-
-PROMPTS = {"v1": PROMPT_V1, "v2": PROMPT_V2, "v3": PROMPT_V3}
+PROMPTS = prompt_variants()
 
 
 def llm_config() -> dict:

@@ -80,6 +80,12 @@ def split_summary(df: pd.DataFrame, split: pd.DataFrame) -> pd.DataFrame:
     return table
 
 
+def websites_per_split(summary: pd.DataFrame) -> dict[str, dict[str, int]]:
+    """Websites per split and class, read from a split summary."""
+    return {name: {row["class"]: int(row["websites"]) for _, row in summary[summary["split"] == name].iterrows()}
+            for name in SPLITS}
+
+
 def check_conspiracy_websites(summary: pd.DataFrame) -> list[str]:
     """Warn about splits with too few conspiracy websites."""
     minimum = project_config()["split"]["min_positive_groups_per_split"]

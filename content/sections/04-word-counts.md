@@ -1,7 +1,7 @@
 ---
 title: Word counts
 part: Methods
-hypothesis: Even plain word counts carry enough signal to tell the two kinds of website apart better than always guessing mainstream.
+hypothesis: We expect plain word counts to tell the two kinds of website apart better than always guessing mainstream, because the two kinds tend to use different words.
 ---
 ## Explained simply
 
@@ -16,6 +16,8 @@ A high weight means "useful for telling these websites apart", not "proves consp
 - **Words in at least two articles.** Words used once are mostly typos and names, and they let the model memorise single articles.
 - **Class weight "balanced".** There are fewer conspiracy articles than mainstream ones, so each conspiracy article counts more. Otherwise the model could ignore the smaller group.
 - **A short list of cautiousness settings, chosen on validation.** The **regularisation** setting (called C in the code) controls how freely the model may use large weights. A cautious setting keeps weights small. A free setting lets the model follow the training data closely, which can lead to **overfitting** (memorising instead of learning). We try three values (0.1, 1, 10) and keep the one with the best validation F1 for the conspiracy class. Validation is a separate set of articles, so the choice is honest. The test set stays untouched.
+
+**What we did not do and why.** We used logistic regression for every trained model because it is simple and its weights can be read as word lists. We did not try other classifiers, because the question is how the features and the language model differ, not which method is best. We did not fine-tune a language model, which needs more data and money than a small project has. We left out emotion features, because fear and anger are normal in reports on an attack and so tell us little.
 
 ## The code
 
@@ -46,13 +48,11 @@ Finally we list the words with the largest weights in each direction.
 
 ## Report
 
-The first analysis represents each article as a bag of words: a vector with the number of times each word occurs, ignoring order. Words were counted on the training articles only, and words occurring in fewer than two training articles were dropped. A logistic regression with balanced class weights was fitted on these counts. The regularisation strength C was chosen from {0.1, 1, 10} by the F1 score of the conspiracy class on the validation set. The test set was not used.
+The first analysis represents each article as a bag of words: a vector with the number of times each word occurs, ignoring order. Words were counted on the training articles only, and words occurring in fewer than two training articles were dropped. A logistic regression with balanced class weights was fitted on these counts; we chose it for all trained models because it is simple and its weights are readable, and we deliberately tried no other classifiers, no fine-tuned language model and no emotion features, since the question concerns the features and the language model, not the best algorithm. The regularisation strength C was chosen from {0.1, 1, 10} by the F1 score of the conspiracy class on the validation set. The test set was not used.
 
 The smallest value, C = 0.1, scored best. On validation this model reached a precision of 0.832, a recall of 0.846 and an F1 score of 0.839. Larger values of C scored lower, which is the typical sign of overfitting: with raw counts, the model starts to rely on rare words that only describe the training articles. The best value lies at the edge of the grid, so a smaller C could be slightly better. We did not widen the grid after seeing the results.
 
 The words with the largest weights are informative, but not all of them are about content. Several of the strongest conspiracy words, for example "posted", "am" and "article", look like habits of how a website presents its articles, not like conspiracy thinking. Strong mainstream words such as "killed", "tower" and "anniversary" fit factual news reporting. The model therefore partly recognises websites and not only arguments, which matters for how the results are read in the results section.
-
-What we did not do and why. We used logistic regression for all three trained models because it is simple, its weights can be read as word lists, and it fits the wide, mostly empty tables that text produces. We did not fine-tune a language model: that costs more data and money than a small project has, and it would blur the comparison. For the same reason we tried no other classifiers, such as support vector machines or tree ensembles; the question was how the features and the language model differ, not which algorithm is best. We also left out emotion features, which lie outside the question and rest on word lists that are unreliable for a topic where fear and anger are normal.
 
 <!-- output: results/figures/word_counts_validation_confusion.png | Word counts: validation confusion matrix -->
 

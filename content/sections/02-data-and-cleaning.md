@@ -5,19 +5,19 @@ hypothesis: Removing articles that are not about 9/11 and articles that appear t
 ---
 ## Explained simply
 
-**Where the articles come from.** We use LOCO, a collection of web pages from conspiracy-oriented and mainstream websites. LOCO is a **corpus**, which simply means a large collection of texts. We use the part about the 9/11 attacks and only the full articles, 3,146 of them. The texts are not redistributed: they stay in a private store, and this page shows only counts, tables and a few short quotes.
+**Where the articles come from.** We use LOCO, a collection of web pages from conspiracy-oriented and mainstream websites. LOCO is a **corpus**, which simply means a large collection of texts. We use the part about the 9/11 attacks and only the full articles, 3,146 of them. LOCO (Language of Conspiracy corpus) was compiled by its authors (Miani, Hills & Bangerter, 2022), and the compilers rated each website as conspiracy-oriented or mainstream. We used Python, scikit-learn and Claude Haiku 5.5. The texts are used for study only and are not redistributed until the licence is confirmed: they stay in a private store, and this page shows only counts, tables and a few short quotes.
 
-**What the label means.** Experts rated each website as conspiracy-oriented or mainstream, and every article inherits the rating of its website. So the label describes the website, not the text. A polite note from a sender known for chain letters still counts as chain-letter mail. This matters later, because a "wrong" model answer is sometimes a sensible reading of a text that the label does not describe well.
+**What the label means.** The corpus compilers rated each website as conspiracy-oriented or mainstream, and every article inherits the rating of its website. So the label describes the website, not the text. A polite note from a sender known for chain letters still counts as chain-letter mail, so a "wrong" model answer is sometimes a sensible reading.
 
-**Why we clean first.** Before any model sees an article, we remove what would give a misleading result. We do this once, so all four analyses work on the same articles.
+**Why we clean first.** We clean once, before any model sees an article, so all four analyses use the same articles.
 
-**Step 1: remove articles that are not about 9/11.** The collection was gathered with a broad search, and some pages barely mention the attacks. A model that sees a cooking blog from one website and a news report from another learns the difference between cooking and news, not between the two kinds of websites. We keep only articles whose title or text mentions the attacks, using a fixed list of search words.
+**Step 1: remove articles that are not about 9/11.** The collection was gathered with a broad search, and some pages barely mention the attacks. A model that sees a cooking blog from one website and a news report from another learns cooking versus news, not the two kinds of websites. We keep only articles that mention the attacks, using a fixed list of search words.
 
 **Step 2: remove near-duplicates.** Websites copy each other, so the same story can appear twice with tiny changes. Imagine an exam where some questions also appeared on the practice sheet: a good score would prove little. If one copy is in training and the other in the test set, the model is partly tested on something it has seen. We drop one copy of each pair: the one in validation or test if they are in different parts, otherwise the one with the higher identification number.
 
 **Step 3: remove clues that give the website away.** We delete web addresses, e-mail addresses, website names and lines that a website repeats in many articles, such as menus and "share this" banners. Otherwise a model could learn "contains the site name" instead of anything about the writing.
 
-**Team question 5: could very short texts be impossible to classify?** We looked at how long the articles are. The shortest has about 100 words, and the middle article is several times longer. These are real articles, not snippets, so we do not set a minimum length and do not throw anything away for being short.
+**Team question 5: could very short texts be impossible to classify?** The shortest article has about 100 words, and the middle one is several times longer. These are real articles, not snippets, so we set no minimum length.
 
 **What to look out for.** Cleaning removes the obvious site clues, not all of them.
 

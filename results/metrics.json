@@ -100,7 +100,21 @@
     },
     "few_conspiracy_websites_flag": false,
     "splits_with_few_conspiracy_websites": [],
-    "min_positive_groups_per_split": 3
+    "min_positive_groups_per_split": 3,
+    "websites_per_split_after_cleaning": {
+      "train": {
+        "conspiracy": 25,
+        "mainstream": 54
+      },
+      "validation": {
+        "conspiracy": 6,
+        "mainstream": 13
+      },
+      "test": {
+        "conspiracy": 6,
+        "mainstream": 12
+      }
+    }
   },
   "word_counts": {
     "chosen_C": 0.1,

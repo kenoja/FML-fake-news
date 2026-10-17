@@ -1,7 +1,7 @@
 ---
 title: The LLM classifier
 part: Methods
-hypothesis: A cheap language model, given no training at all, can tell conspiracy-oriented websites from mainstream ones about as well as the models we trained.
+hypothesis: We expect a cheap language model with no training to do roughly as well as the trained models, because it has read a great deal of text and can judge how an article is written.
 ---
 ## Explained simply
 
@@ -27,7 +27,7 @@ hypothesis: A cheap language model, given no training at all, can tell conspirac
 
 The three prompts. All ask for the same short answer format.
 
-<!-- cell: src/fml/llm.py:30-59 -->
+<!-- cell: src/fml/llm.py#prompt_variants -->
 
 Reading the model's answer. Anything that does not fit the format becomes "unreadable".
 

@@ -5,6 +5,10 @@ hypothesis: Adding features about certainty and writing style improves the TF-ID
 ---
 ## Explained simply
 
+> **Do the extra features help?** On validation only certainty words pass; on test we cannot show a gain beyond noise. See section 08 for the test numbers.
+
+**A tiny example.** Take an invented text of 100 words that contains 3 certainty words such as "obviously". Its certainty score is 3.0 per 100 words. A text of 200 words with the same 3 words scores 1.5, so a long text does not look more certain just because it is long.
+
 **The idea.** TF-IDF only sees single words. The course feedback asked whether a few hand-made clues help on top. A clue is called a **feature**: one number that describes an article. We tried three families of clues, each backed by earlier research.
 
 1. **Phrases (n-grams of one to three words).** "Inside job" or "no evidence of" mean more than their single words (Wang and Manning, 2012).
@@ -71,7 +75,7 @@ The table lists the validation F1 of every model and its change against TF-IDF a
 | + style | 0.894 | -0.020 |
 | + all three groups | 0.887 | -0.027 |
 
-The final tested model therefore contains the certainty words alone; whether it helps on test is answered in the results section. Style and the full combination made the model worse, probably because many weak clues add noise.
+The final tested model therefore contains the certainty words alone. On test its F1 was 0.610 against 0.582 for TF-IDF alone, but the intervals overlap widely and the McNemar test gives p = 0.332, so the chosen model rests on a gain within noise. Style and the full combination made the model worse, probably because many weak clues add noise.
 
 <!-- output: results/figures/ablation_f1.png | Validation F1 of the five models -->
 
