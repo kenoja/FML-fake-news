@@ -125,7 +125,7 @@ All four final models were scored once on the same 410 test articles (96 from co
 |---|---|---|---|
 | Word counts | 0.60 (0.49 to 0.71) | 0.52 (0.43 to 0.62) | 0.56 (0.47 to 0.64) |
 | TF-IDF | 0.70 (0.59 to 0.80) | 0.50 (0.40 to 0.60) | 0.58 (0.49 to 0.66) |
-| TF-IDF + features | 0.73 (0.63 to 0.84) | 0.52 (0.42 to 0.62) | 0.61 (0.52 to 0.69) |
+| TF-IDF + features | 0.74 (0.63 to 0.84) | 0.52 (0.42 to 0.62) | 0.61 (0.52 to 0.69) |
 | LLM | 0.98 (0.95 to 1.00) | 0.67 (0.57 to 0.76) | 0.80 (0.72 to 0.86) |
 
 *Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals*
@@ -162,7 +162,7 @@ Three McNemar tests (exact, two-sided) compare pairs of models. Word counts agai
 
 ## Where they fail
 
-We examined the test articles on which the best logistic regression and the LLM disagree with the label. The groups are articles missed only by the logistic regression, only by the LLM, and by both. A false positive is a mainstream article called conspiracy, a false negative the reverse. The counts per group are in the first table below.
+This is an estimate from one unchecked source: the stance codes come from a single language model and no person has checked them. We examined the test articles on which the best logistic regression and the LLM disagree with the label. The groups are articles missed only by the logistic regression, only by the LLM, and by both. A false positive is a mainstream article called conspiracy, a false negative the reverse. The counts per group are in the first table below.
 
 The labels describe websites, not articles. To separate model errors from label problems, a second model (Claude Sonnet 5.5) coded the stance of every disagreement article towards conspiracy claims about 9/11: endorses, rejects or debunks, reports neutrally, or no claim. The question did not mention the website. A fixed rule, written before the results were read, turns label and stance into a verdict. A conspiracy-site article that does not endorse a claim, or a mainstream article that endorses one, is counted as a label problem. All other cases are model errors. A mainstream article that debunks a theory counts as a model error, because it is still mainstream content.
 
@@ -221,7 +221,7 @@ Fine-tuning a language model and emotion scores were not pursued: both need more
 
 The study design was fixed by the team and not by the assistant: the research question, full articles as input, the four ways of sorting, the feature groups, and the rule that each final model is scored on the test articles once. The assistant followed written rules in the repository and was bound by automatic checks, among them a lock on the test set, a frozen split, a privacy check on public text and a comparison of every number in the report with the result files.
 
-We checked the output in three ways. First, the article counts were compared with those published for the corpus. Second, automatic tests were written to fail whenever a rule such as fitting on training articles only is broken. Third, the team reads the text for clarity and spot-checks numbers against the result files; these human checks are recorded in the log as the team's own entries.
+We checked the output in three ways. First, the article counts were compared with those published for the corpus. Second, automatic tests were written to fail whenever a rule such as fitting on training articles only is broken. Third, human checks are planned (reading the text, spot-checking numbers, coding 40 articles by hand), but none is recorded in the log yet, so we claim none.
 
 We learned that written rules plus automatic checks keep assistant-written work reliable, that automatic checks verify consistency rather than meaning, and that the stance codes produced by a language model need a human check before they are relied on. The language model answers are cached so that every figure can be reproduced without new cost.
 

@@ -5,23 +5,21 @@ hypothesis: Our results are real but narrow, because the labels describe website
 ---
 ## Explained simply
 
-**Why this section matters.** Every study has limits. Naming them is part of doing the study honestly, and it is where your criticism is most welcome.
+**Why this section matters.** Naming the limits is part of honest work, and it is where your criticism is most welcome.
 
 **The label describes the website, not the article.** An article is "conspiracy" because its website is. A calm news item on a conspiracy website still gets the label, and a mainstream article that explains and rejects a theory is "mainstream". So when a model disagrees with the label, the model is not always wrong. What we measure is how well a method recovers the kind of website, which is not the same as detecting conspiracy thinking in a text.
 
-**Few websites.** We have only 39 conspiracy and 79 mainstream websites, and the validation and test sets contain only a handful of conspiracy websites each. Articles from one website resemble each other, so one unusual website can move a score. A different division of websites could give different numbers. That is why we give a range (a confidence interval) with every score and do not read small differences as real.
+**Few websites.** We have only 39 conspiracy and 79 mainstream websites, and the validation and test sets contain only a handful of conspiracy websites each. Articles from one website resemble each other, so one unusual website can move a score. That is why we give a range (a confidence interval) with every score and do not read small differences as real.
 
 **The language model may know too much.** The LLM was trained on a huge amount of web text. It may have seen these articles or may know a website's reputation from its name or tone. A human reader or our own models cannot use such knowledge. We checked a small sample on validation and the model named the true website for 30% of it. That does not prove it never uses such knowledge, so its good score may be partly due to prior knowledge.
 
-**Hand-made word lists are crude.** Our certainty and doubt features count words from a list. They do not understand context. "There is no evidence of a cover-up" counts the word "cover-up" just like "it was a cover-up".
+**Hand-made word lists are crude.** They count words and ignore context: "no evidence of a cover-up" counts like "it was a cover-up".
 
 **Can a model recognise a website without its name?** (Team question 6.) Yes, in part. Even after we delete names, web addresses and repeated menu lines, the typical style of a website can remain, for example the habit of writing "posted by". A model can use such habits as a shortcut. The split by website protects against the worst case, since test websites are new to the model, but it cannot remove style signals that sites of the same kind share. We cannot fully separate them from real differences in content.
 
 **Long articles are cut.** The language model reads only the first 3,000 words of an article. On the validation set, 30 articles were longer and lost their ends, so the model may have missed something that the other models saw.
 
 **One topic, one collection.** Everything here concerns 9/11 articles from one collection. We cannot say whether the results carry over to other topics.
-
-**How to use this section.** When you read a score, ask: does it measure the text or the website? How many websites stand behind it?
 
 ## The code
 

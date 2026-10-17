@@ -11,13 +11,13 @@ hypothesis: A cheap language model, given no training at all, can tell conspirac
 
 **Why the prompt matters.** Small changes in wording can change the answers, so we try three prompts: the bare question, the question with a short description of both website types, and the question with step-by-step advice and a warning not to judge by topic alone. We try them on the validation articles only and keep the one with the best F1 score. The test articles play no part in this choice.
 
-**Why no fine-tuning.** Fine-tuning means training the model further on our articles. That is costly, and we want to know what a cheap, ready-made model can do without help from our data. We also did not set a minimum article length, because the cleaned articles are already long enough to judge.
+**Why no fine-tuning.** Fine-tuning means training the model further on our articles. That is costly, and we want to know what a cheap, ready-made model can do alone.
 
 **Tokens.** A token is a small piece of text, about three quarters of a word. Limits on models are counted in tokens. We cut every article to its first 3,000 words, the same for all articles. The model may write up to 1,000 tokens, so no answer is cut off in the middle.
 
 **Why default sampling.** A model picks among likely next words with a little randomness. Some models have a setting called temperature to turn the randomness down. This model has no temperature setting, so we use its default behaviour. That is why we repeat the validation run once: it shows how often the answers stay the same.
 
-**Why the website question.** The dataset labels describe the website that published an article, not what the article claims. A mainstream site can print a conspiracy story, and a conspiracy site can print plain news. So we ask about the website. The LLM and the logistic regressions are both judged against the same dataset labels, and the LLM's answer is never treated as the truth.
+**Why the website question.** The dataset labels describe the website that published an article, not what the article claims. A mainstream site can print a conspiracy story, and a conspiracy site can print plain news. So we ask about the website. All methods are judged against the same dataset labels.
 
 **Answers we cannot read.** The model must answer in a fixed format. An answer that breaks it counts as wrong, and we report how many there were as one number.
 

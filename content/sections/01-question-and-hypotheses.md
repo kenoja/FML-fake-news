@@ -1,12 +1,13 @@
 ---
 title: Question and hypotheses
 part: Introduction
+hypothesis: Weighting words helps, our own features add little, and the language model beats the models we trained.
 ---
 ## Explained simply
 
 **The question.** Can a computer tell from the text of a 9/11 article whether it was published on a conspiracy-oriented website or on a mainstream website, and which of four ways of doing this works best?
 
-**Why this question.** Conspiracy websites publish so much that spotting them by hand is hard. Before anyone relies on computer methods, we need to know how well they work and where they go wrong.
+**Why this question.** Conspiracy websites publish too much to check by hand, so we need to know how well computer methods work and where they fail.
 
 **The four ways.** All four see the same articles.
 1. **Word counts.** The computer counts how often each word appears and learns which words go with which kind of website.
@@ -16,7 +17,7 @@ part: Introduction
 
 The first three use a method called logistic regression, which we train ourselves. The fourth is used as it comes.
 
-**What is a hypothesis?** A hypothesis is a guess that we write down before we look at the results, so that the results can prove it wrong. We have three. The results later say for each one whether the data support it. If the data do not clearly support a hypothesis, we say so. That is also an answer.
+**What is a hypothesis?** A hypothesis is a guess that we write down before we look at the results, so that the results can prove it wrong. We have three. The results say for each one whether the data support it. If they do not clearly, we say so. That is also an answer.
 
 - **H1.** Weighting words by how telling they are (TF-IDF) improves on plain word counts.
 - **H2.** Adding features about certainty and writing style improves the TF-IDF model. Only the certainty words passed our validation threshold, so the final tested model contains certainty words only, not the style features.
@@ -26,8 +27,7 @@ The first three use a method called logistic regression, which we train ourselve
 
 **How we judge "better".** About seven in ten articles come from mainstream websites. A model that always says "mainstream" would be right 70% of the time and would find no conspiracy article at all. So we do not use the share of correct answers. We use the F1 score for the conspiracy class, which rewards finding conspiracy articles without raising false alarms. The glossary explains it.
 
-**A warning about the label.** The label belongs to the website, not to the single article. A calm news item on a conspiracy website counts as "conspiracy". We keep this in mind in every step.
-
+**A warning about the label.** The label belongs to the website, not to the single article. A calm news item on a conspiracy website counts as "conspiracy".
 ## The code
 
 This section only sets the question. The one piece of code that belongs here is the F1 score that we use to judge every method. It combines how many of the flagged articles are right with how many conspiracy articles we find.

@@ -5,7 +5,7 @@ hypothesis: Adding features about certainty and writing style improves the TF-ID
 ---
 ## Explained simply
 
-**The idea.** TF-IDF only sees single words. The course feedback asked whether a few hand-made clues help on top. A clue is called a **feature**: one number that describes an article. We tried three families of clues, each with a reason from earlier research.
+**The idea.** TF-IDF only sees single words. The course feedback asked whether a few hand-made clues help on top. A clue is called a **feature**: one number that describes an article. We tried three families of clues, each backed by earlier research.
 
 1. **Phrases (n-grams of one to three words).** "Inside job" or "no evidence of" mean more than "inside", "job" and "evidence" alone. Earlier work found that words plus word pairs make a strong baseline for sorting texts (Wang and Manning, 2012).
 2. **Certainty and doubt words (epistemic markers).** "Epistemic" means "about knowing". We made short lists of doubt words ("perhaps"), certainty words ("clearly"), hidden-truth words ("cover-up") and debunking words ("no evidence"). Research links conspiracy writing to certainty and to claims of a hidden truth, but the evidence is mixed (Marini and Jezek, 2024; Fong et al., 2021). The lists are ours, short, and count words only.
@@ -13,17 +13,14 @@ hypothesis: Adding features about certainty and writing style improves the TF-ID
 
 **A fair test.** We compare five models, all with the same articles, the same split and the same list of regularisation values: TF-IDF alone, TF-IDF plus each family, and TF-IDF plus all three. Each family is built once from the training articles. Numbers such as "capital words per article" are **standardised** first (put on one common scale), and that scale is also learned on the training articles only. We judge by F1 on the validation articles, never on test.
 
-**How we read the result.** A family counts as "above threshold" only if F1 rises by at least 0.01. A smaller change could be luck: validation holds a few hundred articles, and one or two articles can move F1 by that much. We keep the plain TF-IDF model unless a family is clearly above the threshold. That also means a model with more features is not automatically better.
+**How we read the result.** A family counts as "above threshold" only if F1 rises by at least 0.01. A smaller change could be luck: validation holds a few hundred articles, and one or two articles can move F1 by that much. We keep the plain TF-IDF model unless a family is clearly above it.
 
 **Why extra clues can add little.**
 - The words already carry the information. If "cover-up" is a telling clue, TF-IDF has it already as a word.
-- Our lists cover only part of the articles. A list with eleven words misses every article that says the same thing differently.
-- A word list ignores meaning: "there was no cover-up" still counts "cover-up".
+- Our short lists miss articles that say the same thing differently, and ignore meaning: "there was no cover-up" still counts "cover-up".
 - A style habit can belong to one website, not to a belief.
 
-**What stays the same.** Everything is chosen on validation. The test set is not touched in this step. Only the certainty words passed the threshold, so the final tested model contains certainty words only.
-
-**What we did not do and why.** We did not add emotion scores, because they need a further pre-trained model and emotional wording is normal in any report on a terror attack.
+**What we did not do.** We added no emotion scores: they need a further pre-trained model, and emotional wording is normal in reports on a terror attack.
 
 **Verdict.** On validation only the certainty words passed our 0.01 threshold; on test the gain (0.582 to 0.610) is within chance, so the features do not help reliably.
 

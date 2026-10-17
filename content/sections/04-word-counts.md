@@ -1,6 +1,7 @@
 ---
 title: Word counts
 part: Methods
+hypothesis: Even plain word counts carry enough signal to tell the two kinds of website apart better than always guessing mainstream.
 ---
 ## Explained simply
 

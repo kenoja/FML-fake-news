@@ -1,6 +1,7 @@
 ---
 title: TF-IDF
 part: Methods
+hypothesis: Giving rare, telling words more weight than everyday words improves on plain word counts.
 ---
 ## Explained simply
 
