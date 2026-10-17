@@ -1,7 +1,6 @@
 ---
 title: Question and hypotheses
 part: Introduction
-hypothesis: Simple word-based models find some of the conspiracy articles, extra features help a little, and a language model that reads the whole article does clearly better.
 ---
 ## Explained simply
 
@@ -20,7 +19,7 @@ The first three use a method called logistic regression, which we train ourselve
 **What is a hypothesis?** A hypothesis is a guess that we write down before we look at the results, so that the results can prove it wrong. We have three. The results later say for each one whether the data support it. If the data do not clearly support a hypothesis, we say so. That is also an answer.
 
 - **H1.** Weighting words by how telling they are (TF-IDF) improves on plain word counts.
-- **H2.** Adding features about certainty and writing style improves the TF-IDF model.
+- **H2.** Adding features about certainty and writing style improves the TF-IDF model. Only the certainty words passed our validation threshold, so the final tested model contains certainty words only, not the style features.
 - **H3.** The language model does better than the best of the three models we trained.
 
 **Why these three?** They follow the order of the study: first the choice of how to represent words (H1), then whether our own ideas add anything (H2), then the comparison with a very different approach (H3). Each is answered in the results section and again in the conclusion.
@@ -43,7 +42,7 @@ This study asks whether the text of a full article about the 9/11 attacks reveal
 
 H1. Weighting words by their distinctiveness (TF-IDF) improves on plain word counts.
 
-H2. Adding features about certainty and writing style improves the TF-IDF model.
+H2. Adding features about certainty and writing style improves the TF-IDF model. The final tested model contains certainty words only, because only they passed the validation threshold (metrics.json, tfidf_features).
 
 H3. The LLM does better than the best logistic regression.
 

@@ -103,8 +103,6 @@ def run_data_stage() -> dict:
     if set(split["doc_id"]) != set(df["doc_id"]):
         raise ValueError("split file and corpus have different doc_ids")
     summ = split_summary(df, split)
-    write_table("split_summary", summ)
-    savefig(plot_split_sizes(summ), "split_sizes")
 
     low = check_conspiracy_websites(summ)
     if low:

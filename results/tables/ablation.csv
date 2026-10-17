@@ -1,6 +1,6 @@
 model_id,label,C,class_weight,f1,delta_f1,verdict
 lr_words_v2,TF-IDF alone,10.0,balanced,0.914,0.0,reference
 lr_plus_ngrams,+ n-grams (1-3),10.0,balanced,0.916,0.002,no clear gain
-lr_plus_epistemic,+ certainty words,10.0,balanced,0.93,0.017,helps
+lr_plus_epistemic,+ certainty words,10.0,balanced,0.93,0.017,above threshold
 lr_plus_style,+ style,100.0,balanced,0.913,-0.001,no clear gain
 lr_extended,+ all three,100.0,balanced,0.896,-0.018,hurts

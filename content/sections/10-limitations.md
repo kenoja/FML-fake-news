@@ -17,6 +17,8 @@ hypothesis: Our results are real but narrow, because the labels describe website
 
 **Can a model recognise a website without its name?** (Team question 6.) Yes, in part. Even after we delete names, web addresses and repeated menu lines, the typical style of a website can remain, for example the habit of writing "posted by". A model can use such habits as a shortcut. The split by website protects against the worst case, since test websites are new to the model, but it cannot remove style signals that sites of the same kind share. We cannot fully separate them from real differences in content.
 
+**Long articles are cut.** The language model reads only the first 3,000 words of an article. On the validation set, 30 articles were longer and lost their ends, so the model may have missed something that the other models saw.
+
 **One topic, one collection.** Everything here concerns 9/11 articles from one collection. We cannot say whether the results carry over to other topics.
 
 **How to use this section.** When you read a score, ask: does it measure the text or the website? How many websites stand behind it?
@@ -28,7 +30,9 @@ This section describes limits of the study, so it has no code of its own. The te
 <!-- cell: src/fml/split.py#make_split -->
 
 <!-- output: results/metrics.json#llm.repeat_agreement -->
-<!-- output: results/metrics.json#errors.prior_knowledge_probe | Can the LLM name the website of a validation article? -->
+<!-- output: results/metrics.json#llm.truncated_docs -->
+<!-- output: results/metrics.json#errors.prior_knowledge_probe.identified -->
+<!-- output: results/metrics.json#errors.prior_knowledge_probe.n -->
 
 ## Report
 
@@ -38,9 +42,7 @@ Second, the number of websites is small: the validation and test sets each conta
 
 <!-- output: results/metrics.json#llm.repeat_agreement | Share of identical answers in a repeated validation run -->
 
-Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites. This cannot be excluded. In a probe on validation articles, the model named the true website for the share below, so a part of its performance may rest on prior knowledge that the trained models do not have.
-
-<!-- output: results/metrics.json#errors.prior_knowledge_probe | Probe: can the LLM name the website? -->
+Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites. This cannot be excluded. In a probe, the model named the true website for 12 of 40 validation articles (30%), so a part of its performance may rest on prior knowledge that the trained models do not have. Moreover, the LLM saw only the first 3,000 words of each article, and 30 validation articles were longer and were cut, so it may have missed later passages that the logistic regressions, which read the full text, could use.
 
 Fourth, the certainty and doubt features are counts of words from a hand-made list and ignore negation: "no evidence of a cover-up" counts like "a cover-up". Fifth, although names, addresses and repeated lines of the websites were removed, the typical style of a website can remain and can serve as a shortcut for the models. The split by website prevents a model from profiting from sites it has seen, but not from style habits that websites of the same kind share. Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer. The test set was used during development; every final model was chosen on validation and scored on test once.
 

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 import fml.pipeline as pipeline
-from fml.ablation import HELPS_BY, choose_best, run_ablation, verdict, verdict_sentence
+from fml.ablation import THRESHOLD, choose_best, run_ablation, verdict, verdict_sentence
 
 C_GRID = (0.1, 1.0, 10.0)
 
@@ -42,12 +42,12 @@ def run(df: pd.DataFrame) -> pd.DataFrame:
 def test_planted_informative_feature_helps():
     row = run(planted()).set_index("model_id").loc["plus_signal"]
     assert row["delta_f1"] > 0.15
-    assert row["verdict"] == "helps"
+    assert row["verdict"] == "above threshold"
 
 
 def test_uninformative_feature_is_not_claimed_to_help():
     row = run(planted(informative=False)).set_index("model_id").loc["plus_signal"]
-    assert row["verdict"] != "helps"
+    assert row["verdict"] != "above threshold"
 
 
 def test_table_has_validation_f1_only():
@@ -62,9 +62,9 @@ def test_ablation_is_reproducible():
 
 
 def test_verdict_needs_a_clear_margin():
-    assert verdict(HELPS_BY) == "helps"
-    assert verdict(-HELPS_BY) == "hurts"
-    assert verdict(HELPS_BY / 2) == "no clear gain"
+    assert verdict(THRESHOLD) == "above threshold"
+    assert verdict(-THRESHOLD) == "hurts"
+    assert verdict(THRESHOLD / 2) == "no clear gain"
 
 
 def test_choose_best_keeps_plain_tfidf_unless_a_group_clearly_helps():

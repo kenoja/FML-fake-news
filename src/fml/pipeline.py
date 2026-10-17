@@ -25,13 +25,14 @@ import pandas as pd  # noqa: E402
 
 from . import errors  # noqa: E402
 from .clean import clean_documents, website_names  # noqa: E402
-from .comparison import mcnemar_pair, model_row  # noqa: E402
+from .comparison import compact_table, mcnemar_pair, model_row  # noqa: E402
 from .evaluate import BOOTSTRAP_SEED, N_BOOTSTRAP, bootstrap_ci, classification_metrics, confusion  # noqa: E402
 from .models import (build_pipeline, choose_c, fit_logistic, split_frames, tfidf_vectorizer, top_words,
                      tune_on_validation, word_counts_vectorizer)  # noqa: E402
 from .paths import project_config  # noqa: E402
 from .results import CONSPIRACY_COLOUR, MAINSTREAM_COLOUR, results_dir, savefig, write_metrics, write_table  # noqa: E402
-from .split import load_split, split_path  # noqa: E402
+from .data_report import plot_split_sizes  # noqa: E402
+from .split import SPLITS, load_split, split_path, split_summary  # noqa: E402
 
 M1_FEATURES = {"ngram_range": [1, 1], "min_df": 2, "sublinear_tf": True, "numeric_columns": []}
 CLASS_NAMES = {True: "conspiracy", False: "mainstream"}
@@ -78,8 +79,12 @@ def round_floats(obj, digits: int = 3):
 
 def cleaning_stage() -> dict:
     """Write the cleaning log, the before/after figure and metrics.json `cleaning`."""
-    _, log, info = _clean_documents_cached()
+    frame, log, info = _clean_documents_cached()
     write_table("cleaning_log", log)
+    summ = split_summary(frame, load_split())       # the split file predates cleaning; count what is left
+    write_table("split_summary", summ)
+    savefig(plot_split_sizes(summ), "split_sizes")
+    info = {**info, "split_after_cleaning": {s: int(summ.loc[summ["split"] == s, "documents"].sum()) for s in SPLITS}}
     savefig(plot_cleaning(log), "cleaning_before_after")
     write_metrics("cleaning", round_floats(info, 4))
     return info
@@ -547,6 +552,7 @@ def comparison_stage() -> dict:
 
     table = pd.DataFrame([model_row(name, y, pred) for name, pred in preds.items()])
     write_table("comparison_test", table)
+    write_table("comparison_compact", compact_table(table, MODEL_NAMES))
     savefig(plot_comparison_f1(table), "comparison_f1")
     savefig(plot_comparison_confusion(table), "comparison_confusion")
 

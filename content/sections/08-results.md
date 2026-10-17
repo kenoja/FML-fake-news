@@ -19,7 +19,7 @@ hypothesis: Counting words is weaker than weighting them, extra features help a 
 
 ## The code
 
-Each model gets one row of the table: counts, the three scores, and bootstrap intervals.
+Each model gets one row of counts, the three scores and bootstrap intervals. The report shows a compact version of this table; the four counts stay in the confusion-matrix figure.
 
 <!-- cell: src/fml/comparison.py#model_row -->
 
@@ -31,7 +31,7 @@ The stage reads the saved test predictions, builds the table and the figures, an
 
 <!-- cell: src/fml/pipeline.py#comparison_stage -->
 
-<!-- output: results/tables/comparison_test.csv -->
+<!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals -->
 <!-- output: results/figures/comparison_confusion.png | Confusion matrix of each model on the test articles -->
 <!-- output: results/figures/comparison_f1.png | Conspiracy F1 with 95% confidence interval -->
 
@@ -39,13 +39,13 @@ The stage reads the saved test predictions, builds the table and the figures, an
 
 All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (2,000 resamples of documents). The first figure shows the confusion matrices and the second the F1 scores with their intervals.
 
-<!-- output: results/tables/comparison_test.csv -->
+<!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals -->
 
 <!-- output: results/figures/comparison_confusion.png | Confusion matrices on the test set (rows: true website type, columns: predicted) -->
 
 <!-- output: results/figures/comparison_f1.png | Conspiracy F1 on the test set with 95% confidence intervals -->
 
-The LLM has the highest F1 (0.795, interval 0.723 to 0.857), followed by TF-IDF with features (0.610), TF-IDF (0.582) and word counts (0.559). The three logistic regressions have overlapping intervals. Their precision is moderate (0.602 to 0.735) and their recall is about one half (0.500 to 0.521). The LLM is almost never wrong when it says "conspiracy" (precision 0.985, one false alarm among 314 mainstream articles) but still misses a third of the conspiracy articles (recall 0.667). Repeating the validation run gave the same answer for 0.992 of the articles, so the LLM's answers are stable.
+The LLM has the highest F1 (0.795, interval 0.723 to 0.857), followed by TF-IDF with features (0.610), TF-IDF (0.582) and word counts (0.559). The three logistic regressions have overlapping intervals. Their precision is moderate (0.602 to 0.735) and their recall is about one half (0.500 to 0.521). The LLM is almost never wrong when it says "conspiracy" (precision 0.985, one false alarm among 314 mainstream articles) but still misses a third of the conspiracy articles (recall 0.667).
 
 Three McNemar tests (exact, two-sided) compare pairs of models. Word counts against TF-IDF: 9 articles are right only for word counts and 19 only for TF-IDF (p = 0.087). TF-IDF against TF-IDF with features: 6 against 11 (p = 0.332). The best logistic regression on validation (TF-IDF with features) against the LLM: 3 against 34 (p < 0.0001).
 

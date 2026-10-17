@@ -23,13 +23,9 @@ The conclusion has no analysis of its own. This function scores one final model 
 
 <!-- cell: src/fml/pipeline.py#evaluate_final -->
 
-<!-- output: results/tables/comparison_test.csv | Test scores of the four final models -->
-
 ## Report
 
-The study compared four methods for deciding whether a full 9/11 article comes from a conspiracy-oriented or a mainstream website. The results are summarised per hypothesis. All numbers refer to the test set of 410 articles and to the F1 score of the conspiracy class, with 95% confidence intervals in the table.
-
-<!-- output: results/tables/comparison_test.csv | Precision, recall and F1 on the test set -->
+The study compared four methods for deciding whether a full 9/11 article comes from a conspiracy-oriented or a mainstream website. The results are summarised per hypothesis. All numbers refer to the test set of 410 articles and to the F1 score of the conspiracy class, with 95% confidence intervals as given in the results section.
 
 H1 (TF-IDF improves on word counts) is not confirmed. TF-IDF reached an F1 score of 0.582 and plain word counts 0.559. The direction agrees with the hypothesis, but the intervals overlap almost completely and the McNemar test is not significant (p = 0.087).
 
@@ -37,7 +33,7 @@ H2 (certainty and style features improve the TF-IDF model) is not confirmed on t
 
 H3 (the LLM beats the best logistic regression) is confirmed. The LLM reached an F1 score of 0.795 against 0.610 for TF-IDF with features, the intervals do not overlap, and the difference is significant (p < 0.0001). The gain comes from precision (0.985) and not from recall (0.667): the LLM almost never labels a mainstream article as conspiracy but misses one third of the conspiracy articles.
 
-Two alternatives were not pursued. Fine-tuning a language model on the training articles would need more data, computing cost and explanation than the scope of this project allows, and a zero-shot model gives a simple and fair comparison. Emotion scores were dropped because they require a further pre-trained model and because emotional language is not specific to conspiracy writing: reporting on a serious event is emotional by nature. In sum, the methods that we trained ranked as hypothesised, but their differences are small relative to the uncertainty, and only the advantage of the LLM is clear. Because the labels describe websites and the number of websites is small, the findings describe how well each method recovers the type of website, and further work should test other topics, more websites and the human check of the label problems.
+Fine-tuning a language model and emotion scores were not pursued: both need more data, cost or explanation than this project allows, and emotional wording is normal in reports on a terror attack. In sum, the methods that we trained ranked as hypothesised, but their differences are small relative to the uncertainty, and only the advantage of the LLM is clear. Because the labels describe websites and the number of websites is small, the findings describe how well each method recovers the type of website, and further work should test other topics, more websites and the human check of the label problems.
 
 ## Check yourself
 

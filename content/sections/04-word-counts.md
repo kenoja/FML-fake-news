@@ -1,7 +1,6 @@
 ---
 title: Word counts
 part: Methods
-hypothesis: Simply counting which words an article uses is enough to tell conspiracy websites from mainstream ones much better than guessing.
 ---
 ## Explained simply
 
@@ -15,7 +14,7 @@ A high weight means "useful for telling these websites apart", not "proves consp
 - **Only training articles build the word list.** Words that appear only in validation or test articles must not influence the model. Otherwise it would have peeked at the exam.
 - **Words in at least two articles.** Words used once are mostly typos and names, and they let the model memorise single articles.
 - **Class weight "balanced".** There are fewer conspiracy articles than mainstream ones, so each conspiracy article counts more. Otherwise the model could ignore the smaller group.
-- **A small grid for C, chosen on validation.** C controls how freely the model may use large weights. A small C keeps it cautious. A large C lets it follow the training data closely, which can lead to **overfitting** (memorising instead of learning). We try three values (0.1, 1, 10) and keep the one with the best validation F1 for the conspiracy class. Validation is a separate set of articles, so the choice is honest. The test set stays untouched.
+- **A short list of cautiousness settings, chosen on validation.** The **regularisation** setting (called C in the code) controls how freely the model may use large weights. A cautious setting keeps weights small. A free setting lets the model follow the training data closely, which can lead to **overfitting** (memorising instead of learning). We try three values (0.1, 1, 10) and keep the one with the best validation F1 for the conspiracy class. Validation is a separate set of articles, so the choice is honest. The test set stays untouched.
 
 ## The code
 
@@ -27,7 +26,7 @@ One function fits a single logistic regression.
 
 <!-- cell: src/fml/models.py#fit_logistic -->
 
-This helper fits one model per value of C and keeps the best on validation.
+This helper fits one model per cautiousness setting and keeps the best on validation.
 
 <!-- cell: src/fml/models.py#choose_c -->
 
@@ -49,8 +48,6 @@ Finally we list the words with the largest weights in each direction.
 The first analysis represents each article as a bag of words: a vector with the number of times each word occurs, ignoring order. Words were counted on the training articles only, and words occurring in fewer than two training articles were dropped. A logistic regression with balanced class weights was fitted on these counts. The regularisation strength C was chosen from {0.1, 1, 10} by the F1 score of the conspiracy class on the validation set. The test set was not used.
 
 The smallest value, C = 0.1, scored best. On validation this model reached a precision of 0.832, a recall of 0.846 and an F1 score of 0.839 (see the table below). Larger values of C scored lower, which is the typical sign of overfitting: with raw counts, the model starts to rely on rare words that only describe the training articles. The best value lies at the edge of the grid, so a smaller C could be slightly better. We did not widen the grid after seeing the results.
-
-<!-- output: results/metrics.json#word_counts.validation -->
 
 The words with the largest weights are informative, but not all of them are about content. Several of the strongest conspiracy words, for example "posted", "am" and "article", look like habits of how a website presents its articles, not like conspiracy thinking. Strong mainstream words such as "killed", "tower" and "anniversary" fit factual news reporting. The model therefore partly recognises websites and not only arguments, which matters for how the results are read in later sections.
 

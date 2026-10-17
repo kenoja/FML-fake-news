@@ -1,7 +1,6 @@
 ---
 title: TF-IDF
 part: Methods
-hypothesis: Giving rare, telling words more weight than everyday words makes the word-based model better than plain counting.
 ---
 ## Explained simply
 
@@ -12,7 +11,7 @@ hypothesis: Giving rare, telling words more weight than everyday words makes the
 **What stays the same.** Everything else is identical to the word-count analysis, so that any difference comes from the weighting alone:
 - The same articles, the same split, the same list of words (words in at least two training articles).
 - The same model, logistic regression, with class weight "balanced" so the smaller conspiracy group is not ignored.
-- The same three values of C (0.1, 1, 10), and the one with the best validation F1 for the conspiracy class wins.
+- The same three regularisation values (0.1, 1, 10), and the one with the best validation F1 for the conspiracy class wins.
 
 **Why we do it this way.** The rarity part (IDF) is learned from the articles, so it must be computed on the training articles only. If validation or test articles shaped it, the model would have peeked at the exam. We also use a gentle version of the term frequency (the logarithm of the count), so that a word repeated fifty times does not count fifty times as much as a word used once. And TF-IDF scales every article to the same length, so long articles do not win just because they have more words.
 
@@ -24,7 +23,7 @@ The vectorizer is the only thing that changes compared with the word-count analy
 
 <!-- cell: src/fml/models.py#tfidf_vectorizer -->
 
-The same helpers as before choose C and fit the model.
+The same helpers as before choose the setting and fit the model.
 
 <!-- cell: src/fml/models.py#choose_c -->
 
@@ -42,8 +41,6 @@ The analysis function is shared, so both analyses run in exactly the same way.
 The second analysis keeps everything from the word-count analysis (articles, split, vocabulary, balanced logistic regression, grid for C) and replaces raw counts by TF-IDF weights. Term frequencies were damped with a logarithm, article vectors were scaled to unit length, and the inverse document frequencies were computed on the training articles only. C was again chosen from {0.1, 1, 10} by the validation F1 score of the conspiracy class.
 
 The largest value, C = 10, scored best, with a precision of 0.922, a recall of 0.906 and an F1 score of 0.914 on validation. Compared with word counts (F1 0.839), the weighting raised all three numbers. Unlike with raw counts, larger C helped: because TF-IDF vectors have a fixed length, the model can use larger weights without being dominated by long articles. The chosen value is at the edge of the grid, so a still larger C might do slightly better. We kept the grid as planned.
-
-<!-- output: results/metrics.json#tfidf.validation -->
 
 The strongest words resemble those of the word-count model. "Posted", "truth" and "article" point to conspiracy websites, and "killed", "tower" and "response" point to mainstream websites. Part of this signal therefore reflects how websites write and present their articles. TF-IDF improves the use of words, but it does not remove this limitation. Whether the improvement holds on unseen articles from other websites is only decided by the final comparison.
 

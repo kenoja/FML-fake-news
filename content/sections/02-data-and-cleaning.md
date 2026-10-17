@@ -43,15 +43,13 @@ This one measures how long the articles are.
 
 ## Report
 
-The study uses the 9/11 subset of the LOCO corpus, a public collection of web pages from websites rated as conspiracy-oriented or mainstream. We use the full articles of this subset, 3,146 documents from 39 conspiracy and 79 mainstream websites. Each document carries the label of its website. The label therefore describes the publisher and not the single text: a neutral news item on a conspiracy-oriented website is labelled conspiracy, and a mainstream article that discusses a conspiracy theory is labelled mainstream. The texts are not redistributed and are kept in a private data store; this report shows only counts and short excerpts.
+The study uses the 9/11 subset of the LOCO corpus (Miani, Hills & Bangerter, 2022), a public collection of web pages from websites rated as conspiracy-oriented or mainstream. We use the full articles of this subset, 3,146 documents from 39 conspiracy and 79 mainstream websites. Each document carries the label of its website. The label therefore describes the publisher and not the single text: a neutral news item on a conspiracy-oriented website is labelled conspiracy, and a mainstream article that discusses a conspiracy theory is labelled mainstream. The texts are not redistributed and are kept in a private data store; this report shows only counts and short excerpts. The corpus is described as freely available, but its licence could not be confirmed, so the texts stay private as a precaution.
 
 Cleaning was applied before any model was fitted, and all four analyses use the same cleaned documents. First, documents that do not mention the attacks in their title or text were removed, because a model could otherwise learn the difference between topics instead of the difference between kinds of websites. Second, near-duplicates were removed: pairs of documents with a cosine similarity of their TF-IDF vectors of at least 0.9. Such copies are common between websites and would let a model meet a near copy of a test article during training. For a pair across two parts of the data, the copy in validation or test was dropped; inside one part, the copy with the lower identifier was kept. Third, web addresses, e-mail addresses, website names and lines repeated across many documents of one website were deleted from the texts. The table shows the number of documents before and after each of the first two steps.
 
 <!-- output: results/tables/cleaning_log.csv | Documents before and after each cleaning step -->
 
-After cleaning, 2,554 documents remain: 755 from conspiracy-oriented and 1,799 from mainstream websites. Roughly three in ten articles are conspiracy, so the classes are unbalanced. Document length was checked to decide whether very short texts need special treatment. After cleaning, the shortest document has the number of words shown below and the median is far above it, so no minimum length was applied.
-
-<!-- output: results/metrics.json#cleaning.short_texts | Length of the cleaned documents in words -->
+After cleaning, 2,554 documents remain: 755 from conspiracy-oriented and 1,799 from mainstream websites. Roughly three in ten articles are conspiracy, so the classes are unbalanced. Document length was checked to decide whether very short texts need special treatment. After cleaning, the shortest document has 102 words and the median is 622 words, so no minimum length was applied.
 
 ## Check yourself
 

@@ -11,7 +11,7 @@ hypothesis: A cheap language model, given no training at all, can tell conspirac
 
 **Why the prompt matters.** Small changes in wording can change the answers, so we try three prompts: the bare question, the question with a short description of both website types, and the question with step-by-step advice and a warning not to judge by topic alone. We try them on the validation articles only and keep the one with the best F1 score. The test articles play no part in this choice.
 
-**Why no fine-tuning.** Fine-tuning means training the model further on our articles. That is costly, and we want to know what a cheap, ready-made model can do without help from our data.
+**Why no fine-tuning.** Fine-tuning means training the model further on our articles. That is costly, and we want to know what a cheap, ready-made model can do without help from our data. We also did not set a minimum article length, because the cleaned articles are already long enough to judge.
 
 **Tokens.** A token is a small piece of text, about three quarters of a word. Limits on models are counted in tokens. We cut every article to its first 3,000 words, the same for all articles. The model may write up to 1,000 tokens, so no answer is cut off in the middle.
 
@@ -56,22 +56,15 @@ The analysis: try the three prompts, keep the best by F1, repeat it once.
 
 The fourth analysis uses a language model instead of a trained classifier. Claude Haiku 5.5 received each article without any examples (zero-shot) and answered the source question: would the article appear on a conspiracy-oriented or on a mainstream website? This is the same target as in the three logistic regression analyses, and the answers are scored against the same dataset labels. The model's output is never treated as ground truth, so the LLM and the logistic regressions are compared on equal terms.
 
-Articles were cut to their first 3,000 words, and the model could write up to 1,000 tokens. The model has no temperature setting, so default sampling was used. Three prompts were tried on the validation articles only: the bare question, the question with short definitions of both website types, and a step-by-step version that warns against judging by topic alone. The prompt with the highest F1 score for the conspiracy class was chosen.
-
-<!-- output: results/tables/llm_prompt_variants.csv -->
+Articles were cut to their first 3,000 words, and the model could write up to 1,000 tokens. The model has no temperature setting, so default sampling was used. Three prompts were tried on the validation articles only: the bare question, the question with short definitions of both website types, and a step-by-step version that warns against judging by topic alone. The prompt with the highest F1 score for the conspiracy class was chosen. Every answer was saved with the article id and a prompt hash, so repeated runs need no new requests.
 
 All three prompts reached almost the same F1 score on the 376 validation articles, and none called a mainstream article conspiracy-oriented. The bare question (v1) and the step-by-step prompt (v3) tied at an F1 score of 0.987, and the short definitions (v2) reached 0.983. With a tie, the first prompt, v1, was kept. Differences this small are within what chance could produce, so the choice of prompt mattered little. The chosen prompt reached a precision of 1.0 and a recall of 0.974: it missed 3 of the 117 conspiracy articles. Answers that could not be read would have been counted as wrong. There were none (0), so the output limit was large enough.
 
-<!-- output: results/metrics.json#llm.validation -->
-<!-- output: results/metrics.json#llm.unreadable -->
-
-Because sampling cannot be fixed, the validation run of the chosen prompt was repeated once. The share of articles that received the same answer both times was 0.992, which means 99.2% of the answers stayed the same. This share is the only stability measure we report. Thirty validation articles were longer than the word limit and were cut.
-
-<!-- output: results/metrics.json#llm.repeat_agreement -->
+Because sampling cannot be fixed, the validation run of the chosen prompt was repeated once. The share of articles that received the same answer both times was 0.992, which means 99.2% of the answers stayed the same. This share is the only stability measure we report. In total, 30 validation articles were longer than the 3,000-word limit and were cut.
 
 <!-- output: results/figures/llm_validation_confusion.png | LLM: validation confusion matrix of the chosen prompt -->
 
-These numbers describe validation articles only. Whether the model keeps this level on unseen websites is decided in the final comparison. Two cautions apply. The model may have met these websites or this 9/11 material during its own training, so a correct answer can be memory rather than reading. And the question is hard from one article alone, because mainstream sites sometimes print conspiracy-friendly pieces and conspiracy sites print plain news.
+These numbers describe validation articles only. Whether the model keeps this level on unseen websites is decided in the final comparison. Two cautions apply. The model may have met these websites or this 9/11 material during its own training (see Limitations), so a correct answer can be memory rather than reading. And the question is hard from one article alone, because mainstream sites sometimes print conspiracy-friendly pieces and conspiracy sites print plain news.
 
 ## Check yourself
 

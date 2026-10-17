@@ -5,14 +5,14 @@ import pandas as pd
 
 from .models import tune_variant
 
-HELPS_BY = 0.01      # a group "helps" only if validation F1 rises by at least this much
+THRESHOLD = 0.01     # a group counts as "above threshold" only if validation F1 rises by this much
 
 
 def verdict(delta_f1):
     """Plain label for a change in validation F1."""
-    if delta_f1 >= HELPS_BY:
-        return "helps"
-    if delta_f1 <= -HELPS_BY:
+    if delta_f1 >= THRESHOLD:
+        return "above threshold"
+    if delta_f1 <= -THRESHOLD:
         return "hurts"
     return "no clear gain"
 
@@ -40,19 +40,19 @@ def add_verdicts(table, reference):
 
 
 def choose_best(table: pd.DataFrame, reference: str) -> dict:
-    """Pick the best row, but keep the plain reference unless another row clearly helps."""
+    """Pick the best row, but keep the plain reference unless another row is clearly above the threshold."""
     best = table.sort_values("f1", ascending=False, kind="stable").iloc[0]
-    chosen = best["model_id"] if best["verdict"] == "helps" else reference
-    rule = f"best validation F1, but only if it beats TF-IDF alone by at least {HELPS_BY}"
+    chosen = best["model_id"] if best["verdict"] == "above threshold" else reference
+    rule = f"best validation F1, but only if it beats TF-IDF alone by at least {THRESHOLD}"
     return {"chosen": chosen, "rule": rule, "f1": float(table.set_index("model_id").loc[chosen, "f1"])}
 
 
 def verdict_sentence(table: pd.DataFrame, reference: str) -> str:
     """One sentence that answers: do the extra features help?"""
     extras = table[table["model_id"] != reference]
-    helping = extras.loc[extras["verdict"] == "helps", "label"].tolist()
+    helping = extras.loc[extras["verdict"] == "above threshold", "label"].tolist()
     best_gain = float(extras["delta_f1"].max())
     if not helping:
-        return (f"No extra feature group raised validation F1 by {HELPS_BY} or more "
+        return (f"No extra feature group raised validation F1 by {THRESHOLD} or more "
                 f"(the largest gain was {best_gain:.3f}), so the extra features do not help.")
-    return f"These groups raised validation F1 by {HELPS_BY} or more: {', '.join(helping)}."
+    return f"These groups raised validation F1 by {THRESHOLD} or more: {', '.join(helping)}."

@@ -54,6 +54,11 @@
       "shortest_words": 102,
       "documents_under_threshold": 0,
       "median_words": 622.0
+    },
+    "split_after_cleaning": {
+      "train": 1768,
+      "validation": 376,
+      "test": 410
     }
   },
   "split": {
@@ -291,7 +296,7 @@
         "class_weight": "balanced",
         "f1": 0.9304,
         "delta_f1": 0.0166,
-        "verdict": "helps"
+        "verdict": "above threshold"
       },
       "lr_plus_style": {
         "model_id": "lr_plus_style",

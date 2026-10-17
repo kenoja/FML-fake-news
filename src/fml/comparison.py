@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 
 from .evaluate import bootstrap_ci, confusion, mcnemar_exact
 
@@ -17,6 +18,18 @@ def model_row(name: str, y, pred) -> dict:
         row[f"{score}_ci_low"] = intervals[score]["ci_low"]
         row[f"{score}_ci_high"] = intervals[score]["ci_high"]
     return row
+
+
+def compact_table(table, names: dict):
+    """Four plain rows for the report: each score with its 95% interval in one cell."""
+    rows = []
+    for _, r in table.iterrows():
+        row = {"Model": names[r["model"]]}
+        for score in SCORES:
+            row[score.capitalize() if score != "f1" else "F1"] = (
+                f"{r[score]:.2f} ({r[score + '_ci_low']:.2f} to {r[score + '_ci_high']:.2f})")
+        rows.append(row)
+    return pd.DataFrame(rows)
 
 
 def mcnemar_pair(y, pred_a, pred_b, name_a: str, name_b: str) -> dict:

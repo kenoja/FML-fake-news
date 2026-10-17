@@ -132,3 +132,29 @@ def test_gate_catches_an_injected_60_word_cell(tmp_path):
     # A long justification is usually copied article text; the gate must see it.
     (tmp_path / "x.csv").write_text("doc_id,claude_justification\nA1," + " ".join(["w"] * 60) + "\n")
     assert _long_cells(tmp_path, _limits(), _limits())
+
+
+def test_assembled_report_is_at_most_5000_words_by_plain_count():
+    # The team counts by whitespace, tables included; the report must stay within the limit by that count.
+    from pathlib import Path
+
+    import pytest
+
+    report = Path(__file__).resolve().parents[1] / "reports" / "report.md"
+    if not report.is_file():
+        pytest.skip("report not built yet (python -m sitegen build)")
+    body = report.read_text(encoding="utf-8").split("\n## References")[0]
+    assert 3000 <= len(body.split()) <= 5000
+
+
+def test_report_has_no_internal_model_ids():
+    from pathlib import Path
+
+    import pytest
+
+    report = Path(__file__).resolve().parents[1] / "reports" / "report.md"
+    if not report.is_file():
+        pytest.skip("report not built yet (python -m sitegen build)")
+    text = report.read_text(encoding="utf-8")
+    for name in ("final_tfidf_features", "lr_words_v2", "lr_extended"):
+        assert name not in text
