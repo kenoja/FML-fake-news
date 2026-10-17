@@ -11,6 +11,7 @@ exactly where this one stopped. Output always ends with one line `STATUS: <word>
 """
 from __future__ import annotations
 
+import re
 import time
 import traceback
 
@@ -54,6 +55,8 @@ def run(cycle: int | None = None, minutes: float | None = None, use_git: bool = 
     if use_git:
         tools.checkout_cycle_branch(branch)
 
+    if _last_status() == "FAILED":
+        memory.reset_timeouts()  # a human restarted the cycle after a failure: give the step fresh attempts
     runs = memory.count_run(cycle)
     if runs > lim["max_runs_per_cycle"]:
         return _finish(cycle, branch, "FAILED", f"max_runs_per_cycle ({lim['max_runs_per_cycle']}) exceeded", use_git)
@@ -106,6 +109,14 @@ def run(cycle: int | None = None, minutes: float | None = None, use_git: bool = 
                                       state.get("review_summary", "") + "\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)")
         detail += f"\n\nPull request: {url}"
     return _finish(cycle, branch, status, detail, use_git)
+
+
+def _last_status() -> str:
+    p = memory.STATE_DIR / "last_run.md"
+    if not p.is_file():
+        return ""
+    m = re.search(r"^- status: (\w+)", p.read_text(encoding="utf-8"), re.M)
+    return m.group(1) if m else ""
 
 
 def _final_state(cycle: int) -> dict:

@@ -68,6 +68,17 @@ your choice in `docs/decisions.md`. If you cannot resolve something from the fil
 Numbers in prose are copied from `results/` files, never typed from memory. When results change,
 update every place that quotes them.
 
+## Performance
+
+The whole pipeline must stay fast enough to check often: `fml run-all` must finish in **under 8
+minutes** on a 2-CPU machine, and the full test suite in under 3 minutes.
+- Build text features (TF-IDF vocabulary, n-grams, lexicon counts, style features) **once per feature
+  configuration** on the training split and reuse the matrices for every regularisation value and
+  class-weight setting. Do not refit vectorizers inside the C loop.
+- Use a solver that suits large sparse inputs (e.g. `liblinear` or `saga`) and a sensible `max_iter`.
+- Cache expensive intermediate results under `results/cache/` (git-ignored) keyed by a config hash.
+- Slow tests on the real data belong in at most a few `needs_data` tests; unit tests use tiny inputs.
+
 ## Section format
 
 Planned sections (create what is missing, keep slugs stable because feedback threads use them):
