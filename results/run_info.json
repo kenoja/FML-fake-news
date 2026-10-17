@@ -1,5 +1,5 @@
 {
-  "run_all_seconds": 222.1,
+  "run_all_seconds": 217.3,
   "python": "3.11.17",
   "packages": {
     "numpy": "2.4.6",
