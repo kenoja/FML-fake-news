@@ -139,3 +139,43 @@ def test_report_length_is_within_the_limit():
     n = len(re.findall(r"\b\w[\w'-]*\b", " ".join(prose)))
     print(f"report body: {n} words")
     assert 3000 <= n <= 5000, f"report body has {n} words"
+
+
+ABLATION_WORDS = {  # words that name an ablation row in prose -> model_id in ablation.csv
+    "n-gram": "lr_plus_ngrams", "certainty": "lr_plus_epistemic", "epistemic": "lr_plus_epistemic",
+    "style": "lr_plus_style", "all three groups": "lr_extended",
+}
+ABLATION_TEXTS = ["content/sections/06-feature-engineering.md", "reports/report.md", "docs/decisions.md"]
+
+
+def _ablation_rows() -> dict[str, tuple[float, float]]:
+    with (REPO / "results" / "tables" / "ablation.csv").open(encoding="utf-8", newline="") as fh:
+        return {r["model_id"]: (float(r["f1"]), float(r["delta_f1"])) for r in csv.DictReader(fh)}
+
+
+def ablation_mismatches(text: str, rows: dict[str, tuple[float, float]]) -> list[str]:
+    """Three-decimal numbers in a sentence that names ablation rows must belong to those rows."""
+    bad = []
+    for sentence in re.split(r"(?<=[.;])\s+(?=[A-Z])|\n", text):
+        low = sentence.lower()
+        named = {mid for word, mid in ABLATION_WORDS.items() if word in low}
+        if not named:
+            continue
+        allowed = {round(rows["lr_words_v2"][0], DIGITS)}  # plain TF-IDF is the reference in every comparison
+        for mid in named:
+            allowed |= {round(rows[mid][0], DIGITS), round(abs(rows[mid][1]), DIGITS)}
+        bad += [n for n in re.findall(r"(?<![\d.])\d\.\d{3}(?!\d)", sentence) if round(float(n), DIGITS) not in allowed]
+    return bad
+
+
+@pytest.mark.parametrize("rel", ABLATION_TEXTS)
+def test_ablation_numbers_in_prose_match_the_table(rel):
+    """A stale F1 or delta for a feature family misleads the verdict, so prose must match ablation.csv."""
+    bad = ablation_mismatches((REPO / rel).read_text(encoding="utf-8"), _ablation_rows())
+    assert not bad, f"{rel}: ablation numbers that disagree with results/tables/ablation.csv: {bad}"
+
+
+def test_ablation_checker_catches_a_changed_number():
+    rows = _ablation_rows()
+    assert ablation_mismatches("Style features gave 0.894, a change of -0.020 in validation F1.", rows) == []
+    assert ablation_mismatches("Style features gave 0.913, a change of -0.001 in validation F1.", rows) == ["0.913", "0.001"]

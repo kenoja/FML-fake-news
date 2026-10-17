@@ -64,7 +64,7 @@ The stage puts it all together and writes the tables.
 
 ## Report
 
-This is an estimate from one unchecked source: the stance codes come from a single language model and no person has checked them. We examined the test articles on which the best logistic regression and the LLM disagree with the label. The groups are articles missed only by the logistic regression, only by the LLM, and by both. A false positive is a mainstream article called conspiracy, a false negative the reverse. The counts per group are in the first table below.
+This is an estimate from one unchecked source: the stance codes come from a single language model and no person has checked them. We examined the test articles on which the best logistic regression and the LLM disagree with the label. The groups are articles missed only by the logistic regression, only by the LLM, and by both. A false positive is a mainstream article called conspiracy, a false negative the reverse. The counts per group are given in the first table of this part.
 
 The labels describe websites, not articles. To separate model errors from label problems, a second model (Claude Sonnet 5.5) coded the stance of every disagreement article towards conspiracy claims about 9/11: endorses, rejects or debunks, reports neutrally, or no claim. The question did not mention the website. A fixed rule, written before the results were read, turns label and stance into a verdict. A conspiracy-site article that does not endorse a claim, or a mainstream article that endorses one, is counted as a label problem. All other cases are model errors. A mainstream article that debunks a theory counts as a model error, because it is still mainstream content.
 
@@ -72,7 +72,7 @@ The labels describe websites, not articles. To separate model errors from label 
 
 By this rule most of the errors are label problems, especially missed conspiracy-site articles. Many of them are ordinary news or commentary with no conspiracy claim, so a model that reads only the text has little to find. Mistakes on mainstream articles are mostly model errors: the models react to the topic words and not to the stance of the article. These shares depend on the automatic coding. Of the 67 coded articles, 2 received an answer that could not be read and are left out of the shares.
 
-Short excerpts of five articles (missed by one model, by both, and two correct ones for contrast) are given in the notebook, never full texts.
+Short excerpts of five articles (missed by one model, by both, and two correct ones for contrast) are quoted in this part, never full texts.
 
 The automatic stance coding is not presented as verified. It was produced by a language model and no person has checked it yet. The team therefore carries out a human check on a sample of 40 of these articles. The label-problem share (47 of 65 readable codings) comes from one unchecked source, the Claude stance coding, so it is an estimate. Until this check is done, the split between model errors and label problems is an estimate from one unchecked source and should be read as such.
 

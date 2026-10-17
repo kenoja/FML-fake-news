@@ -322,7 +322,7 @@ Checks done by T12 (not a full run):
 ## Cycle 2, T5: analysis 3 (TF-IDF plus engineered features)
 
 - Five models only (TF-IDF alone, + n-grams 1-3, + certainty words, + style, + all three), same C grid and class-weight choice, validation F1 only. Dropped: bootstrap intervals, McNemar here, drop-one rows, coefficient tables, the negation check (`epistemic_negation`, `count_markers_negation`, `VARIANT_GROUPS`), and `epistemic_negation.csv`, `top_ngrams.csv`, `dense_coefficients.csv`. Kept: the lexicon coverage table (it supports the "why so little" explanation).
-- Decision rule without intervals (team may change): a group "helps" if validation F1 rises by at least `ablation.HELPS_BY` = 0.01; the chosen model is the best row only if it helps, else plain TF-IDF. Result: certainty words +0.017 (chosen, `lr_plus_epistemic`), n-grams +0.002, style -0.001, all three -0.018. The report calls this "no reliable help" because 376 validation articles cannot separate 1-2 points from chance.
+- Decision rule without intervals (team may change): a group "helps" if validation F1 rises by at least `ablation.HELPS_BY` = 0.01; the chosen model is the best row only if it helps, else plain TF-IDF. Result: certainty words +0.017 (chosen, `lr_plus_epistemic`), n-grams +0.002, style -0.020, all three groups -0.027. The report calls this "no reliable help" because 376 validation articles cannot separate 1-2 points from chance.
 - **Test scoring removed from this stage** (AGENTS.md: all runs first, then compare). `lr_words_v2` and `lr_extended` keep their frozen ids and configs; their old test predictions are still in `predictions_lr.csv`. `lr_plus_epistemic` has no test scores yet. **The comparison stage still looks for the chosen model in `predictions_lr.csv` and will fail until the queued "final run" and "comparison" tasks score the final models and update it.**
 - Section 06 replaces 07 and 08 (deleted). Numbers in it come from `results/tables/ablation.csv`, `epistemic_coverage.csv`, `feature_summary.csv`.
 
@@ -368,3 +368,14 @@ Checks done by T12 (not a full run):
   team fills it in. The previous sheet (test-set errors) is replaced, so any earlier partial human entries
   would be lost; none existed (`has_human_input` guards against overwriting).
 - Test: `test_check_sample_caps_rows_per_website_and_balances_classes`.
+
+## Cycle 2, T6: report self-containment
+- Licence wording on the site and in the report is now only "texts are not redistributed; used for study only".
+  The open licence check (OSF page unreadable, licence unconfirmed) stays recorded here only.
+- Added "What we did not do and why" (logistic regression, no fine-tuning, no other classifiers, no emotion
+  features) to the 04 report; the 06 and 11 report sentences point back to it.
+- Conflict: `00-how-to-use.md` had a `## Report` stub and `sitegen` put it into `reports/report.md`. AGENTS.md says
+  00 has no report part, so the stub was removed from the section (sitegen not edited). The report no longer contains it.
+- Open: `10-limitations.md` still has `<!-- output: results/metrics.json#llm.repeat_agreement -->` in its report part
+  (sitegen warns it is not flat JSON and drops it). Left for the queued section 09/10 task; a plain grep for
+  "metrics.json" in report parts matches this marker, not prose.

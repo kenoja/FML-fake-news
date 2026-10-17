@@ -26,10 +26,6 @@ hypothesis: A reader with no technical knowledge can follow every step, test the
 
 This section has no code. The next sections show it.
 
-## Report
-
-This section is a reading guide and is not part of the report.
-
 ## Check yourself
 
 Q: Which part of a section would you read if you want to understand a step but have no interest in code?

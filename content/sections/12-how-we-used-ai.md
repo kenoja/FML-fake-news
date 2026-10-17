@@ -32,7 +32,7 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 ## Report
 
-**Use of AI tools.** We used an AI assistant (Claude, in the form of a coding agent) to draft the project plan, write the analysis code and tests, produce tables and figures, and draft the notebook text and this report. A separate language model, Claude Haiku 5.5, is the fourth classifier under study and a second model (Claude Sonnet 5.5) coded how disagreement articles treat conspiracy claims for the error analysis. The log of what was produced, checked and changed is kept in the repository.
+**Use of AI tools.** We used an AI assistant (Claude, in the form of a coding agent) to draft the project plan, write the analysis code and tests, produce tables and figures, and draft the course text and this report. A separate language model, Claude Haiku 5.5, is the fourth classifier under study and a second model (Claude Sonnet 5.5) coded how disagreement articles treat conspiracy claims for the error analysis. The log of what was produced, checked and changed is kept in the repository.
 
 The study design was fixed by the team and not by the assistant: the research question, full articles as input, the four ways of sorting, the feature groups, and the rule that each final model is scored on the test articles once. The assistant followed written rules in the repository and was bound by automatic checks, among them a lock on the test set, a frozen split, a privacy check on public text and a comparison of every number in the report with the result files.
 

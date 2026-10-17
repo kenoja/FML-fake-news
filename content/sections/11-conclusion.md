@@ -31,9 +31,11 @@ H1 (TF-IDF improves on word counts) is not confirmed. TF-IDF reached an F1 score
 
 H2 (certainty and style features improve the TF-IDF model) is not confirmed on test. F1 rose from 0.582 to 0.610, mostly through fewer false alarms, but the difference is within chance (p = 0.332). On validation, the certainty words were the only feature group with a gain of 0.01 or more; n-grams and style features gave no clear gain, and using all three groups together lowered the score.
 
+Do the hand-made features help? On validation only the certainty words passed the threshold, so only they were kept for the final model. On test the model with them scores 0.610 against 0.582 for TF-IDF alone (p = 0.332): a small gain in the expected direction that the data cannot distinguish from chance. This is the same verdict as in the results section.
+
 H3 (the LLM beats the best logistic regression) is confirmed. The LLM reached an F1 score of 0.795 against 0.610 for TF-IDF with features, the intervals do not overlap, and the difference is significant (p < 0.0001). The gain comes from precision (0.985) and not from recall (0.667): the LLM almost never labels a mainstream article as conspiracy but misses one third of the conspiracy articles.
 
-Fine-tuning a language model and emotion scores were not pursued: both need more data, cost or explanation than this project allows, and emotional wording is normal in reports on a terror attack. In sum, the methods that we trained ranked as hypothesised, but their differences are small relative to the uncertainty, and only the advantage of the LLM is clear. Because the labels describe websites and the number of websites is small, the findings describe how well each method recovers the type of website, and further work should test other topics, more websites and the human check of the label problems.
+We did not fine-tune a language model or use other classifiers or emotion features, for the reasons given with the word-count analysis. In sum, the methods that we trained ranked as hypothesised, but their differences are small relative to the uncertainty, and only the advantage of the LLM is clear. Because the labels describe websites and the number of websites is small, the findings describe how well each method recovers the type of website, and further work should test other topics, more websites and the human check of the label problems.
 
 ## Check yourself
 

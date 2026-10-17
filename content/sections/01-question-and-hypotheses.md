@@ -1,7 +1,7 @@
 ---
 title: Question and hypotheses
 part: Introduction
-hypothesis: Weighting words helps, our own features add little, and the language model beats the models we trained.
+hypothesis: Weighting words helps, our own features help, and the language model beats the models we trained.
 ---
 ## Explained simply
 
@@ -17,15 +17,15 @@ hypothesis: Weighting words helps, our own features add little, and the language
 
 The first three use a method called logistic regression, which we train ourselves. The fourth is used as it comes.
 
-**What is a hypothesis?** A hypothesis is a guess that we write down before we look at the results, so that the results can prove it wrong. We have three. The results say for each one whether the data support it. If they do not clearly, we say so. That is also an answer.
+**What is a hypothesis?** A hypothesis is a guess that we write down before we look at the results, so that the results can prove it wrong. We have three. Later the results say for each one whether the data support it. If they do not clearly, we say so. That is also an answer.
 
 - **H1.** Weighting words by how telling they are (TF-IDF) improves on plain word counts.
-- **H2.** Adding features about certainty and writing style improves the TF-IDF model. Only the certainty words passed our validation threshold, so the final tested model contains certainty words only, not the style features.
+- **H2.** Adding features about certainty and writing style improves the TF-IDF model.
 - **H3.** The language model does better than the best of the three models we trained.
 
-**Why these three?** They follow the order of the study: first the choice of how to represent words (H1), then whether our own ideas add anything (H2), then the comparison with a very different approach (H3). Each is answered in the results section and again in the conclusion.
+**Why these three?** They follow the order of the study: first the choice of how to represent words (H1), then whether our own ideas add anything (H2), then the comparison with a very different approach (H3). Each is answered later, in the results and the conclusion.
 
-**How we judge "better".** About seven in ten articles come from mainstream websites. A model that always says "mainstream" would be right 70% of the time and would find no conspiracy article at all. So we do not use the share of correct answers. We use the F1 score for the conspiracy class, which rewards finding conspiracy articles without raising false alarms. The glossary explains it.
+**How we judge "better".** Most articles come from mainstream websites. A model that always says "mainstream" would be right most of the time and would find no conspiracy article at all. So we do not use the share of correct answers. We use the F1 score for the conspiracy class, which rewards finding conspiracy articles without raising false alarms. The glossary explains it.
 
 **A warning about the label.** The label belongs to the website, not to the single article. A calm news item on a conspiracy website counts as "conspiracy".
 ## The code
@@ -42,11 +42,11 @@ This study asks whether the text of a full article about the 9/11 attacks reveal
 
 H1. Weighting words by their distinctiveness (TF-IDF) improves on plain word counts.
 
-H2. Adding features about certainty and writing style improves the TF-IDF model. The final tested model contains certainty words only, because only they passed the validation threshold (metrics.json, tfidf_features).
+H2. Adding features about certainty and writing style improves the TF-IDF model.
 
 H3. The LLM does better than the best logistic regression.
 
-All methods are judged by precision, recall and F1 score for the conspiracy class, because the classes are unbalanced: about seven in ten articles come from mainstream websites, so the share of correct answers would reward a model that never finds a conspiracy article. A hypothesis counts as supported only if the confidence interval and the significance test agree with the direction of the difference. Results are reported in the results section, and the conclusion returns to each hypothesis.
+All methods are judged by precision, recall and F1 score for the conspiracy class, because the classes are unbalanced: most articles come from mainstream websites, so the share of correct answers would reward a model that never finds a conspiracy article. A hypothesis counts as supported only if the confidence interval and the significance test agree with the direction of the difference. Results are reported in the results section, and the conclusion returns to each hypothesis.
 
 ## Check yourself
 
@@ -57,7 +57,7 @@ Q: What is the difference between H1 and H2?
 A: H1 changes how words are counted (plain counts versus TF-IDF weights). H2 adds new clues that are not words (certainty and style features) on top of TF-IDF.
 
 Q: Why do we not simply report the share of correct answers?
-A: Because most articles are mainstream, so always answering "mainstream" would already be right about 70% of the time while finding no conspiracy article.
+A: Because most articles are mainstream, so always answering "mainstream" would already be right most of the time while finding no conspiracy article.
 
 Q: What does the label in this study describe?
 A: The website that published the article, not the content of the single article.
