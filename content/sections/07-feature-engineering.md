@@ -41,6 +41,19 @@ An **n-gram** is n words in a row: "inside job" is a 2-gram, "no evidence of" a 
 
 *Literature reason.* Hedges and boosters follow the distinction used by Islam et al. (2020) for unreliable news. Marini and Jezek (2024) describe conspiracy discourse through evidentiality and certainty markers and through vocabulary that claims a hidden truth. Rashkin et al. (2017) found that unreliable news used more hedges and subjective words. The evidence is **mixed**: Fong et al. (2021) report that certainty was lower for conspiracy influencers but higher for their followers. So the certainty features are a hypothesis to test, not a fact. Our word list is a short hand-picked subset, not a copy of any published list.
 
+#### How much of the data the word list covers, and does negation handling matter?
+
+Two questions about the list: how many training documents contain at least one of its words (**coverage**), and does ignoring negation hurt? `lexicon_coverage` counts, per category and class, the exact list size (`list_size`) and the share of **training** documents with at least one hit (`share_plain`). The negation-aware count treats a hit as *negated* when "not", "no", "never" or a word ending in "n't" stands within 3 tokens before it ("not proven" is negated), and drops it from the count. A window of 3 tokens is crude (it ignores punctuation and clause boundaries). Nothing is learned; this only counts.
+
+<!-- cell: src/fml/features/epistemic.py#count_markers_negation -->
+<!-- cell: src/fml/features/epistemic.py#lexicon_coverage -->
+<!-- output: results/tables/epistemic_coverage.csv -->
+
+To see whether negation handling changes the classifier, `ablation.epistemic_negation` compares **validation** F1 of "words + epistemic" with plain and with negation-aware counts: same C grid and class weights, scaler fitted on the training split, test split never read. The verdict uses the paired website-bootstrap confidence interval (a range that would contain the true difference in 95 of 100 repeated samples of websites): if the interval contains 0 the difference is within noise and we do not call it an improvement. Read the list sizes, coverage shares, F1 values, delta and interval from the table above and from:
+
+<!-- output: results/metrics.json#ablation.epistemic_negation -->
+<!-- output: results/tables/epistemic_negation.csv -->
+
 ### Group 3: style (`src/fml/features/style.py`)
 
 <!-- cell: src/fml/features/style.py#StyleFeatures -->

@@ -6,6 +6,8 @@ pipeline, so the scaler's means and spreads are learned on the training rows onl
 """
 from __future__ import annotations
 
+from functools import partial
+
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -16,9 +18,15 @@ from .style import StyleFeatures
 NUMERIC_GROUPS = {"epistemic": EpistemicMarkers, "style": StyleFeatures}
 
 
+# Variants for the negation check only. Kept out of NUMERIC_GROUPS, which the feature summary iterates
+# (it would list the epistemic columns twice).
+VARIANT_GROUPS = {"epistemic_negation": partial(EpistemicMarkers, negation_aware=True)}
+
+
 def scaled(group: str) -> Pipeline:
     """A numeric feature group followed by a StandardScaler (fitted on train when the pipeline is)."""
-    return Pipeline([("raw", NUMERIC_GROUPS[group]()), ("scale", StandardScaler())])
+    make = NUMERIC_GROUPS.get(group) or VARIANT_GROUPS[group]
+    return Pipeline([("raw", make()), ("scale", StandardScaler())])
 
 
 __all__ = ["EpistemicMarkers", "StyleFeatures", "build_ngram_vectorizer", "scaled", "NUMERIC_GROUPS"]

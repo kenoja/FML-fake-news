@@ -131,3 +131,30 @@ def choose_between(table: pd.DataFrame, m1: str, m2: str) -> dict:
     helps = r["delta_f1_vs_m1_verdict"] == "helps"
     return {"chosen": m2 if helps else m1, "rule": "M2 only if delta-F1 vs M1 has a website-bootstrap CI above 0 on validation",
             "delta_f1": r["delta_f1_vs_m1"], "ci_site": [r["delta_f1_vs_m1_ci_site_low"], r["delta_f1_vs_m1_ci_site_high"]]}
+
+
+def epistemic_negation(train: pd.DataFrame, valid: pd.DataFrame, words_cfg: dict, c_grid=C_GRID,
+                       n_boot: int = 2000) -> tuple[pd.DataFrame, dict]:
+    """Words + epistemic group with plain vs negation-aware counts, validation only.
+
+    Same protocol as every ablation row (C and class weight tuned on validation, scaler fitted on train).
+    Returns the two-row table and the summary written to metrics.json (`ablation.epistemic_negation`).
+    The verdict uses the website-bootstrap CI of the paired delta-F1, so "no clear gain" means the
+    difference is inside the noise.
+    """
+    variants = {"epistemic_plain": {"label": "words + epistemic (plain counts)", "kind": "reference",
+                                    "features": {**words_cfg, "dense_groups": ["epistemic"]}},
+                "epistemic_negation_aware": {"label": "words + epistemic (negation-aware counts)", "kind": "variant",
+                                             "features": {**words_cfg, "dense_groups": ["epistemic_negation"]}}}
+    table, _, _ = run_ablation(train, valid, variants, reference="epistemic_plain", c_grid=c_grid, n_boot=n_boot)
+    t = table.set_index("model_id")
+    new = t.loc["epistemic_negation_aware"]
+    summary = {"data": "filtered documents, split_v1, validation rows only (test never read)",
+               "negation_window_tokens": 3, "negators": ["not", "no", "never", "*n't"],
+               "f1_plain": t.loc["epistemic_plain", "f1"], "f1_negation_aware": new["f1"],
+               "delta_f1": new["delta_f1_vs_m1"],
+               "ci_site": [new["delta_f1_vs_m1_ci_site_low"], new["delta_f1_vs_m1_ci_site_high"]],
+               "ci_doc": [new["delta_f1_vs_m1_ci_doc_low"], new["delta_f1_vs_m1_ci_doc_high"]],
+               "mcnemar_p": new["mcnemar_p_m1"], "verdict": new["delta_f1_vs_m1_verdict"],
+               "selected_C": {m: float(t.loc[m, "C"]) for m in t.index}}
+    return table, summary

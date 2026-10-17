@@ -80,6 +80,24 @@ Every split has at least 3 conspiracy websites, so no split triggers the warning
 
 ## 4. Evaluation
 
+> **Read this first (four cautions about the test numbers).**
+>
+> 1. **Wide intervals, website level first.** The test set has 423 documents (98 conspiracy) from 18 websites, but only **6 conspiracy websites**. Documents from one website resemble each other, so the website (cluster) bootstrap interval is the honest one; the document interval is shown second and is too narrow.
+> 2. **The words-only logistic regression was scored on test twice.** `results/test_access_log.jsonl` has `lr_words` at 2026-10-17T01:19:52+00:00 and later `lr_words_v2` at 2026-10-17T10:35:02+00:00 (a different configuration hash, see the log), after `lr_extended` (01:21:07) and `llm_haiku` (09:26:03) had been scored. Why: the first configuration was stale (validation tuning no longer picked it), and the lock forbids re-scoring one id with a new configuration, so the corrected model got a new id. **`lr_words_v2` is the reported words-only model; the `lr_words` result is not used for any number.** The log is unchanged, and the second look happened after other test results were known.
+> 3. **Six conspiracy websites.** One of them supplies 44 of the 98 conspiracy test documents, so the test set mostly measures how well each model recognises that site.
+> 4. **36 near-duplicate pairs across splits** (`data.near_duplicate_pairs_across_splits`). Nine test documents have a partner in train or validation. The "without near-duplicates" rows stay in the table below: the F1 changes by -0.005 (logistic regression) and -0.004 (LLM), and the gap stays about 0.1, so the duplicates do not explain the result.
+
+**Headline comparison on test** (website intervals first, then document intervals; copied from `results/tables/comparison_test.csv`, `results/tables/comparison_test_no_dups.csv` and `results/metrics.json#comparison`):
+
+| Model | F1 | F1 website (cluster) interval | F1 document interval | Precision | Recall | Macro F1 | Balanced accuracy |
+|---|---|---|---|---|---|---|---|
+| Majority class | 0.0 | 0.0 to 0.0 | 0.0 to 0.0 | 0.0 | 0.0 | 0.434 | 0.5 |
+| Logistic regression, words (`lr_words_v2`) | 0.585 | 0.324 to 0.804 | 0.491 to 0.667 | 0.685 | 0.510 | 0.740 | 0.720 |
+| Logistic regression, extended (`lr_extended`) | 0.583 | 0.314 to 0.822 | 0.493 to 0.667 | 0.662 | 0.520 | 0.737 | 0.720 |
+| Claude Haiku 5.5 (`llm_haiku`) | 0.684 | 0.371 to 0.933 | 0.592 to 0.762 | 0.963 | 0.531 | 0.807 | 0.762 |
+| `lr_words_v2`, sensitivity: without near-duplicates (414 documents) | 0.580 | not computed | not computed | 0.681 | 0.505 | not computed | not computed |
+| `llm_haiku`, sensitivity: without near-duplicates (414 documents) | 0.680 | not computed | not computed | 0.962 | 0.526 | not computed | not computed |
+
 **Metrics.** *Precision* is the share of articles flagged as conspiracy that really come from conspiracy websites. *Recall* is the share of conspiracy-site articles that we catch. *F1* is the harmonic mean of the two. We report F1 for the conspiracy class, because about 70 percent of the documents are mainstream and a model that always answers "mainstream" would look good on accuracy while finding nothing. We also give macro F1 and balanced accuracy.
 
 **Baselines.** The majority-class baseline always answers "mainstream"; a random baseline guesses at the class rates (validation F1 0.297, majority 0).
@@ -200,6 +218,8 @@ By stance, 62 articles make no claim, 9 report neutrally, 3 endorse a conspiracy
 
 **H6 is supported for false negatives and only partly for false positives.** The finding is provisional: the stance codes come from Claude and have not been checked by a person (section 6).
 
+**Status of the human stance check.** The column `human_stance` in `results/tables/stance_check_sample.csv` is blank for all 40 rows, Cohen's kappa was not computed (`null`, not 0), and H6 has not been tested by humans. To close this gap: Member A and Member B each fill the column `human_stance` with `endorses`, `rejects_or_debunks`, `reports_neutrally` or `no_claim` (reading the article in the private data repository before looking at Claude's code); then run `fml stance-agreement`; then copy the kappa into the H6 verdict here and in section 11. Until then, the label-problem range above is an estimate.
+
 ## 6. Interpretation and limitations
 
 **What the results say.** Both approaches work well on validation and much less well on test, which asks for generalisation to unseen websites. The LLM is almost never wrong about mainstream articles, and its recall is limited by articles that do not look like conspiracy writing. The logistic regression is cheaper per document, but it learns blog style and misclassifies some mainstream sites. Hand-made features did not help beyond chance.
@@ -210,7 +230,7 @@ By stance, 62 articles make no claim, 9 report neutrally, 3 endorse a conspiracy
 
 **The website name.** We removed site names, URLs and boilerplate, and no site name is among the top coefficients. The grouped split keeps a trained-on site out of test. Style, such as blog formatting, may still identify a **type** of website; that signal transfers to unseen sites of the same type and explains part of the success. Near-duplicates across splits (36 pairs) could leak some information; section 5.5 shows that dropping the 9 affected test documents changes F1 by -0.005 (logistic regression) and -0.004 (LLM).
 
-**LLM prior knowledge.** Haiku 5.5 may know some of these websites from its training. A probe (asking Haiku to name the website of up to 40 validation articles; only a yes/no match is stored) has **not been run yet**: there is no cached probe answer, so `errors.prior_knowledge_probe` says "not run" and the risk is unmeasured. `fml run-all` with the key set fills it in.
+**LLM prior knowledge.** Haiku 5.5 may know some of these websites from its training. We ran a probe on validation only: Haiku was asked to name the website of a seeded sample of 40 validation articles (the prompt gives the cleaned article text, not only the title; only a yes/no match is stored). It named the true site for 5 of 40 articles (12.5%; `errors.prior_knowledge_probe` in `results/metrics.json`). The sample is small and a model can recognise a site's style without naming it, so this does not rule out that the LLM's score partly reflects memorised site reputations.
 
 **LLM output limits.** Between 44 and 91 of 398 validation answers per prompt variant, and 61 of 423 test answers, could not be parsed, which lowers recall. A larger limit would be a new run with a new model id and needs a team decision. Every unparsed answer used the full 150 output tokens (`metrics.json#llm.parse_error_causes`), so truncation at the limit is the likely cause; the cache stores no raw replies, so this is inferred. Our earlier 400-token check on a validation subset never applied 400 tokens (the cache shows 150 for those answers), so it is not evidence either way and a valid rerun is future work.
 

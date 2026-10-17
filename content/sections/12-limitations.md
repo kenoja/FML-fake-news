@@ -34,6 +34,12 @@ Together the two steps stop a model from saying "the text contains `neonnettle.c
 
 One conspiracy site (`neonnettle.com`, 44 test documents) is classified correctly by the logistic regression for only 16% of its articles, while the other five conspiracy sites reach 53% to 100%. A model that had merely memorised "conspiracy sites" would not fail so unevenly; one that picked up the style of the training sites would. We read this as: the model learned **some** transferable signal and a good deal of site-type style. We have no experiment that isolates the two (for example a model trained on style features alone), so this is an interpretation, not a measurement.
 
+**Prior-knowledge probe (validation only).** To see whether Haiku simply recognises the websites, we asked it to name the website of a seeded sample of validation articles (`llm.website_probe`). Only a yes/no "named the true site" flag is cached, never article text or the answer. It named the true site for this share of the sample:
+
+<!-- output: results/metrics.json#errors.prior_knowledge_probe | Prior-knowledge probe on validation -->
+
+Limits of this probe: the sample is small (at most 40 documents), so the share is rough; the prompt gives the cleaned article text, **not** only the title as originally proposed, so it measures recognition from text; and a low share does not prove the model has no memory of site reputations, because it may recognise a site's style without being able to name it. The LLM's score may therefore still partly reflect memorised reputations.
+
 ### Other limitations
 
 - **The label is the website, not the content.** An article is "conspiracy" because its publisher is. Error analysis (section 11) shows many conspiracy-site articles contain no conspiracy claim, and some mainstream articles discuss such claims. Scores therefore measure "recognise the source", not "detect conspiracy content". This is what we asked both models.

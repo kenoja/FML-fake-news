@@ -190,14 +190,16 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 - Result: 9 test documents excluded; F1 moves by -0.0049 (LR) and -0.0042 (LLM); the LR-vs-LLM gap is
   0.0994 before and 0.1001 after, so the conclusion is unchanged. Removal from the corpus stays a team decision.
 
-## T5: LLM prior-knowledge probe — NOT RUN
+## T5/T4: LLM prior-knowledge probe — run (5 of 40 identified)
 
 - `llm.website_probe` (<=40 validation documents, seeded) asks Haiku to name the website and caches only
   `doc_id`, prompt hash and a boolean `matched` in `results/llm_cache.jsonl`. `errors_stage` writes the result to
   `metrics.json` `errors.prior_knowledge_probe`.
-- The probe has **not been run**: the implementing session could not run commands that read the API key
-  (`LLM_CLASSIFIER_API_KEY`) or execute Python, and no probe answers are cached. Until `fml run-all` runs with the
-  key, `errors.prior_knowledge_probe` reads `{"status": "not run"}` and report §5.6/§6 say so. No share was invented.
+- Update (T4): a later `fml run-all` with the key ran the probe on 40 validation documents: 5 identified (12.5%), see
+  `metrics.json` `errors.prior_knowledge_probe`; 40 flag-only records are in `results/llm_cache.jsonl`. Section 12 and
+  report §5.6 quote it. Deviation from the proposal: the prompt gives article text, not title only (conservative
+  reading: the share is a lower bound for memorisation, and both texts say so). Whether to also run a title-only probe
+  is a team decision (see "Needs a team decision").
 - The tests added in this task (`test_classification_table_rows_sum_to_errors`) were also not executed here.
 - `error_classification.csv` gains `unparsed` (renamed from `not coded`) and `not_sampled`; the existing CSV in
   `results/` is stale until the next run (report §5.6 table was updated by hand from its old `not coded` values).
@@ -219,7 +221,7 @@ Status after task T8; "partly" items name the reason. Numbers live in `results/`
 | # | Requirement | Status | Reason / pointer |
 |---|---|---|---|
 | 1 | Build the analysis in `src/fml/` (load, clean, frozen split, first run, filter, baseline, features, ablation, LLM, comparison with bootstrap CIs and McNemar, error analysis) | partly | All stages exist and write `results/`. Near-duplicates are detected and quantified but not removed (T4, team decision open); the LLM answers at temperature "default", not 0 (model rejects the setting); 150-token limit kept (sensitivity measured). |
-| 2 | Error analysis: disagreement sets, Claude stance codes, 40-row human sample, "model wrong" vs "label does not describe the text" | partly | Sets, codes and the sample file exist. The human column `human_stance` is empty (needs a team member), so kappa is null and H6 is provisional. The website prior-knowledge probe was not run (T5 note). |
+| 2 | Error analysis: disagreement sets, Claude stance codes, 40-row human sample, "model wrong" vs "label does not describe the text" | partly | Sets, codes and the sample file exist. The human column `human_stance` is empty (needs a team member), so kappa is null and H6 is provisional. The website prior-knowledge probe was run on 40 validation documents (T5/T4 note). |
 | 3 | Websites and documents per split and class; loud warning below 3 conspiracy websites | done | 25 / 7 / 7 conspiracy websites per split; no split below 3, so no per-website table was required (T2). The test split loses 2 conspiracy websites' worth of documents to the topic filter; reported in T4. |
 | 4 | Every notebook section in the required format, answering the open questions | partly | Sections exist with headings and code cells. Teaching polish of sections 06, 11 and 13 is queued as a later task. |
 | 5 | `reports/report.md`, 3,000-5,000 words, assignment structure, figures and tables by path | partly | Written and number-checked by `tests/test_report_numbers.py`. Literature, feature reasons and trimming are queued as a later task. |
@@ -253,6 +255,18 @@ No requirement is declined.
 | Req | Open item | Reason | Owner | What closes it |
 |---|---|---|---|---|
 | 2 | Human stance labels (`human_stance`, 40 rows) and kappa | The agent cannot produce human labels; kappa is null, H6 provisional | Member _ (A–E) | Member labels the 40 rows in `stance_check_sample.csv`, runs `fml stance-agreement`, records kappa here |
-| 2 | Website prior-knowledge probe | Not run; needs the API key and execution not available to the agent | Member _ (A–E) | `fml run-all` with `LLM_CLASSIFIER_API_KEY` set; `errors.prior_knowledge_probe` is no longer "not run" |
+| 2 | Website prior-knowledge probe | Ran with article text (5 of 40); title-only variant from the proposal not run | Member _ (A–E) | Decide whether a title-only probe is needed; if so add it as a second probe prompt and rerun `fml run-all` |
 | 7 | LOCO licence check | OSF page not reachable by the agent (see above) | Member _ (A–E) | Fill-in line completed above |
 | 7 | Temperature/licence wording confirmation | Team decision needed | Member _ (A–E) | Dates and names written in the entries above |
+
+## T5 (cycle 1 review): epistemic lexicon coverage and negation check
+
+- Added `lexicon_coverage` and `count_markers_negation` (`src/fml/features/epistemic.py`), `EpistemicMarkers(negation_aware=...)`,
+  `ablation.epistemic_negation` (`src/fml/ablation.py`) and `pipeline.epistemic_negation_check`, called from the `ablation` stage.
+  Outputs: `results/tables/epistemic_coverage.csv`, `results/tables/epistemic_negation.csv`, `metrics.json: ablation.epistemic_negation`.
+- Choices: negation window = 3 tokens before the hit's first word; negators = not, no, never, any word ending in n't. The negation-aware
+  variant is registered in `features.VARIANT_GROUPS`, not `NUMERIC_GROUPS`, so the feature summary does not list columns twice.
+  The main M1/M2 models still use plain counts; the negation check is a side comparison on validation only and changes no model id.
+- **Not run in the authoring session:** the sandbox denied every code execution, so the new tests, the coverage table and the
+  validation delta were NOT run and no numbers exist yet. Section 07 therefore points at the result files and quotes no values.
+  Next `fml run-all` (or the `ablation` stage) writes them; then check the delta against its CI and state in section 07 whether it is within noise.

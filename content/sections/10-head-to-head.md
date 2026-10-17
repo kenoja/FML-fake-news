@@ -5,6 +5,26 @@ hypothesis: Both approaches beat the always-mainstream baseline on conspiracy F1
 ---
 ## Goal and hypothesis
 
+> **Read this first (four cautions about the test numbers).**
+>
+> 1. **Wide intervals, website level first.** The test set has 423 documents (98 conspiracy) from 18 websites, but only **6 conspiracy websites**. Documents from one website resemble each other, so the website (cluster) bootstrap interval is the honest one; the document interval is shown second and is too narrow.
+> 2. **The words-only logistic regression was scored on test twice.** `results/test_access_log.jsonl` has `lr_words` at 2026-10-17T01:19:52+00:00 (config hash 4c7ae4b64bb07dc1) and later `lr_words_v2` at 2026-10-17T10:35:02+00:00 (hash 686c1de15756e287), after `lr_extended` (01:21:07) and `llm_haiku` (09:26:03) had been scored. Why: the first configuration was stale (validation tuning no longer picked it), and the lock forbids re-scoring one id with a new configuration, so the corrected model got a new id. **`lr_words_v2` is the reported words-only model; the `lr_words` result is not used for any number.** The log is unchanged, and the second look happened after other test results were known.
+> 3. **Six conspiracy websites.** One of them supplies 44 of the 98 conspiracy test documents, so the test set mostly measures how well each model recognises that site.
+> 4. **36 near-duplicate pairs across splits** (`data.near_duplicate_pairs_across_splits`). Nine test documents have a partner in train or validation. The "without near-duplicates" rows stay in the table below: the F1 changes by -0.005 (logistic regression) and -0.004 (LLM), and the gap stays about 0.1, so the duplicates do not explain the result.
+
+**Headline comparison on test** (website intervals first, then document intervals; copied from `results/tables/comparison_test.csv`, `results/tables/comparison_test_no_dups.csv` and `results/metrics.json#comparison`):
+
+| Model | F1 | F1 website (cluster) interval | F1 document interval | Precision | Recall | Macro F1 | Balanced accuracy |
+|---|---|---|---|---|---|---|---|
+| Majority class | 0.0 | 0.0 to 0.0 | 0.0 to 0.0 | 0.0 | 0.0 | 0.434 | 0.5 |
+| Logistic regression, words (`lr_words_v2`) | 0.585 | 0.324 to 0.804 | 0.491 to 0.667 | 0.685 | 0.510 | 0.740 | 0.720 |
+| Logistic regression, extended (`lr_extended`) | 0.583 | 0.314 to 0.822 | 0.493 to 0.667 | 0.662 | 0.520 | 0.737 | 0.720 |
+| Claude Haiku 5.5 (`llm_haiku`) | 0.684 | 0.371 to 0.933 | 0.592 to 0.762 | 0.963 | 0.531 | 0.807 | 0.762 |
+| `lr_words_v2`, sensitivity: without near-duplicates (414 documents) | 0.580 | not computed | not computed | 0.681 | 0.505 | not computed | not computed |
+| `llm_haiku`, sensitivity: without near-duplicates (414 documents) | 0.680 | not computed | not computed | 0.962 | 0.526 | not computed | not computed |
+
+<!-- output: results/tables/comparison_test.csv -->
+
 Everything so far was tuned on **validation**. This section is the one place where all approaches meet on the same **test** documents, which were scored exactly once per model by `fml evaluate-final` (the log is `results/test_access_log.jsonl`). The comparison stage reads only the saved prediction files, so it cannot choose or re-score anything on test.
 
 **Sequence of test looks.** The log `results/test_access_log.jsonl` shows this actual order (UTC, copied from the log): `lr_words` at 2026-10-17T01:19:52 (config hash 4c7ae4b64bb07dc1), `lr_extended` at 2026-10-17T01:21:07, `llm_haiku` at 2026-10-17T09:26:03, and `lr_words_v2` at 2026-10-17T10:35:02 (changed configuration, new hash 686c1de15756e287). So `lr_words_v2` is a second test look at the words-only logistic regression, made after the test results of the other models were known. The LR choice rule (M2 only if its F1 gain over M1 has a website-bootstrap interval above 0) is applied to validation rows only (`ablation.chosen_lr`); we state that it was fixed before any test look, but the log cannot prove it, because the first `lr_words` look already used an earlier configuration. Limitation: the stale `lr_words` entry stays in the log and is not used for any number, yet the sequence means the words-only configuration was revised after one test look. From now on `evaluate_final` refuses to score a model unless its validation-chosen configuration is already in `results/frozen_models.json` (model id, config hash, source `validation`, timestamp) with the same hash. Entries for looks that happened before this rule are marked `retroactive` there, so their timestamps are later than the log lines.

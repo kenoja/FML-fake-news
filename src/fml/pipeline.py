@@ -648,6 +648,23 @@ def _nan_to_none(d: dict) -> dict:
     return {k: (None if isinstance(v, float) and v != v else v) for k, v in d.items()}
 
 
+def epistemic_negation_check(train: pd.DataFrame, valid: pd.DataFrame) -> dict:
+    """Lexicon coverage (train rows) and plain vs negation-aware epistemic counts (validation rows).
+
+    Writes `epistemic_coverage.csv` and `epistemic_negation.csv`; returns the summary for
+    `metrics.json: ablation.epistemic_negation`. Only train and validation rows come in.
+    """
+    from .ablation import epistemic_negation
+    from .features.epistemic import lexicon_coverage
+
+    coverage = lexicon_coverage(train)
+    write_table("epistemic_coverage", coverage.round(4))
+    table, summary = epistemic_negation(train, valid, M1_FEATURES)
+    write_table("epistemic_negation", table.round(4))
+    summary["coverage"] = coverage.round(4).to_dict("records")
+    return summary
+
+
 def ablation() -> dict:
     """Ablation on the filtered set (validation only), then the single test scoring of M1 and M2.
 
@@ -689,7 +706,8 @@ def ablation() -> dict:
               "documents": {"train": int(len(train)), "validation": int(len(valid)),
                             "validation_conspiracy": int(y.sum()), "validation_websites": int(len(set(sites)))},
               "selected": selected, "models": {r["model_id"]: _nan_to_none(r) for r in table.to_dict("records")},
-              "verdicts": verdicts, "chosen_lr": chosen}
+              "verdicts": verdicts, "chosen_lr": chosen,
+              "epistemic_negation": epistemic_negation_check(train, valid)}
     write_metrics("ablation", round_floats(values, 4))
 
     for m in (LR_WORDS_ID, LR_EXTENDED_ID):

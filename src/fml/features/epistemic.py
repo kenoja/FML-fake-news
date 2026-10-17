@@ -20,9 +20,10 @@ from __future__ import annotations
 import re
 
 import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from ._text import as_texts, normalise_quotes, per_n_words, words
+from ._text import WORD_RE, as_texts, normalise_quotes, per_n_words, words
 
 LEXICON: dict[str, tuple[str, ...]] = {
     # Hedges: the writer signals doubt or distance (Islam et al. 2020).
@@ -57,8 +58,73 @@ def count_markers(text: str) -> dict[str, int]:
     return {cat: len(p.findall(low)) for cat, p in _PATTERNS.items()}
 
 
+NEGATION_WINDOW = 3
+NEGATORS = frozenset({"not", "no", "never"})
+
+
+def _is_negator(token: str) -> bool:
+    return token in NEGATORS or token.endswith("n't")
+
+
+def count_markers_negation(text: str, lexicon: dict[str, tuple[str, ...]] | None = None
+                           ) -> dict[str, dict[str, int]]:
+    """Lexicon hits per category, split into plain hits and negated hits.
+
+    A hit is *negated* when not/no/never or a word ending in n't stands within `NEGATION_WINDOW` (3)
+    tokens before its first word: "not proven" and "never clearly" are negated. The window is a crude
+    scope rule, chosen for being easy to explain; it ignores punctuation and clause boundaries. Nothing
+    is learned: this only counts. `lexicon` defaults to `LEXICON` (a different one is for tests).
+    """
+    patterns = _PATTERNS if lexicon is None else {c: _compile(t) for c, t in lexicon.items()}
+    low = normalise_quotes(text).lower()
+    spans = [(m.start(), m.group()) for m in WORD_RE.finditer(low)]
+    starts = [s for s, _ in spans]
+    out = {}
+    for cat, p in patterns.items():
+        hits = negated = 0
+        for m in p.finditer(low):
+            i = int(np.searchsorted(starts, m.start()))      # index of the hit's first token
+            if any(_is_negator(spans[j][1]) for j in range(max(0, i - NEGATION_WINDOW), i)):
+                negated += 1
+            else:
+                hits += 1
+        out[cat] = {"hits": hits, "negated": negated}
+    return out
+
+
+def lexicon_coverage(df_train: pd.DataFrame) -> pd.DataFrame:
+    """Per category and class: lexicon size and the share of TRAIN documents with at least one hit.
+
+    Columns: `list_size` (exact number of terms), `share_plain` (>= 1 plain hit, as the model counts),
+    `share_negation_aware` (>= 1 hit that is not negated), `share_any_negated` (>= 1 negated hit) and
+    `negated_hit_share` (negated hits / all hits). Needs columns `txt` and `label` (1 = conspiracy);
+    pass training rows only so that coverage is described without looking at validation or test.
+    """
+    counted = [count_markers_negation(t) for t in as_texts(df_train["txt"])]
+    labels = df_train["label"].to_numpy()
+    rows = []
+    for cat, terms in LEXICON.items():
+        hits = np.array([c[cat]["hits"] for c in counted])
+        neg = np.array([c[cat]["negated"] for c in counted])
+        for name, mask in (("conspiracy", labels == 1), ("mainstream", labels == 0)):
+            n = int(mask.sum())
+            total = int(hits[mask].sum() + neg[mask].sum())
+            rows.append({"category": cat, "list_size": len(terms), "class": name, "train_documents": n,
+                         "share_plain": float(((hits + neg)[mask] > 0).mean()) if n else 0.0,
+                         "share_negation_aware": float((hits[mask] > 0).mean()) if n else 0.0,
+                         "share_any_negated": float((neg[mask] > 0).mean()) if n else 0.0,
+                         "negated_hit_share": float(neg[mask].sum() / total) if total else 0.0})
+    return pd.DataFrame(rows)
+
+
 class EpistemicMarkers(BaseEstimator, TransformerMixin):
-    """Text -> 4 columns of lexicon hits per `features.per_n_words` words. Stateless: nothing is learned."""
+    """Text -> 4 columns of lexicon hits per `features.per_n_words` words. Stateless: nothing is learned.
+
+    With `negation_aware=True` negated hits (see `count_markers_negation`) are left out of the counts.
+    """
+
+    def __init__(self, negation_aware: bool = False):
+        self.negation_aware = negation_aware
 
     def fit(self, X, y=None):
         return self
@@ -67,7 +133,10 @@ class EpistemicMarkers(BaseEstimator, TransformerMixin):
         rows = []
         for text in as_texts(X):
             n = len(words(text))
-            counts = count_markers(text)
+            if self.negation_aware:
+                counts = {c: v["hits"] for c, v in count_markers_negation(text).items()}
+            else:
+                counts = count_markers(text)
             rows.append([per_n_words(counts[cat], n) for cat in LEXICON])
         return np.asarray(rows, dtype=float).reshape(-1, len(LEXICON))
 
