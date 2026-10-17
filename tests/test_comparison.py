@@ -1,24 +1,20 @@
-"""Head-to-head statistics: McNemar counts and p-values must match a hand re-computation.
-
-Why it matters: the verdict "LR and LLM differ" rests on the discordant pairs, so a wrong 2x2 table
-or a one-sided p-value would silently change the conclusion of section 10.
-"""
+"""Why: the verdict "two models differ" rests on the discordant pairs and the intervals, so a wrong 2x2 table,
+a one-sided p-value or a table with the wrong columns would silently change the conclusions in section 08."""
 from __future__ import annotations
 
 import json
 from math import comb
 
 import numpy as np
-import pandas as pd
 import pytest
 
-from fml.comparison import length_bucket_f1, model_row, pairwise
+from fml.comparison import mcnemar_pair, model_row
 from fml.results import results_dir
 
 # 12 documents, 6 per class. A is wrong on docs 5 and 10, B on docs 0, 1 and 11.
 Y = np.array([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0], dtype=bool)
-A = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0], dtype=bool)   # wrong on docs 5 and 10
-B = np.array([0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1], dtype=bool)   # wrong on docs 0, 1 and 11
+A = np.array([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0], dtype=bool)
+B = np.array([0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1], dtype=bool)
 
 
 def hand_mcnemar_p(k: int, n: int) -> float:
@@ -27,59 +23,47 @@ def hand_mcnemar_p(k: int, n: int) -> float:
 
 
 def test_discordant_counts_and_p_value_match_hand_computation():
-    r = pairwise(Y, A, B, "a", "b")
-    # A-only right = {0, 1, 11} (B wrong, A right); B-only right = {5, 10} (A wrong, B right).
+    r = mcnemar_pair(Y, A, B, "a", "b")
+    # A is right where B is wrong on docs {0, 1, 11}; B is right where A is wrong on docs {5, 10}
     assert (r["a_only_correct"], r["b_only_correct"]) == (3, 2)
-    assert r["both_correct"] + r["both_wrong"] + 5 == len(Y)
-    assert r["both_wrong"] == 0 and r["both_correct"] == 7
-    assert r["mcnemar_p"] == pytest.approx(hand_mcnemar_p(2, 5))
+    assert r["both_correct"] == 7 and r["both_wrong"] == 0
+    assert r["p_value"] == pytest.approx(hand_mcnemar_p(2, 5))
 
 
 def test_clear_difference_gives_small_p():
     y = np.ones(30, dtype=bool)
-    a, b = np.ones(30, dtype=bool), np.zeros(30, dtype=bool)
-    r = pairwise(y, a, b, "a", "b")
+    r = mcnemar_pair(y, np.ones(30, dtype=bool), np.zeros(30, dtype=bool), "a", "b")
     assert (r["a_only_correct"], r["b_only_correct"]) == (30, 0)
-    assert r["mcnemar_p"] == pytest.approx(hand_mcnemar_p(0, 30))
-    assert r["mcnemar_p"] < 1e-6
+    assert r["p_value"] == pytest.approx(hand_mcnemar_p(0, 30)) and r["p_value"] < 1e-6
 
 
-def test_delta_f1_sign_and_estimate():
-    r = pairwise(Y, A, B, "a", "b")
-    f1 = lambda p: 2 * (Y & p).sum() / (2 * (Y & p).sum() + (~Y & p).sum() + (Y & ~p).sum())  # noqa: E731
-    assert r["delta_f1_b_minus_a"]["estimate"] == pytest.approx(f1(B) - f1(A))
-    lo, hi = r["delta_f1_b_minus_a"]["ci_low"], r["delta_f1_b_minus_a"]["ci_high"]
-    assert lo <= r["delta_f1_b_minus_a"]["estimate"] <= hi
-
-
-def test_model_row_counts_and_interval_present():
+def test_model_row_has_counts_scores_and_intervals_only():
     row = model_row("m", Y, A)
     assert (row["tp"], row["fn"], row["fp"], row["tn"]) == (5, 1, 1, 5)
     assert row["precision"] == pytest.approx(5 / 6) and row["recall"] == pytest.approx(5 / 6)
-    for key in ("f1_ci_low", "f1_ci_high", "macro_f1_ci_low", "balanced_accuracy_ci_high"):
-        assert key in row
+    for score in ("precision", "recall", "f1"):
+        assert row[f"{score}_ci_low"] <= row[score] <= row[f"{score}_ci_high"]
+    assert "macro_f1" not in row           # only the statistics listed in AGENTS.md
 
 
-def test_length_bucket_is_nan_without_conspiracy_documents():
-    t = length_bucket_f1(np.array([10, 10, 200, 200, 400, 400]), np.array([1, 0, 0, 0, 1, 0], dtype=bool),
-                         {"a": np.array([1, 0, 0, 0, 1, 1], dtype=bool)})
-    assert t["conspiracy"].tolist() == [1, 0, 1] and np.isnan(t["f1_a"].iloc[1])
+def test_bootstrap_is_reproducible():
+    assert model_row("m", Y, A) == model_row("m", Y, A)
 
 
-def test_stage_output_matches_prediction_files():
-    """Real files: the stored McNemar counts must equal a re-count from the saved predictions."""
-    import pandas as pd
+def test_stage_output_has_four_rows_and_three_tests():
+    """Real results: the stored McNemar counts must equal a re-count from the saved predictions."""
     path = results_dir() / "metrics.json"
-    if not path.exists() or not json.loads(path.read_text())["comparison"]:
+    comp = json.loads(path.read_text())["comparison"] if path.exists() else {}
+    if not comp.get("mcnemar"):
         pytest.skip("comparison stage has not run")
-    comp = json.loads(path.read_text())["comparison"]
-    lr = pd.read_csv(results_dir() / "tables" / "predictions_lr.csv")
-    llm = pd.read_csv(results_dir() / "tables" / "predictions_llm.csv")
+    from fml.pipeline import read_final_predictions
+    assert len(comp["table"]) == 4 and set(comp["mcnemar"]) == {"words_vs_tfidf", "tfidf_vs_features", "best_lr_vs_llm"}
+    lr, llm = read_final_predictions()
     llm = llm[llm["pass"] == 1].set_index("doc_id")
     best = lr[lr["model_id"] == comp["lr_best"]].set_index("doc_id").loc[llm.index]
     y = llm["label"].to_numpy(dtype=bool)
     a_ok, b_ok = best["pred"].to_numpy(dtype=bool) == y, llm["pred"].to_numpy(dtype=bool) == y
-    m = comp["mcnemar"]["lr_best_vs_llm"]
+    m = comp["mcnemar"]["best_lr_vs_llm"]
     assert (m["a_only_correct"], m["b_only_correct"]) == (int((a_ok & ~b_ok).sum()), int((~a_ok & b_ok).sum()))
     n = m["a_only_correct"] + m["b_only_correct"]
-    assert m["mcnemar_p"] == pytest.approx(hand_mcnemar_p(min(m["a_only_correct"], m["b_only_correct"]), n), abs=1e-4)
+    assert m["p_value"] == pytest.approx(hand_mcnemar_p(min(m["a_only_correct"], m["b_only_correct"]), n), abs=1e-4)

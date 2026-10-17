@@ -376,3 +376,10 @@ Checks done by T12 (not a full run):
 - Decision rule without intervals (team may change): a group "helps" if validation F1 rises by at least `ablation.HELPS_BY` = 0.01; the chosen model is the best row only if it helps, else plain TF-IDF. Result: certainty words +0.017 (chosen, `lr_plus_epistemic`), n-grams +0.002, style -0.001, all three -0.018. The report calls this "no reliable help" because 376 validation articles cannot separate 1-2 points from chance.
 - **Test scoring removed from this stage** (AGENTS.md: all runs first, then compare). `lr_words_v2` and `lr_extended` keep their frozen ids and configs; their old test predictions are still in `predictions_lr.csv`. `lr_plus_epistemic` has no test scores yet. **The comparison stage still looks for the chosen model in `predictions_lr.csv` and will fail until the queued "final run" and "comparison" tasks score the final models and update it.**
 - Section 06 replaces 07 and 08 (deleted). Numbers in it come from `results/tables/ablation.csv`, `epistemic_coverage.csv`, `feature_summary.csv`.
+
+## T8 (cycle 2): comparison and section 08
+- `08-results` answers three hypotheses: H1 TF-IDF beats word counts, H2 certainty and style features improve TF-IDF, H3 the LLM beats the best logistic regression. The rewrite of section 01 must use the same numbering and meaning, or section 08 must be adjusted. Hypotheses about label problems belong to `09-where-they-fail`.
+- "Best logistic regression" for the third McNemar test = the final model of TF-IDF vs TF-IDF + features with the higher validation F1 (`comparison.lr_best`); it is TF-IDF + features.
+- The majority baseline row, precision-recall curve, length buckets and extra scores (macro F1, balanced accuracy) were removed from the comparison.
+- Final models were scored on test once in this task (`final_*` ids, `results/test_access_log.jsonl`).
+- Not done here: `tests/test_report_numbers.py` still fails 2 tests (old report structure, stale hard-coded 0.6842); that belongs to the report/number-check tasks.

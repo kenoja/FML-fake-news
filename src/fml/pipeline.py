@@ -22,21 +22,18 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
-from sklearn.metrics import average_precision_score  # noqa: E402
 
 from . import errors  # noqa: E402
 from .clean import clean_documents, website_names  # noqa: E402
-from .evaluate import (BOOTSTRAP_SEED, N_BOOTSTRAP, bootstrap_ci, classification_metrics, confusion,  # noqa: E402
-                       majority_baseline, mcnemar_exact, METRIC_NAMES, paired_delta_ci, pr_curve_data,
-                       stratified_random_baseline)
-from .models import (build_pipeline, choose_c, split_frames, tfidf_vectorizer, top_words,
+from .comparison import mcnemar_pair, model_row  # noqa: E402
+from .evaluate import BOOTSTRAP_SEED, N_BOOTSTRAP, bootstrap_ci, classification_metrics, confusion  # noqa: E402
+from .models import (build_pipeline, choose_c, fit_logistic, split_frames, tfidf_vectorizer, top_words,
                      tune_on_validation, word_counts_vectorizer)  # noqa: E402
 from .paths import project_config  # noqa: E402
 from .results import CONSPIRACY_COLOUR, MAINSTREAM_COLOUR, results_dir, savefig, write_metrics, write_table  # noqa: E402
 from .split import load_split, split_path  # noqa: E402
 
 M1_FEATURES = {"ngram_range": [1, 1], "min_df": 2, "sublinear_tf": True, "numeric_columns": []}
-LENGTH_BUCKETS = (150, 250)
 CLASS_NAMES = {True: "conspiracy", False: "mainstream"}
 COLOURS = {"conspiracy": CONSPIRACY_COLOUR, "mainstream": MAINSTREAM_COLOUR}
 
@@ -156,6 +153,7 @@ class ModelSpec:
     config: dict
     fit_predict: Callable[[pd.DataFrame, pd.DataFrame], np.ndarray]
     fit_predict_proba: Callable[[pd.DataFrame, pd.DataFrame], tuple[np.ndarray, np.ndarray]] | None = None
+    details: Callable[[pd.DataFrame], pd.DataFrame] | None = None       # extra prediction columns, per test row
 
 
 def config_hash(config: dict) -> str:
@@ -231,6 +229,9 @@ def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] |
     if any(e["config_hash"] != digest for e in previous):
         raise PermissionError(f"{model_id} was already scored on test with a different configuration; "
                               "a new configuration needs a new model id (and is a new test access).")
+    predictions_path = log_path.parent / "tables" / f"predictions_{model_id}.csv"
+    if previous and predictions_path.is_file():         # same configuration, already scored: reuse, never rescore
+        return _summary_from_predictions(model_id, digest, pd.read_csv(predictions_path))
 
     if frame is None:
         frame = analysis_frame()
@@ -241,21 +242,28 @@ def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] |
         pred, proba = spec.fit_predict_proba(train, test)
     else:
         pred, proba = spec.fit_predict(train, test), None
-    y = test["label"].to_numpy()
-    out = {"model_id": model_id, "config_hash": digest, "n_docs": int(len(test)),
-           "confusion": confusion(y, pred),
-           "metrics": bootstrap_ci(y, pred),
-           "test_websites": int(test["website"].nunique()), "test_conspiracy": int(y.sum())}
-    if proba is not None:       # per-document predictions: ids, label, prediction, probability; never text
-        out["predictions"] = pd.DataFrame({"model_id": model_id, "doc_id": test["doc_id"], "label": y,
-                                           "pred": np.asarray(pred, dtype=bool), "proba": proba})
+    table = pd.DataFrame({"model_id": model_id, "doc_id": test["doc_id"], "label": test["label"].to_numpy(),
+                          "pred": np.asarray(pred, dtype=bool)})       # ids and answers only, never text
+    if proba is not None:
+        table["proba"] = np.round(proba, 4)
+    if spec.details is not None:
+        table = pd.concat([table, spec.details(test).reset_index(drop=True)], axis=1)
+    predictions_path.parent.mkdir(parents=True, exist_ok=True)
+    table.to_csv(predictions_path, index=False)
     if not previous:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         with log_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps({"model_id": model_id, "config_hash": digest,
                                 "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                                "n_docs": out["n_docs"]}) + "\n")
-    return out
+                                "n_docs": int(len(test))}) + "\n")
+    return _summary_from_predictions(model_id, digest, table)
+
+
+def _summary_from_predictions(model_id: str, digest: str, table: pd.DataFrame) -> dict:
+    """Confusion counts and bootstrap intervals from a stored predictions table."""
+    y, pred = table["label"].to_numpy(dtype=bool), table["pred"].to_numpy(dtype=bool)
+    return {"model_id": model_id, "config_hash": digest, "n_docs": int(len(table)),
+            "confusion": confusion(y, pred), "metrics": bootstrap_ci(y, pred), "predictions": table}
 
 
 # ---------------------------------------------------------------- stage: tfidf_features
@@ -292,31 +300,48 @@ def plot_ablation(table: pd.DataFrame, chosen: str):
     return fig
 
 
+def _metrics() -> dict:
+    return json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))
+
+
 def _ablation_selected() -> dict:
-    sel = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))["tfidf_features"].get("selected")
+    sel = _metrics()["tfidf_features"].get("selected")
     if not sel:
         raise RuntimeError("run the ablation stage first: the tuned settings come from validation")
     return sel
 
 
-def _lr_spec(model_id: str) -> ModelSpec:
-    """Test-time spec of an ablation model: settings (features, C, class weight) fixed by validation tuning."""
-    sel = _ablation_selected()[model_id]
-    cw = None if sel["class_weight"] == "none" else sel["class_weight"]
-    config = {"model_id": model_id, "features": sel["features"], "C": sel["C"], "class_weight": cw,
-              "data": "filtered_documents_cleaned", "split": project_config()["split"]["file"]}
+def _final_config(model_id: str, **settings) -> dict:
+    return {"model_id": model_id, **settings, "data": "filtered_documents_cleaned",
+            "split": project_config()["split"]["file"]}
 
-    def fit(train: pd.DataFrame):
-        return build_pipeline(config["features"], C=config["C"], class_weight=cw).fit(train, train["label"])
+
+def _logistic_spec(model_id: str, vectorizer, metrics_key: str) -> ModelSpec:
+    """Word counts or TF-IDF on all words: C and class weight were chosen on validation (metrics.json)."""
+    chosen = _metrics()[metrics_key]
+    config = _final_config(model_id, features=metrics_key, C=chosen["chosen_C"], class_weight=chosen["class_weight"])
 
     def fit_predict_proba(train: pd.DataFrame, test: pd.DataFrame):
-        pipe = fit(train)
+        vec = vectorizer()
+        model = fit_logistic(vec.fit_transform(train["txt"]), train["label"], config["C"], config["class_weight"])
+        X_test = vec.transform(test["txt"])                 # vocabulary comes from training articles only
+        return model.predict(X_test), model.predict_proba(X_test)[:, 1]
+
+    return ModelSpec(config, lambda train, test: fit_predict_proba(train, test)[0], fit_predict_proba)
+
+
+def _features_spec(model_id: str) -> ModelSpec:
+    """TF-IDF plus engineered features: the feature set, C and class weight chosen on validation."""
+    name = _metrics()["tfidf_features"]["chosen_lr"]["chosen"]
+    sel = _ablation_selected()[name]
+    cw = None if sel["class_weight"] == "none" else sel["class_weight"]
+    config = _final_config(model_id, feature_set=name, features=sel["features"], C=sel["C"], class_weight=cw)
+
+    def fit_predict_proba(train: pd.DataFrame, test: pd.DataFrame):
+        pipe = build_pipeline(config["features"], C=config["C"], class_weight=cw).fit(train, train["label"])
         return pipe.predict(test), pipe.predict_proba(test)[:, 1]
 
-    return ModelSpec(config, lambda train, test: fit(train).predict(test), fit_predict_proba)
-
-
-MODEL_BUILDERS.update({m: (lambda m=m: _lr_spec(m)) for m in (LR_WORDS_ID, LR_EXTENDED_ID)})
+    return ModelSpec(config, lambda train, test: fit_predict_proba(train, test)[0], fit_predict_proba)
 
 
 def ablation() -> dict:
@@ -358,7 +383,7 @@ def feature_summary_stage() -> dict:
 
 # ---------------------------------------------------------------- stage: llm
 
-LLM_ID = "llm_haiku"
+LLM_ID = "final_llm"
 
 
 def llm_scores(valid: pd.DataFrame, variant: str, pass_id: int = 1) -> dict:
@@ -401,22 +426,63 @@ def llm_stage() -> dict:
     return values
 
 
+def _llm_spec(model_id: str) -> ModelSpec:
+    """The LLM with the prompt chosen on validation; the config holds the prompt hash, so a changed prompt is caught."""
+    from . import llm
+
+    variant = _metrics()["llm"]["chosen_prompt"]
+    config = _final_config(model_id, model=llm.llm_config()["model"], prompt=variant,
+                           prompt_hash=llm.cache_key(variant, 1), pass_id=1)
+
+    def answers(test: pd.DataFrame) -> pd.DataFrame:
+        return llm.classify(test, variant, 1)               # from the cache first, from the API only on a miss
+
+    def fit_predict(train: pd.DataFrame, test: pd.DataFrame):
+        return (answers(test)["label"] == "conspiracy").to_numpy()      # unreadable answers count as wrong
+
+    def details(test: pd.DataFrame) -> pd.DataFrame:
+        cache = llm.read_cache(llm.cache_path())
+        records = [cache[(d, config["prompt_hash"])] for d in test["doc_id"]]
+        return pd.DataFrame({"llm_label": [r["label"] for r in records],
+                             "confidence": [r["confidence"] for r in records],
+                             "pass": 1, "variant": variant})
+
+    return ModelSpec(config, fit_predict, details=details)
+
+
+MODEL_BUILDERS.update({"final_word_counts": lambda: _logistic_spec("final_word_counts", word_counts_vectorizer, "word_counts"),
+                       "final_tfidf": lambda: _logistic_spec("final_tfidf", tfidf_vectorizer, "tfidf"),
+                       "final_tfidf_features": lambda: _features_spec("final_tfidf_features"),
+                       "final_llm": lambda: _llm_spec("final_llm")})
+FINAL_IDS = tuple(MODEL_BUILDERS)
+
+
+def final_stage() -> dict:
+    """One final run: freeze the four validation-chosen settings, then score each on test exactly once."""
+    return {model_id: (freeze_model(model_id), evaluate_final(model_id))[1]["n_docs"] for model_id in FINAL_IDS}
+
+
 # ---------------------------------------------------------------- stage: comparison
 
-def _score_from_llm(p1: pd.DataFrame) -> np.ndarray:
-    """LLM confidence as a conspiracy score: confidence if it said conspiracy, 1 - confidence otherwise."""
-    conf = p1["confidence"].astype(float).fillna(0.0).to_numpy()
-    return np.where(p1["llm_label"].to_numpy() == "conspiracy", conf, 1 - conf)
+WORDS_FINAL, TFIDF_FINAL, FEATURES_FINAL = "final_word_counts", "final_tfidf", "final_tfidf_features"
 
 
-def _nan_to_none_deep(obj):
-    if isinstance(obj, float) and obj != obj:
-        return None
-    if isinstance(obj, dict):
-        return {k: _nan_to_none_deep(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_nan_to_none_deep(v) for v in obj]
-    return obj
+def read_final_predictions() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Test predictions written by evaluate_final: (logistic regression models stacked, the LLM)."""
+    tables = results_dir() / "tables"
+    lr = pd.concat([pd.read_csv(tables / f"predictions_{m}.csv")
+                    for m in (WORDS_FINAL, TFIDF_FINAL, FEATURES_FINAL)], ignore_index=True)
+    return lr, pd.read_csv(tables / "predictions_final_llm.csv")
+
+
+def best_final_lr(metrics: dict) -> str:
+    """Of the two TF-IDF models, the one with the higher validation F1 (a tie keeps plain TF-IDF)."""
+    plain, extra = metrics["tfidf"]["validation"]["f1"], metrics["tfidf_features"]["chosen_lr"]["f1"]
+    return FEATURES_FINAL if extra > plain else TFIDF_FINAL
+
+
+MODEL_NAMES = {"final_word_counts": "Word counts", "final_tfidf": "TF-IDF",
+               "final_tfidf_features": "TF-IDF + features", "final_llm": "LLM"}
 
 
 def plot_comparison_f1(table: pd.DataFrame):
@@ -427,7 +493,7 @@ def plot_comparison_f1(table: pd.DataFrame):
     ax.bar(x, f1, color=CONSPIRACY_COLOUR, width=0.55)
     ax.errorbar(x, f1, yerr=[f1 - ci[:, 0], ci[:, 1] - f1], fmt="none", ecolor="black", capsize=4,
                 label="95% confidence interval")
-    ax.set_xticks(x, table["model"])
+    ax.set_xticks(x, table["model"].map(MODEL_NAMES))
     ax.set_ylabel("Conspiracy-class F1 (test)")
     ax.set_ylim(0, 1.05)
     ax.legend(loc="upper left", fontsize=8)
@@ -446,105 +512,48 @@ def plot_comparison_confusion(table: pd.DataFrame):
         ax.set_xticks([0, 1], ["main.", "consp."])
         ax.set_yticks([0, 1], ["main.", "consp."])
         ax.set_xlabel("Predicted")
-        ax.set_title(r["model"], fontsize=10)
+        ax.set_title(MODEL_NAMES[r["model"]], fontsize=10)
     axes[0].set_ylabel("True website type")
     fig.tight_layout()
     return fig
 
 
-def plot_comparison_pr(curves: dict[str, tuple[dict, float]], base_rate: float):
-    fig, ax = plt.subplots(figsize=(5.5, 4))
-    for (name, (c, ap)), colour in zip(curves.items(), (CONSPIRACY_COLOUR, MAINSTREAM_COLOUR)):
-        ax.plot(c["recall"], c["precision"], color=colour, label=f"{name} (AP {ap:.2f})")
-    ax.axhline(base_rate, color="grey", linestyle="--", label=f"always conspiracy ({base_rate:.2f})")
-    ax.set_xlabel("Recall (conspiracy)")
-    ax.set_ylabel("Precision (conspiracy)")
-    ax.set_ylim(0, 1.02)
-    ax.set_title("Test: score threshold behaviour")
-    ax.legend(loc="lower left", fontsize=8)
-    return fig
-
-
 def comparison_stage() -> dict:
-    """Compare majority, lr_words, lr_extended and llm_haiku (pass 1) on the same test documents.
+    """Compare the four final models on the same test documents, from the saved prediction files only."""
+    lr, llm_all = read_final_predictions()
+    llm = llm_all[llm_all["pass"] == 1].set_index("doc_id")
+    ids = llm.index
+    y = llm["label"].to_numpy(dtype=bool)
+    preds = {m: lr[lr["model_id"] == m].set_index("doc_id").loc[ids]["pred"].to_numpy(dtype=bool)
+             for m in (WORDS_FINAL, TFIDF_FINAL, FEATURES_FINAL)}           # same documents, same order
+    preds[LLM_ID] = llm["pred"].to_numpy(dtype=bool)
 
-    Reads only the prediction files written by `evaluate_final` (plus website and length metadata of
-    the same documents). No model is fitted or scored here, so this stage cannot select anything on test.
-    """
-    from .comparison import length_bucket_f1, model_row, pairwise
-
-    frame = analysis_frame()
-    split = load_split().set_index("doc_id")["split"]
-    train_y = frame.loc[frame["doc_id"].map(split) == "train", "label"].to_numpy()
-    lr = pd.read_csv(results_dir() / "tables" / "predictions_lr.csv")
-    llm_all = pd.read_csv(results_dir() / "tables" / "predictions_llm.csv")
-    p1 = llm_all[llm_all["pass"] == 1].set_index("doc_id")
-    ids = p1.index
-    for m in (LR_WORDS_ID, LR_EXTENDED_ID):
-        if set(lr.loc[lr["model_id"] == m, "doc_id"]) != set(ids):
-            raise RuntimeError(f"{m} and the LLM were not scored on the same test documents")
-    meta = frame.set_index("doc_id").loc[ids]
-    y = p1["label"].to_numpy(dtype=bool)
-    if not (meta["label"].to_numpy(dtype=bool) == y).all() or (split.loc[ids] != "test").any():
-        raise RuntimeError("prediction files disagree with split_v1 / dataset labels")
-    words = meta["txt"].str.split().map(len).to_numpy()
-
-    metrics = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))
-    chosen_lr = metrics["tfidf_features"]["chosen_lr"]["chosen"]
-    lr_by = {m: lr[lr["model_id"] == m].set_index("doc_id").loc[ids] for m in (LR_WORDS_ID, LR_EXTENDED_ID)}
-    majority = bool(np.mean(train_y) >= 0.5)
-    preds = {"majority": np.full(len(y), majority), LR_WORDS_ID: lr_by[LR_WORDS_ID]["pred"].to_numpy(dtype=bool),
-             LR_EXTENDED_ID: lr_by[LR_EXTENDED_ID]["pred"].to_numpy(dtype=bool), LLM_ID: p1["pred"].to_numpy(dtype=bool)}
-    table = pd.DataFrame([model_row(n, y, p) for n, p in preds.items()])
-    write_table("comparison_test", table.round(4))
+    table = pd.DataFrame([model_row(name, y, pred) for name, pred in preds.items()])
+    write_table("comparison_test", table)
     savefig(plot_comparison_f1(table), "comparison_f1")
     savefig(plot_comparison_confusion(table), "comparison_confusion")
 
-    scores = {chosen_lr: lr_by[chosen_lr]["proba"].to_numpy(), LLM_ID: _score_from_llm(p1)}
-    curves = {n: (pr_curve_data(y, s), float(average_precision_score(y, s))) for n, s in scores.items()}
-    savefig(plot_comparison_pr(curves, float(y.mean())), "comparison_pr")
-
-    model_preds = {k: v for k, v in preds.items() if k != "majority"}
-    lengths = length_bucket_f1(words, y, model_preds, LENGTH_BUCKETS)
-    write_table("comparison_length_buckets", lengths.round(4))
-
-    tests = {"lr_best_vs_llm": pairwise(y, preds[chosen_lr], preds[LLM_ID], chosen_lr, LLM_ID),
-             "lr_words_vs_lr_extended": pairwise(y, preds[LR_WORDS_ID], preds[LR_EXTENDED_ID],
-                                                 LR_WORDS_ID, LR_EXTENDED_ID)}
-    f1_of = {r["model"]: r for r in table.to_dict("records")}
-    h1 = {}
-    for m in (chosen_lr, LLM_ID):
-        h1[m] = {"f1": f1_of[m]["f1"], "majority_f1": f1_of["majority"]["f1"],
-                 "delta_f1_vs_majority": paired_delta_ci(y, preds["majority"], preds[m]),
-                 "beats_majority": bool(f1_of[m]["f1"] > f1_of["majority"]["f1"]),
-                 "ci_excludes_majority": bool(f1_of[m]["f1_ci_low"] > f1_of["majority"]["f1"])}
-    pair = (chosen_lr, LLM_ID)
-    wins = {k: max(pair, key=lambda m: f1_of[m][k]) for k in ("precision", "recall", "f1")}
-    values = {"data": "filtered documents, split_v1, TEST rows; predictions from evaluate_final files only",
-              "models": list(preds), "lr_best": chosen_lr,
-              "lr_best_rule": "chosen on validation (tfidf_features.chosen_lr)", "llm_pass_scored": 1,
+    metrics = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))
+    best_lr = best_final_lr(metrics)
+    tests = {"words_vs_tfidf": mcnemar_pair(y, preds[WORDS_FINAL], preds[TFIDF_FINAL], WORDS_FINAL, TFIDF_FINAL),
+             "tfidf_vs_features": mcnemar_pair(y, preds[TFIDF_FINAL], preds[FEATURES_FINAL], TFIDF_FINAL, FEATURES_FINAL),
+             "best_lr_vs_llm": mcnemar_pair(y, preds[best_lr], preds[LLM_ID], best_lr, LLM_ID)}
+    values = {"models": list(preds), "lr_best": best_lr, "test_documents": int(len(y)), "test_conspiracy": int(y.sum()),
               "bootstrap": {"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95},
-              "test_documents": int(len(y)), "test_conspiracy": int(y.sum()),
-              "table": table.to_dict("records"), "mcnemar": tests, "h1": h1, "winner_by_metric": wins,
-              "mainstream_accuracy": {m: float((preds[m][~y] == y[~y]).mean()) for m in pair},
-              "average_precision": {n: c[1] for n, c in curves.items()},
-              "length_buckets": lengths.to_dict("records"), "llm_stability": metrics["llm"]["repeat_agreement"]}
-    write_metrics("comparison", round_floats(_nan_to_none_deep(values), 4))
+              "table": table.to_dict("records"), "mcnemar": tests, "llm_stability": metrics["llm"]["repeat_agreement"]}
+    write_metrics("comparison", round_floats(values, 4))
     return values
 
 
 # ---------------------------------------------------------------- stage: errors
 
+EXCERPT_WORDS = 40                      # article excerpts stay below the 50-word limit
+
 def _example_candidates(coded: pd.DataFrame) -> pd.DataFrame:
-    """Worked-example documents, chosen by rule (not by hand) so a rerun picks the same ones:
-    a mainstream false positive that debunks, a conspiracy site without a claim, an endorsing conspiracy
-    article both models missed, a mainstream article that endorses (label problem), plus one LR-only and
-    one LLM-only error. First match by (set order, doc_id)."""
+    """Four example documents, chosen by rule (first match by set order, doc_id) so a rerun picks the same ones."""
     wants = [("debunking mainstream false positive", lambda d: (~d["true_label"]) & (d["claude_stance"] == "rejects_or_debunks")),
              ("conspiracy site without a claim", lambda d: d["true_label"] & (d["claude_stance"] == "no_claim")),
              ("endorsing conspiracy article missed", lambda d: d["true_label"] & (d["claude_stance"] == "endorses")),
-             ("mainstream site endorsing a claim", lambda d: (~d["true_label"]) & (d["claude_stance"] == "endorses")),
-             ("LR-only error", lambda d: d["set"] == "lr_only_wrong"),
              ("LLM-only error", lambda d: d["set"] == "llm_only_wrong")]
     rows, used = [], set()
     for kind, rule in wants:
@@ -557,75 +566,44 @@ def _example_candidates(coded: pd.DataFrame) -> pd.DataFrame:
 
 
 def errors_stage() -> dict:
-    """Disagreement sets on TEST predictions -> stance coding (Sonnet, cached) -> verdicts -> tables.
-
-    Reads only the prediction files written by `evaluate_final`; the LR is refitted on TRAIN only, solely to
-    explain individual predictions (coef * tf-idf). Nothing is scored or selected on test.
-    """
+    """Test articles where the best LR and the LLM disagree -> stance coding (cached) -> tables."""
     cfg = errors.stance_config()
     seed = project_config()["split"]["seed"]
-    lr_all = pd.read_csv(results_dir() / "tables" / "predictions_lr.csv")
+    lr_all, llm_p = read_final_predictions()
     chosen = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))["comparison"]["lr_best"]
     lr = lr_all[lr_all["model_id"] == chosen]
-    llm_p = pd.read_csv(results_dir() / "tables" / "predictions_llm.csv")
     llm_p = llm_p[llm_p["pass"] == 1]
     sets = errors.disagreement_sets(lr, llm_p)
     frame = analysis_frame().set_index("doc_id")
     sets["website"] = sets["doc_id"].map(frame["website"])
     to_code = errors.select_for_coding(sets, cfg["max_per_other_set"], seed)
-    missing = errors.missing_stances(to_code["doc_id"])
     client = None
-    if missing:
+    if errors.missing_stances(to_code["doc_id"]):
         client = errors.stance_client(cfg)          # raises loudly: no key and no complete cache
     stance = errors.code_stances(to_code.assign(txt=to_code["doc_id"].map(frame["txt"])), client=client)
     coded = to_code.merge(stance, on="doc_id")
     coded["verdict"] = [errors.classify_error(bool(t), s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
-    table = errors.error_classification_table(coded, sets)
-    write_table("error_classification", table)
+    write_table("error_classification", errors.error_classification_table(coded, sets))
 
     usable = coded[coded["claude_stance"] != errors.UNREADABLE]
     sample = errors.stratified_sample(usable, cfg["human_sample_size"], seed)
-    sample_path = results_dir() / "tables" / "stance_check_sample.csv"
-    written = errors.write_check_sample(sample, sample_path)
+    written = errors.write_check_sample(sample, results_dir() / "tables" / "stance_check_sample.csv")
 
-    sel = _ablation_selected()[chosen]
-    split = load_split().set_index("doc_id")["split"]
-    f = frame.reset_index()
-    train = f[f["doc_id"].map(split) == "train"]
-    pipe = build_pipeline(sel["features"], C=sel["C"], class_weight=None if sel["class_weight"] == "none" else sel["class_weight"]
-                          ).fit(train, train["label"])
     ex = _example_candidates(coded)
-    contrib = errors.top_contributions(pipe, f.set_index("doc_id").loc[ex["doc_id"]].reset_index()) if len(ex) else []
-    reasons = llm_p.set_index("doc_id")
-    from . import llm as llm_mod
-    cache = llm_mod.read_cache(llm_mod.cache_path())
-    key = llm_mod.cache_key(reasons["variant"].iloc[0], 1)
-    ex = pd.concat([ex.reset_index(drop=True), pd.DataFrame(contrib)], axis=1)
-    ex["llm_label"] = ex["doc_id"].map(reasons["llm_label"])
-    ex["llm_reason"] = [errors.scrub_justification(cache[(d, key)]["reason"]) for d in ex["doc_id"]]
+    ex["excerpt"] = [" ".join(frame.loc[d, "txt"].split()[:EXCERPT_WORDS]) + " ..." for d in ex["doc_id"]]
     ex["true_label"] = ex["true_label"].map(CLASS_NAMES)
     write_table("error_examples", ex[["kind", "doc_id", "website", "set", "true_label", "error_type", "claude_stance",
-                                      "claude_justification", "verdict", "llm_label", "llm_reason",
-                                      "lr_top_conspiracy", "lr_top_mainstream"]])
+                                      "verdict", "excerpt"]])
 
-    def share(mask_all, mask_hit):
-        n = int(mask_all.sum())
-        return {"n": n, "hit": int(mask_hit.sum()), "share": float(mask_hit.sum() / n) if n else None}
-
-    fp, fn = ~usable["true_label"], usable["true_label"]
-    nonendorse = usable["claude_stance"] != "endorses"
-    h6 = {"fp_mainstream_not_endorsing_but_discusses": share(
-              fp, fp & usable["claude_stance"].isin(["rejects_or_debunks", "reports_neutrally"])),
-          "fp_mainstream_debunking": share(fp, fp & (usable["claude_stance"] == "rejects_or_debunks")),
-          "fn_conspiracy_no_claim": share(fn, fn & (usable["claude_stance"] == "no_claim")),
-          "fn_conspiracy_not_endorsing": share(fn, fn & nonendorse),
-          "label_problem_overall": share(usable["verdict"].notna(), usable["verdict"] == errors.LABEL_PROBLEM)}
-    totals = sets.groupby(["set", "error_type"]).size()
-    val = f[f["doc_id"].map(split) == "validation"]
+    from . import llm as llm_mod
+    split = load_split().set_index("doc_id")["split"]
+    val = frame.reset_index()
+    val = val[val["doc_id"].map(split) == "validation"]
     try:
         probe = llm_mod.website_probe(llm_mod.probe_sample(val, seed))
     except RuntimeError as exc:             # no key and no cached probe: say so, never invent a share
         probe = {"status": "not run", "reason": str(exc)}
+    totals = sets.groupby(["set", "error_type"]).size()
     values = {"data": "TEST rows, filtered documents; predictions from evaluate_final files only",
               "prior_knowledge_probe": probe,
               "lr_model": chosen, "llm_pass": 1, "stance_model": cfg["model"],
@@ -639,8 +617,8 @@ def errors_stage() -> dict:
               "stance_counts": usable["claude_stance"].value_counts().to_dict(),
               "verdict_counts": usable["verdict"].value_counts().to_dict(),
               "rule": "conspiracy site + (rejects|neutral|no_claim) -> label problem; mainstream site + endorses -> label problem; else model wrong",
-              "h6": h6, "human_check": {"sample_file": "results/tables/stance_check_sample.csv",
-                                        "file_rewritten_this_run": written}}
+              "human_check": {"sample_file": "results/tables/stance_check_sample.csv", "rows": int(len(sample)),
+                              "file_rewritten_this_run": written, "status": "to be filled by the team"}}
     write_metrics("errors", round_floats(values, 4))
     return values
 
@@ -648,7 +626,7 @@ def errors_stage() -> dict:
 STAGES: list[tuple[str, Callable[[], object]]] = [("cleaning", cleaning_stage),
                                                   ("word_counts", word_counts_stage), ("tfidf", tfidf_stage), ("features", feature_summary_stage),
                                                   ("tfidf_features", ablation), ("llm", llm_stage),
-                                                  ("comparison", comparison_stage),
+                                                  ("final", final_stage), ("comparison", comparison_stage),
                                                   ("errors", errors_stage)]
 PENDING_STAGES: list[str] = []
 

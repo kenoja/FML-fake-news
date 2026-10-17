@@ -35,8 +35,7 @@ NAME_ALLOWLIST = {
     "Congress", "Senate", "Arabia", "Arab", "Middle", "East", "Taliban", "ISIS", "UK", "EU", "NATO",
 }
 _CAP_TOKEN = re.compile(r"[A-Z][\w'’-]*")
-CHECK_COLUMNS = ["doc_id", "website", "true_label", "lr_pred", "llm_pred", "claude_stance",
-                 "claude_justification", "human_stance", "human_note"]
+CHECK_COLUMNS = ["doc_id", "claude_stance", "human_stance"]
 
 STANCE_PROMPT = (
     "You code how a web article treats CONSPIRACY CLAIMS about the 9/11 attacks (for example: the attacks "
@@ -244,45 +243,14 @@ def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.
     return pd.DataFrame(rows)
 
 
-# ---------------------------------------------------------------- LR explanation
-
-def top_contributions(pipe, df: pd.DataFrame, k: int = 5) -> list[dict]:
-    """Per document: the k features pushing most towards conspiracy and towards mainstream (coef * tf-idf)."""
-    X = pipe.named_steps["features"].transform(df)
-    names = [str(n).split("__", 1)[-1] for n in pipe.named_steps["features"].get_feature_names_out()]
-    contrib = X.multiply(pipe.named_steps["clf"].coef_[0]).tocsr()
-    out = []
-    for i in range(contrib.shape[0]):
-        row = contrib.getrow(i)
-        order = np.argsort(row.data)
-        fmt = lambda j: f"{names[row.indices[j]]} ({row.data[j]:+.3f})"  # noqa: E731
-        out.append({"lr_top_conspiracy": "; ".join(fmt(j) for j in order[::-1][:k] if row.data[j] > 0),
-                    "lr_top_mainstream": "; ".join(fmt(j) for j in order[:k] if row.data[j] < 0)})
-    return out
-
-
 # ---------------------------------------------------------------- human check
 
-def scrub_public_csv(path: Path, columns: list[str]) -> int:
-    """Rewrite free-text `columns` of an existing public CSV through `scrub_justification`; returns cells changed.
-
-    Human columns are never touched, so a half-filled check sample survives.
-    """
-    df = pd.read_csv(path, dtype=str, keep_default_na=False)
-    changed = 0
-    for c in columns:
-        new = df[c].map(scrub_justification)
-        changed += int((new != df[c]).sum())
-        df[c] = new
-    df.to_csv(path, index=False)
-    return changed
-
-
 def has_human_input(path: Path) -> bool:
+    """True if a teammate has already typed something into the check file."""
     if not path.is_file():
         return False
     df = pd.read_csv(path, dtype=str, keep_default_na=False)
-    return bool((df["human_stance"].str.strip() != "").any() or (df["human_note"].str.strip() != "").any())
+    return bool((df["human_stance"].str.strip() != "").any())
 
 
 def write_check_sample(sample: pd.DataFrame, path: Path) -> bool:
@@ -290,10 +258,7 @@ def write_check_sample(sample: pd.DataFrame, path: Path) -> bool:
     if has_human_input(path):
         return False
     out = sample.copy()
-    out["true_label"] = np.where(out["true_label"], "conspiracy", "mainstream")
-    for c in ("lr_pred", "llm_pred"):
-        out[c] = np.where(out[c], "conspiracy", "mainstream")
-    out["human_stance"], out["human_note"] = "", ""
+    out["human_stance"] = ""          # left empty on purpose: the team fills it in
     path.parent.mkdir(parents=True, exist_ok=True)
     out[CHECK_COLUMNS].to_csv(path, index=False)
     return True

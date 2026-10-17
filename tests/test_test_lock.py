@@ -169,3 +169,64 @@ def test_mcnemar_hand_computed():
     assert (r["a_only_correct"], r["b_only_correct"], r["both_correct"], r["both_wrong"]) == (2, 8, 5, 5)
     assert r["p_value"] == pytest.approx(112 / 1024) == pytest.approx(binomtest(2, 10, 0.5).pvalue)
     assert mcnemar_exact(y, a, a)["p_value"] == 1.0
+
+
+def test_same_hash_reuses_stored_predictions_and_never_rescores(frames, tmp_path):
+    """A rerun must give the same test numbers without touching the test rows again (or paying the LLM again)."""
+    df, _ = frames
+    log, fz = tmp_path / "log.jsonl", tmp_path / "frozen.json"
+    calls = []
+    toy = builders()["toy"]
+
+    def counting():
+        spec = toy()
+        inner = spec.fit_predict
+        spec.fit_predict = lambda train, test: calls.append(1) or inner(train, test)
+        return spec
+
+    b = {"toy": counting}
+    pipeline.freeze_model("toy", b, fz, log)
+    first = pipeline.evaluate_final("toy", b, df, log, fz)
+    again = pipeline.evaluate_final("toy", b, df, log, fz)
+    assert len(calls) == 1 and len(log.read_text().splitlines()) == 1
+    assert (tmp_path / "tables" / "predictions_toy.csv").is_file()
+    assert first["confusion"] == again["confusion"]
+    assert list(again["predictions"].columns)[:4] == ["model_id", "doc_id", "label", "pred"]
+
+
+def test_final_models_are_registered_and_scored_after_every_validation_stage():
+    assert pipeline.FINAL_IDS == ("final_word_counts", "final_tfidf", "final_tfidf_features", "final_llm")
+    names = [name for name, _ in pipeline.STAGES]
+    assert names.index("final") > max(names.index(n) for n in ("word_counts", "tfidf", "tfidf_features", "llm"))
+    assert names.index("final") < names.index("comparison")
+
+
+def test_final_stage_adds_four_log_lines_once(frames, tmp_path, monkeypatch):
+    """First run: one log line per final model. Second run: none, and the earlier lines stay untouched."""
+    df, _ = frames
+    ids = ("a", "b", "c", "d")
+    monkeypatch.setattr(pipeline, "results_dir", lambda: tmp_path)
+    monkeypatch.setattr(pipeline, "analysis_frame", lambda: df)
+    monkeypatch.setattr(pipeline, "FINAL_IDS", ids)
+    monkeypatch.setattr(pipeline, "MODEL_BUILDERS", {i: (lambda i=i: pipeline.ModelSpec(
+        {"model_id": i}, lambda train, test: np.zeros(len(test), dtype=bool))) for i in ids})
+    log = tmp_path / "test_access_log.jsonl"
+    old = json.dumps({"model_id": "older", "config_hash": "x", "at": "t", "n_docs": 1}) + "\n"
+    log.write_text(old)
+    pipeline.final_stage()
+    lines = log.read_text().splitlines()
+    assert len(lines) == 5 and lines[0] + "\n" == old
+    pipeline.final_stage()
+    assert log.read_text().splitlines() == lines
+
+
+def test_final_model_with_new_configuration_fails(frames, tmp_path):
+    """Changing the validation-chosen setting after the test look must be refused, not silently rescored."""
+    df, _ = frames
+    log, fz = tmp_path / "log.jsonl", tmp_path / "frozen.json"
+    pipeline.freeze_model("toy", builders(1.0), fz, log)
+    pipeline.evaluate_final("toy", builders(1.0), df, log, fz)
+    with pytest.raises(PermissionError):
+        pipeline.freeze_model("toy", builders(10.0), fz, log)
+    with pytest.raises(PermissionError):
+        pipeline.evaluate_final("toy", builders(10.0), df, log, fz)

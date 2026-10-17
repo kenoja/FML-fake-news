@@ -84,7 +84,7 @@ def test_cache_holds_only_id_hash_answer_and_is_reused(tmp_path):
         def complete(self, prompt, article):
             Fake.calls += 1
             from fml.llm import Completion
-            return Completion('{"stance": "no_claim", "justification": "plain news"}', 1, 1)
+            return Completion('{"stance": "no_claim", "justification": "plain news"}', 1)
 
     df = pd.DataFrame({"doc_id": ["x"], "txt": ["secret article words"]})
     path = tmp_path / "stance.jsonl"
@@ -113,7 +113,7 @@ def test_classification_table_rows_sum_to_errors():
 def _sample(tmp_path, human):
     p = tmp_path / "s.csv"
     pd.DataFrame({"doc_id": list("abcd"), "claude_stance": ["endorses", "no_claim", "endorses", "reports_neutrally"],
-                  "human_stance": human, "human_note": [""] * 4}).to_csv(p, index=False)
+                  "human_stance": human}).to_csv(p, index=False)
     return p
 
 
@@ -124,10 +124,19 @@ def test_justification_is_shortened_and_names_are_stripped():
     assert "Jane" not in out and "Wolter" not in out and "[name]" in out and "WTC" in out
 
 
+def test_fresh_check_sample_has_empty_human_column(tmp_path):
+    p = tmp_path / "new.csv"
+    sample = pd.DataFrame({"doc_id": list("ab"), "claude_stance": ["no_claim", "endorses"], "set": ["x", "y"]})
+    assert errors.write_check_sample(sample, p) is True
+    out = pd.read_csv(p, dtype=str, keep_default_na=False)
+    assert list(out.columns) == ["doc_id", "claude_stance", "human_stance"]
+    assert (out["human_stance"] == "").all()
+
+
 def test_rerun_never_overwrites_human_work(tmp_path):
     p = _sample(tmp_path, ["endorses", "", "", ""])
-    sample = pd.DataFrame({c: ["x"] for c in errors.CHECK_COLUMNS if c != "human_stance"})
-    assert errors.write_check_sample(sample.assign(true_label=True, lr_pred=True, llm_pred=False), p) is False
+    sample = pd.DataFrame({"doc_id": ["x"], "claude_stance": ["no_claim"]})
+    assert errors.write_check_sample(sample, p) is False
     assert "endorses" in p.read_text()
 
 

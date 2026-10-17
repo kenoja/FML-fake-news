@@ -41,7 +41,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "run-all":
         pipeline.run_all()
     else:
-        pipeline.evaluate_final(args.model_id)
+        pipeline.freeze_model(args.model_id)        # write the validation-chosen setting before the first test look
+        result = pipeline.evaluate_final(args.model_id)
+        print(json.dumps({k: result[k] for k in ("model_id", "config_hash", "n_docs", "confusion")}, indent=2))
     return 0
 
 
