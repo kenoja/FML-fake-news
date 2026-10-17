@@ -65,6 +65,9 @@ Three McNemar tests (exact, two-sided) compare pairs of models. Word counts agai
 Q: A model flags 10 articles as conspiracy and 8 of them really are. It misses 12 other conspiracy articles. What are its precision and recall?
 A: Precision is 8 of 10, so 0.8. Recall is 8 of the 20 real conspiracy articles (8 caught plus 12 missed), so 0.4.
 
+Q: Why can the LLM have a precision of 0.985 but a recall of only 0.667?
+A: It almost never calls a mainstream article conspiracy (1 false alarm), so what it flags is nearly always right. But it misses 32 of the 96 conspiracy articles, so it finds only two thirds of them.
+
 Q: Why do we show a confidence interval and not only the F1 number?
 A: The test set is just one sample of articles. The interval shows how much the score could change with other articles, so we do not over-read small differences.
 

@@ -118,65 +118,14 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 - **2026-10-17 · Conflict (c): extra analyses.** Cycle 1 added a human stance kappa, a website-level bootstrap, a stability pass and sensitivity analyses. Cycle-02 item 13 removes them; only the statistics listed in AGENTS.md remain (confusion matrix, precision, recall, F1, one 95% bootstrap interval per number, three McNemar tests). Code and text for them are removed in later tasks.
 - **2026-10-17 · Near-duplicate rule (d).** Cycle 1 only counted near-duplicates; cycle-02 item 4 removes them before any model runs, together with off-topic documents. Exact threshold and counts are set in the cleaning task and shown in `02-data-and-cleaning`.
 - **2026-10-17 · Logistic regression settings.** Shared config `lr: {c_grid: [0.1, 1, 10], class_weight: balanced}`, chosen on validation only.
+- **2026-10-17 · Closed cycle-1 items (superseded in cycle 2).** LLM temperature: the model rejects a temperature setting, so default sampling is used (AGENTS.md now says so). Output limit: the 150-token limit is replaced by `max_output_tokens: 1000` (`config/project.yaml`). Near-duplicates: removed before any model runs, after the topic filter; the cleaned set is the one in `metrics.json#cleaning`, not a fixed 2,608. API key and duplicated cache lines: resolved, cache is complete.
 
 ## Needs a team decision
 
-- **Licence of the OSF page (owner checks).** The agent cannot read https://osf.io/snpcg/. Conservative default kept: article texts only in the private data repo, short excerpts (at most 50 words, 6 per section).
-- **40-article human check.** Done by the team during the feedback period using the check sheet; not done by the agent.
-- **GitHub account name in the repo link.** Kept in `config/site.yaml`: the site's code link and comment tool need the repo address, and `sitegen/` and `config/` site files are protected. Moving the repo to a neutral account would remove it.
-
-- **LLM temperature 0 cannot be set (T8). Status: accepted default, awaiting team confirmation.** AGENTS.md
-  asks for temperature 0, but `claude-haiku-5-5` answers HTTP 400 ("`temperature` is deprecated for this
-  model") and the installed SDK has no such argument. Default chosen: call the model with its default
-  sampling and keep `temperature: 0` in config (it stays in the cache key). Why: the rule cannot be
-  followed, and sending nothing is the only call the API accepts. Measured effect (second test pass, 423
-  documents, `metrics.json#llm.stability`): agreement 0.9504, 21 flipped documents, Cohen's kappa 0.8871;
-  the official pass-1 and pass-2 confusion matrices give the same F1. Quoted in section 09 and report §5.4.
-  Conservative reading (stated explicitly): the API rejects temperature 0 for this model, default sampling
-  is used, and results are cached so reruns are deterministic. Section 09 and the report mirror this.
-  Proposed decision wording for the team to confirm: "We accept default sampling for `claude-haiku-5-5`
-  because temperature 0 is rejected; the cache makes `fml run-all` deterministic; run-to-run stability is
-  reported (agreement, kappa)." Confirmed on (date): ___ ; by: Member _ . Closes when: a member writes the
-  date and name here, or the team asks for a different model/setting (which means a new model id on test).
-  **Confirmation: pending (Member __, date __).** Conservative reading used meanwhile: default sampling,
-  temperature 0 only recorded in config and cache key, instability measured and reported, not hidden.
-
-- **Licence of the LOCO texts.** Unconfirmed (see above). Default: texts not redistributable; private
-  data repo only; excerpt limits apply. Measured effect: not run: the OSF page was unreachable, so no
-  licence text could be read (recheck is queued as a separate task).
-- **LLM API key in the cloud environment.** It was unknown whether `LLM_CLASSIFIER_API_KEY` is set when
-  the agent runs. Default: assume it is set and fail loudly if not. Measured effect: it was set in the T8 run, so the three validation variants and both test passes were
-  produced (numbers: `metrics.json` key `llm`). The committed cache `results/llm_cache.jsonl` is
-  complete for those runs, so `fml run-all` needs no key; without key and cache the stage still fails
-  loudly with exact missing counts, and never falls back to `ANTHROPIC_API_KEY`.
-- **LLM parse errors and the 150-token output limit (T8, revised in T3). Status: accepted default, awaiting team
-  confirmation.** Default: keep `max_output_tokens: 150` for the official runs (changing it now would mean a
-  new test run after seeing test results). Investigation without new API calls (`llm.parse_error_report`,
-  `results/tables/llm_parse_errors.csv`, counts in `metrics.json#llm.parse_error_causes`): every unparsed cache
-  record used exactly 150 output tokens, i.e. the whole budget, and no parsed reply used more. The dominant
-  (only visible) cause is therefore truncation at the output limit; refusal, hedging and wrong format cannot be
-  distinguished because the cache stores no raw replies (inferred, not read). The earlier T8 conclusion "most
-  parse errors are NOT caused by the cut-off" is **retracted**: the 400-token sensitivity run (pass 3) reused
-  the 150-token client, so its records also show 150 tokens, and `llm.token_limit_sensitivity` compares 150
-  with 150. Shares: see `metrics.json` (`llm.variants.v2.parse_errors` / `n_docs` on validation,
-  `llm.test.parse_errors` / `n_docs` on test, `llm.token_limit_sensitivity.large` for the 12% subset figure).
-  Cheap fix not applied: it needs new API calls (a valid 400-token validation run, ideally storing raw replies)
-  and, for test, a new documented run under a new model id. Future work: fix `token_limit_sensitivity` so it
-  builds its own client with the larger limit, rerun on validation, and decide with the team.
-  **Confirmation: pending (Member __, date __).** Conservative reading used meanwhile: keep 150 tokens, do not
-  change any setting after test results were seen, count unparsed answers as errors, report the truncation.
-- **Parallel LLM runs left duplicate lines (T8).** Two interrupted-attempt processes ran the stage at the
-  same time, which duplicated cache lines (1,059 dropped; first answer per `doc_id`+`prompt_hash` kept,
-  `read_cache` now does the same) and wrote the `llm_haiku` test-access entry twice (the second,
-  identical line was removed). Test data was classified once per configuration; the numbers in
-  `metrics.json` were regenerated from the deduplicated cache and are reproducible without a key.
-- **Near-duplicate removal vs the expected 2,608.** If near-duplicate removal is applied after the
-  topic filter, the count will fall below 2,608 and that is the number used downstream. Conservative
-  reading (T2 measured 63 near-duplicate pairs, 53 documents would go, 36 pairs cross splits): report 2,608 after the topic filter first, then the count after near-duplicate removal
-  separately, and use the smaller set only if the team approves; until then experiments use 2,608.
-  Default: experiments use 2,608. Measured effect (T4, `comparison.no_duplicate_sensitivity`, see "T4:
-  near-duplicates are quantified, not removed" below): leaving out the 9 test documents with a
-  near-duplicate partner moves F1 by -0.0049 (LR) and -0.0042 (LLM); the conclusion is unchanged.
+- **LOCO licence check.** The agent cannot read https://osf.io/snpcg/. One member opens it, copies the licence text and date here. Until then: article texts only in the private data repo, excerpts at most 50 words, at most 6 per section.
+- **Human stance check.** The 40-article sheet (`results/tables/stance_check_sample.csv`) is not filled in by anyone; kappa is `null`, so the Claude stance codes are an unchecked single source. Needs one member per article, then `fml stance-agreement`.
+- **GitHub account name in `config/site.yaml` (T12, cycle 2).** `repo_url` and `giscus.repo` hold the real account name, so it appears in `config/site.yaml`, in the built `site/index.html` (link and comment widget), and in `scripts/collect_feedback.py` (default `--repo`); `AGENTS.md` says "no GitHub usernames". The agent cannot fix this: `config/site.yaml`, `sitegen/` and `scripts/` are protected paths. **Owner action:** a human either moves the repository to a neutral organisation (then updates `repo_url`, `giscus.repo` and the collect script default) or accepts the name on the site and removes the rule. Conservative reading until then: treat the name as still present and as a privacy gap; do not claim the repo is free of it. `docs/` and `.gitignore` use `<owner>/<repo>` placeholders, and `tests/test_privacy.py` passes (it reads the name at run time).
+- **Report length counting rule.** Decided in T8: the 3,000-5,000 word limit is `len(text.split())` on `reports/report.md` before References, tables included (see the last section). The team confirms or asks for prose-only counting.
 
 ## Gate fix: `fml run-all` timeout and the `lr_words` test lock
 

@@ -11,10 +11,6 @@ Also: Ablation study
 
 Taking one group of features out, or adding one in, to see what changes. Like removing one ingredient from a recipe to learn what it contributes.
 
-### Accuracy
-
-The share of all articles that the model labels correctly. It can mislead when one class is much bigger than the other. Like a student who guesses "true" every time on a quiz that is mostly true.
-
 ### Bag of words
 
 Treating an article as a pile of words and ignoring their order. Like tipping a letter's words into a bag: you can count them but no longer see the sentences. Our first two analyses work this way.
@@ -28,15 +24,20 @@ Also: Bootstrap resampling, website bootstrap
 
 Redrawing articles (or whole websites) at random with replacement, many times, and recomputing the score each time. The spread shows how shaky the score is. Like asking what a score would be on other, similar test sets.
 
+### C (regularisation strength)
+Also: C, C value
+
+The number that sets how strong the regularisation penalty is, with an odd twist: small C means a strong penalty and large C a weak one. Like a strictness dial where low C asks for short, simple answers. We tried 0.1, 1 and 10 and kept the best on validation.
+
 ### Cache
 Also: Saved answers
 
 A file that stores each answer the first time it is computed, so a rerun reads the file instead of paying again. Like writing a result in a notebook so you need not recalculate. It stores ids and codes, never article text.
 
-### Certainty and uncertainty words
-Also: Epistemic markers, epistemic words
+### Epistemic markers
+Also: Epistemic words, certainty and uncertainty words, doubt words
 
-Words that show how sure a writer is: "clearly" and "proves" for certainty, "maybe" and "allegedly" for doubt. We count them with a short hand-made list. Like noticing whether a friend says "I know" or "I guess".
+Words that show how sure a writer is ("epistemic" means "about knowing"): "clearly" and "proves" for certainty, "maybe" and "allegedly" for doubt. We count them with a short hand-made list. Like noticing whether a friend says "I know" or "I guess".
 
 ### Class weight
 Also: Balanced class weight
@@ -46,11 +47,6 @@ A setting that makes mistakes on the rarer class count more during training. "Ba
 ### Classifier
 
 A program that puts each item into one of a few groups. Ours decides whether an article comes from a conspiracy-oriented or a mainstream website. Like a mail sorter who looks at each letter and drops it in one of two boxes.
-
-### Cohen's kappa
-Also: Kappa
-
-A number showing how much two people agree beyond what chance would give. 1 is perfect agreement, 0 is no better than chance. Like two judges scoring the same dives.
 
 ### Confidence interval
 Also: 95% confidence interval, interval
@@ -143,11 +139,6 @@ A program trained on huge amounts of text that writes answers to written questio
 
 A simple model that gives each feature a weight, adds up the weighted values for an article and turns the total into a probability. Like a judge adding points for and against, then stating how likely the case is.
 
-### Macro-F1
-Also: Balanced accuracy
-
-Scores that treat both classes as equally important, so the bigger class cannot hide poor results on the smaller one. Like grading each subject equally, not by how many questions it had.
-
 ### McNemar test
 
 A test that compares two classifiers on the same articles by looking only at those where exactly one is right. It tells whether the difference is bigger than chance. Like two students answering the same exam, comparing their disagreements.
@@ -169,11 +160,6 @@ When a model memorises quirks of its training articles and then does worse on ne
 ### P-value
 
 A number between 0 and 1 that says how surprising our result would be if there were really no difference. A small p-value (under 0.05) means chance alone is an unlikely explanation. Like how odd ten heads in a row would seem.
-
-### Parse error
-Also: Unreadable answer
-
-A model reply we cannot turn into a clear answer, for example when it is cut off or off-format. Such articles need a rule. Like a form where the box for the answer is left blank.
 
 ### Precision
 
@@ -198,7 +184,7 @@ A starting number that makes a computer's random choices repeatable. With the sa
 Of the articles from conspiracy websites, the share the model found. Like a metal detector: of all the metal buried, how much it found.
 
 ### Regularisation
-Also: C, penalty
+Also: Penalty
 
 A penalty that keeps weights small so the model cannot memorise too much. In scikit-learn, C is the inverse strength: small C means strong penalty. Like a teacher asking for short, simple answers. We choose C on validation.
 

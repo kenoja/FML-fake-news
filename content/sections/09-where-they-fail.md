@@ -5,6 +5,8 @@ hypothesis: Some of the "mistakes" are not mistakes of the model but of the labe
 ---
 ## Explained simply
 
+This is an estimate from one unchecked source: a second language model, with no human check yet.
+
 **Two kinds of wrong.** Every article in our data carries the label of the website it came from. That label is a good guess, but it is not always true for the single article. A mainstream paper can print a piece that debunks a 9/11 theory; a conspiracy website can print an ordinary news item. If a model calls the first one "conspiracy" or the second one "mainstream", is the model wrong, or is the label misleading? We want to know how often each happens.
 
 **Where we look.** We take the test articles where the best logistic regression and the LLM do not agree with the label. We sort them into three groups: only the logistic regression is wrong, only the LLM is wrong, or both are wrong.
@@ -58,7 +60,7 @@ The stage puts it all together and writes the tables.
 
 ## Report
 
-We examined the test articles on which the best logistic regression and the LLM disagree with the label. The groups are articles missed only by the logistic regression, only by the LLM, and by both. A false positive is a mainstream article called conspiracy, a false negative the reverse. The counts per group are in the first table below.
+This is an estimate from one unchecked source: the stance codes come from a single language model and no person has checked them. We examined the test articles on which the best logistic regression and the LLM disagree with the label. The groups are articles missed only by the logistic regression, only by the LLM, and by both. A false positive is a mainstream article called conspiracy, a false negative the reverse. The counts per group are in the first table below.
 
 The labels describe websites, not articles. To separate model errors from label problems, a second model (Claude Sonnet 5.5) coded the stance of every disagreement article towards conspiracy claims about 9/11: endorses, rejects or debunks, reports neutrally, or no claim. The question did not mention the website. A fixed rule, written before the results were read, turns label and stance into a verdict. A conspiracy-site article that does not endorse a claim, or a mainstream article that endorses one, is counted as a label problem. All other cases are model errors. A mainstream article that debunks a theory counts as a model error, because it is still mainstream content.
 

@@ -184,7 +184,7 @@
   },
   "tfidf_features": {
     "data": "filtered documents, split_v1, validation rows only",
-    "protocol": "per model: C in C_GRID x class_weight in (none, balanced), best conspiracy-F1 on validation",
+    "protocol": "per model: C and class weight from config lr (same grid as word counts and TF-IDF), best conspiracy-F1 on validation",
     "documents": {
       "train": 1768,
       "validation": 376
@@ -213,8 +213,8 @@
           "min_df": 3,
           "sublinear_tf": true,
           "numeric_columns": [],
-          "max_features": 200000,
-          "dense_groups": []
+          "dense_groups": [],
+          "max_features": 200000
         },
         "C": 10.0,
         "class_weight": "balanced"
@@ -248,7 +248,7 @@
             "style"
           ]
         },
-        "C": 100.0,
+        "C": 10.0,
         "class_weight": "balanced"
       },
       "lr_extended": {
@@ -260,13 +260,13 @@
           "min_df": 3,
           "sublinear_tf": true,
           "numeric_columns": [],
-          "max_features": 200000,
           "dense_groups": [
             "epistemic",
             "style"
-          ]
+          ],
+          "max_features": 200000
         },
-        "C": 100.0,
+        "C": 10.0,
         "class_weight": "balanced"
       }
     },
@@ -301,19 +301,19 @@
       "lr_plus_style": {
         "model_id": "lr_plus_style",
         "label": "+ style",
-        "C": 100.0,
+        "C": 10.0,
         "class_weight": "balanced",
-        "f1": 0.913,
-        "delta_f1": -0.0007,
-        "verdict": "no clear gain"
+        "f1": 0.8936,
+        "delta_f1": -0.0202,
+        "verdict": "hurts"
       },
       "lr_extended": {
         "model_id": "lr_extended",
         "label": "+ all three",
-        "C": 100.0,
+        "C": 10.0,
         "class_weight": "balanced",
-        "f1": 0.8959,
-        "delta_f1": -0.0179,
+        "f1": 0.8869,
+        "delta_f1": -0.0269,
         "verdict": "hurts"
       }
     },

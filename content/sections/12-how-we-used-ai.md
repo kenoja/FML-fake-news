@@ -18,7 +18,7 @@ hypothesis: An AI assistant can write most of the code quickly, but a person sti
 
 - *Automatic checks.* Small programs that fail loudly when a rule is broken. For example, they fail if the split of articles changes, if private names appear in public text, or if a number in the report is not found in the result files.
 - *Comparing with outside facts.* The article counts were compared with the counts published for the corpus, and every figure in the text was copied from the result files rather than typed.
-- *Reading by people.* Some checks cannot be automatic, such as whether an explanation is understandable or whether a result makes sense. These are listed as open for the team in the AI log.
+- *Reading by people.* Some checks cannot be automatic, such as whether an explanation is understandable or whether a result makes sense. These are listed as open in the AI log; none is recorded as done yet.
 
 **What an automatic check cannot do.** It can confirm that a number matches a file. It cannot confirm that the number answers the right question. That judgement stays with people.
 
@@ -36,7 +36,7 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 The study design was fixed by the team and not by the assistant: the research question, full articles as input, the four ways of sorting, the feature groups, and the rule that each final model is scored on the test articles once. The assistant followed written rules in the repository and was bound by automatic checks, among them a lock on the test set, a frozen split, a privacy check on public text and a comparison of every number in the report with the result files.
 
-We checked the output in three ways. First, the article counts were compared with those published for the corpus. Second, automatic tests were written to fail whenever a rule such as fitting on training articles only is broken. Third, the team reads the text for clarity and spot-checks numbers against the result files; these human checks are recorded in the log as the team's own entries.
+We checked the output in three ways. First, the article counts were compared with those published for the corpus. Second, automatic tests were written to fail whenever a rule such as fitting on training articles only is broken. Third, human checks are planned (reading the text, spot-checking numbers, coding 40 articles by hand), but none is recorded in the log yet, so we claim none.
 
 We learned that written rules plus automatic checks keep assistant-written work reliable, that automatic checks verify consistency rather than meaning, and that the stance codes produced by a language model need a human check before they are relied on. The language model answers are cached so that every figure can be reproduced without new cost.
 
