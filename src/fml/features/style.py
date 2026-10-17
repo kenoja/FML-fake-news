@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
+from functools import lru_cache
 
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -23,10 +24,24 @@ QUOTE_CHARS = ('"', "“", "”")
 
 def allcaps_share(tokens: list[str]) -> float:
     """Share of words with at least 2 letters that are written entirely in capitals ("FBI", "WAKE")."""
-    cand = [t for t in tokens if sum(c.isalpha() for c in t) >= 2]
-    if not cand:
-        return 0.0
-    return sum(t.isupper() for t in cand) / len(cand)
+    n_cand = n_upper = 0
+    for t, k in Counter(tokens).items():
+        kind = _token_kind(t)
+        if kind:
+            n_cand += k
+            n_upper += k * (kind == 2)
+    return n_upper / n_cand if n_cand else 0.0
+
+
+@lru_cache(maxsize=None)
+def _token_kind(token: str) -> int:
+    """0 = fewer than 2 letters (not counted), 1 = counted word, 2 = counted word written in capitals.
+
+    Memoised: the same words recur across thousands of articles, and the per-character check is slow.
+    """
+    if sum(c.isalpha() for c in token) < 2:
+        return 0
+    return 2 if token.isupper() else 1
 
 
 def mean_sentence_length(text: str, n_words: int) -> float:
@@ -46,16 +61,19 @@ def mattr(tokens: list[str], window: int) -> float:
         return 0.0
     if len(toks) <= window:
         return len(set(toks)) / len(toks)
-    counts = Counter(toks[:window])
-    distinct_sum = len(counts)
-    for i in range(window, len(toks)):
-        out, new = toks[i - window], toks[i]
-        counts[out] -= 1
-        if counts[out] == 0:
-            del counts[out]
-        counts[new] += 1
-        distinct_sum += len(counts)
-    return distinct_sum / ((len(toks) - window + 1) * window)
+    # Vectorised: a token at position i is the first of its word in window [s, s+window) exactly when its
+    # previous occurrence is before s, so summing those windows over all i gives the sum of distinct counts.
+    n = len(toks)
+    ids = np.unique(np.asarray(toks), return_inverse=True)[1].ravel()
+    order = np.argsort(ids, kind="stable")
+    prev = np.full(n, -1)
+    same = ids[order][1:] == ids[order][:-1]
+    prev[order[1:][same]] = order[:-1][same]
+    pos = np.arange(n)
+    first = np.maximum(np.maximum(pos - window + 1, prev + 1), 0)
+    last = np.minimum(pos, n - window)
+    distinct_sum = int(np.clip(last - first + 1, 0, None).sum())
+    return distinct_sum / ((n - window + 1) * window)
 
 
 class StyleFeatures(BaseEstimator, TransformerMixin):
