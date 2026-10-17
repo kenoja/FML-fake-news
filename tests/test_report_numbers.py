@@ -18,8 +18,10 @@ import yaml
 
 REPO = Path(__file__).resolve().parents[1]
 REPORT = REPO / "reports" / "report.md"
-SECTIONS = ["1. What we wanted", "2. Data, models", "3. Approach", "4. Evaluation", "5. Findings",
-            "6. Interpretation", "7. Use of AI"]
+SECTIONS = ["Question and hypotheses", "Data and cleaning", "Splitting by website", "Word counts", "TF-IDF",
+            "TF-IDF plus extra features", "The LLM classifier", "Results", "Where they fail", "Limitations",
+            "Conclusion", "How we used AI"]
+DIGITS = 3   # one rounding rule: every precision, recall, F1 and p-value is written with three decimals
 
 DECIMAL = re.compile(r"(?<![\d.])(\d+\.\d+)(?!\d|\.\d)(%?)")
 INTEGER = re.compile(r"(?<![\d.,])(\d{1,3}(?:,\d{3})+|\d{3,})(?![\d,]*\.\d)(?!\d)")
@@ -32,6 +34,8 @@ def _walk(obj, out: set[float]) -> None:
     if isinstance(obj, (int, float)):
         out.add(float(obj))
     elif isinstance(obj, dict):
+        if {"tp", "fn", "fp", "tn"} <= obj.keys():  # the prose also quotes class sizes (tp + fn, fp + tn)
+            out.update({float(obj["tp"] + obj["fn"]), float(obj["fp"] + obj["tn"])})
         for v in obj.values():
             _walk(v, out)
     elif isinstance(obj, (list, tuple)):
@@ -85,7 +89,7 @@ def unmatched(body: str, nums: set[float]) -> list[str]:
     return missing
 
 
-def test_report_exists_with_seven_parts():
+def test_report_has_every_part():
     body = _body()
     for title in SECTIONS:
         assert f"## {title}" in body, f"report lacks part '{title}'"
@@ -103,6 +107,7 @@ def test_every_number_in_report_comes_from_results():
         body = body.replace(v, " ")
     body = re.sub(r"Python \d+\.\d+(\.\d+)?", "Python", body)
     body = re.sub(r"https?://\S+", " ", body)
+    body = re.sub(r"\bC\d{3,4}[a-z]{1,2}\b|\b[0-9a-f]{16}\b", " ", body)  # article ids and prompt hashes
     body = re.sub(r"\b[Ss]ections? \d+(\.\d+)?|^#+ \d+(\.\d+)?", " ", body, flags=re.M)  # cross-references
     body = re.sub(r"0-149 words|150-249 words|>= 250 words|shorter than 250 words", " ", body)  # length thresholds, not results
     bad = unmatched(body, source_numbers())
@@ -112,6 +117,25 @@ def test_every_number_in_report_comes_from_results():
 def test_checker_catches_a_wrong_number():
     """The check must fail when a number is typed from memory (otherwise the test proves nothing)."""
     nums = source_numbers()
-    assert unmatched("The LLM reaches F1 0.6843 on test.", nums) == ["0.6843"]
-    assert unmatched("The LLM reaches F1 0.6842 on test.", nums) == []
+    assert unmatched("The LLM reaches F1 0.796 on test.", nums) == ["0.796"]
+    assert unmatched("The LLM reaches F1 0.795 on test.", nums) == []
     assert unmatched("We used 4,242 documents.", nums) == ["4,242"]
+
+
+def test_scores_use_one_rounding_rule():
+    """0.68 in one place and 0.684 in another looks like two different results; the report uses one rule."""
+    text = re.sub(r"https?://\S+", " ", _body())
+    scores = re.findall(r"(?:precision|recall|F1(?: score)?|p) (?:of |=|<|reached |is )?\s?(\d\.\d+)", text)
+    wrong = [x for x in scores if len(x.split(".")[1]) > DIGITS and x != "0.0001"]
+    assert not wrong, f"scores written with more than {DIGITS} decimals (except p < 0.0001): {wrong}"
+    metrics = json.loads((REPO / "results" / "metrics.json").read_text(encoding="utf-8"))
+    best = max(r["f1"] for r in metrics["comparison"]["table"])
+    assert f"{best:.{DIGITS}f}" in text, "the best test F1 is not written with the standard rounding"
+
+
+def test_report_length_is_within_the_limit():
+    """The assignment asks for 3,000-5,000 words of report text; tables and figure links are not prose."""
+    prose = [line for line in _body().splitlines() if not line.startswith(("|", "!["))]
+    n = len(re.findall(r"\b\w[\w'-]*\b", " ".join(prose)))
+    print(f"report body: {n} words")
+    assert 3000 <= n <= 5000, f"report body has {n} words"

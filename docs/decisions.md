@@ -383,3 +383,12 @@ Checks done by T12 (not a full run):
 - The majority baseline row, precision-recall curve, length buckets and extra scores (macro F1, balanced accuracy) were removed from the comparison.
 - Final models were scored on test once in this task (`final_*` ids, `results/test_access_log.jsonl`).
 - Not done here: `tests/test_report_numbers.py` still fails 2 tests (old report structure, stale hard-coded 0.6842); that belongs to the report/number-check tasks.
+
+## Cycle 2, T12: final gates
+
+- **Stale section files deleted** (slugs not in the AGENTS.md list): `00-overview`, `01-research-questions`, `02-data-and-labels`, `06-off-topic-filter`, `12-limitations`. They produced build warnings about outputs that no longer exist.
+- **Report length.** `python -m sitegen build` gives a report body of 5,766 whitespace-separated words *including* table rows; the prose alone (table rows and figure links removed) is 4,330 words. `tests/test_report_numbers.py::test_report_length_is_within_the_limit` counts prose only and requires 3,000-5,000. Reading: tables are not report prose. If the team counts tables too, about 770 words (mostly table cells of `ablation`, `comparison_test`, `error_examples`) would have to go. Needs a team decision.
+- **Explained parts** are all at most 450 words (checked with the counting rule of `agent/tools.py`); `09-where-they-fail` was 499 and was trimmed.
+- **Rounding.** Task text asked for 2 decimals for precision/recall/F1. The site renders every table with 3 decimals (`sitegen/build.py`, protected path), so the prose uses 3 decimals everywhere (p-values below 0.0001 are written "p < 0.0001"). One rule, no mixed 0.68 / 0.684. `tests/test_report_numbers.py` now checks section titles, that every number is in `results/` or config (class sizes tp+fn and fp+tn count as derived values; article ids and hashes are ignored), and that scores use at most 3 decimals.
+- **Not done by this task (rules forbid running them inside a task):** two consecutive `fml run-all` runs with a diff of `results/`, the timing check (< 8 min) and the full test suite (< 3 min). Run them as described in README "Reproducibility check" and record the outcome here. The last recorded run time is in `results/run_info.json`.
+- **Remaining human items:** corpus licence check (T6); the 40-article human stance check (kappa still `null`); the GitHub account name in the repo link (T10); the team decisions listed above and in earlier cycle sections.

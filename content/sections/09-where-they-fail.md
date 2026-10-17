@@ -5,9 +5,9 @@ hypothesis: Some of the "mistakes" are not mistakes of the model but of the labe
 ---
 ## Explained simply
 
-**Two kinds of wrong.** Every article in our data carries the label of the website it came from. That label is a good guess, but it is not always true for the single article. A mainstream newspaper can print a piece that explains why a 9/11 theory is nonsense. A conspiracy website can print an ordinary news item about a statue. If a model calls the first one "conspiracy" or the second one "mainstream", is the model wrong, or is the label misleading? We want to know how often each happens.
+**Two kinds of wrong.** Every article in our data carries the label of the website it came from. That label is a good guess, but it is not always true for the single article. A mainstream paper can print a piece that debunks a 9/11 theory; a conspiracy website can print an ordinary news item. If a model calls the first one "conspiracy" or the second one "mainstream", is the model wrong, or is the label misleading? We want to know how often each happens.
 
-**Where we look.** We take the test articles where the best logistic regression and the LLM do not agree with the label. We sort them into three groups: only the logistic regression is wrong, only the LLM is wrong, or both are wrong. Looking at what these articles actually say is more useful than looking at one more score.
+**Where we look.** We take the test articles where the best logistic regression and the LLM do not agree with the label. We sort them into three groups: only the logistic regression is wrong, only the LLM is wrong, or both are wrong.
 
 **Stance coding.** To judge the article and not the website, we ask a simple question that never mentions the website: *what does this article do with conspiracy claims about 9/11?* There are four possible answers:
 
@@ -16,13 +16,13 @@ hypothesis: Some of the "mistakes" are not mistakes of the model but of the labe
 - it **reports** them **neutrally**, without taking a side;
 - it contains **no claim** at all (for example ordinary news that only mentions the date).
 
-Think of a teacher reading an essay and ticking one of four boxes. The tick says nothing about who wrote it. We call this ticking "stance coding". A second language model (Claude Sonnet 5.5) does the ticking for us, because reading all disagreement articles by hand would take too long.
+Think of a teacher reading an essay and ticking one of four boxes. We call this "stance coding". A second language model (Claude Sonnet 5.5) does the ticking for us, because reading them all by hand would take too long.
 
-**Turning ticks into a verdict.** We fixed a simple rule before looking at the results. If the website is a conspiracy site, but the article debunks, reports neutrally or has no claim, then the text does not look like conspiracy content, so we call it a *label problem*. The same is true for a mainstream site whose article endorses a claim. In every other case the text fits its label and the model simply missed it: a *model error*. One case is strict on purpose: a mainstream article that debunks a theory is still mainstream content, so calling it "conspiracy" is a model error, even if we can understand how the model was fooled by the topic words.
+**Turning ticks into a verdict.** We fixed a simple rule before looking at the results. If the website is a conspiracy site, but the article debunks, reports neutrally or has no claim, then the text does not look like conspiracy content, so we call it a *label problem*. The same is true for a mainstream site whose article endorses a claim. In every other case the text fits its label and the model simply missed it: a *model error*. A mainstream article that debunks a theory is still mainstream content, so calling it "conspiracy" is a model error.
 
 **Why we do not trust the ticks yet.** The automatic coding is a second model with its own mistakes. It has not been checked by people, so none of the numbers from it count as verified. For that reason we prepared a sheet with 40 articles. Our team fills in its own tick for each article, and only then can we say how far the automatic coding can be trusted.
 
-**Why we show examples.** Numbers hide what a mistake looks like. A few short excerpts show how a model can be fooled, for example by a long article that spends one sentence on the topic.
+**Why we show examples.** Numbers hide what a mistake looks like, so we show a few short excerpts.
 
 ## The code
 

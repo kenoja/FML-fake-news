@@ -65,14 +65,24 @@ pip install -r requirements-lock.txt && pip install -e . --no-deps
 
 ### Reproducibility check
 
-`results/run_info.json` records the last `fml run-all` time (217.3 s, limit 8 min). `fml run-all` does not
-append to `results/test_access_log.jsonl`: `evaluate_final` writes a line only when the model id has no
-entry yet and refuses a different config hash (checked by reading `src/fml/pipeline.py`).
+All random choices use the seed in `config/project.yaml` (`split.seed`, currently 20261016): the split, the
+models and the bootstrap. The LLM answers come from the committed cache `results/llm_cache.jsonl`
+(keyed by document and prompt), so a rerun makes no API calls. Expensive intermediate results sit in
+`results/cache/` (git-ignored). `results/run_info.json` records the time and library versions of the
+last `fml run-all` (limit 8 minutes on 2 CPUs).
 
-Double-run diff: **still not done (2026-10-17).** The attempt in task T5 was blocked: the sandbox denied
-running `fml run-all` (no approval possible), so no two-run comparison of `metrics.json` exists. To do it: run
-`fml run-all`, copy `results/metrics.json` aside, run again, and compare the two files, ignoring
-timestamps and `run_info.json`. Record the outcome here.
+To check that two runs agree:
+
+```bash
+fml run-all && git add -A results && fml run-all && git diff --stat results   # empty diff = identical
+```
+
+`fml run-all` does not touch `results/test_access_log.jsonl`; only `fml evaluate-final <model_id>` writes
+there, once per model id and configuration. `run_info.json` holds the timing, so it is the one file that
+may differ between runs.
+
+**Status:** the two-run comparison was not run by the agent that last edited this file (task rules forbid
+running `fml run-all` inside a task). It is listed in `docs/decisions.md` under "Cycle 2, T12".
 
 Results are in `results/` (`metrics.json`, `tables/`, `figures/`); the written report is
 [`reports/report.md`](reports/report.md); `tests/test_report_numbers.py` checks that its numbers match `results/`.

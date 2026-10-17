@@ -15,7 +15,7 @@
       "threshold_words": 50,
       "documents_under_150_words": 131,
       "documents_under_250_words": 398,
-      "statement": "The shortest article has 101 words, above the 50-word level below which a text is a snippet rather than an article, so no minimum length is applied. 398 of 3146 documents are under 250 words; the model results by length bucket are checked in the first evaluation run (results/tables)."
+      "statement": "The shortest article has 101 words, above the 50-word level below which a text is a snippet rather than an article, so no minimum length is applied. 398 of 3146 documents are under 250 words."
     }
   },
   "cleaning": {
