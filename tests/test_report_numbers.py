@@ -179,3 +179,40 @@ def test_ablation_checker_catches_a_changed_number():
     rows = _ablation_rows()
     assert ablation_mismatches("Style features gave 0.894, a change of -0.020 in validation F1.", rows) == []
     assert ablation_mismatches("Style features gave 0.913, a change of -0.001 in validation F1.", rows) == ["0.913", "0.001"]
+
+
+SECTION_NUMBER = re.compile(r"(?<![\d.])\d\.\d{3}(?!\d)")
+
+
+def section_mismatches(text: str, nums: set[float]) -> list[str]:
+    """Three-decimal numbers in a section that appear nowhere in results/."""
+    return [n for n in SECTION_NUMBER.findall(text) if not _found(float(n), DIGITS, nums)]
+
+
+def test_every_three_decimal_number_in_sections_comes_from_results():
+    """The site is read before the report; a stale 0.795 in a section misleads just as much."""
+    nums = source_numbers()
+    bad = {}
+    for f in sorted((REPO / "content" / "sections").glob("*.md")):
+        found = section_mismatches(re.sub(r"https?://\S+", " ", f.read_text(encoding="utf-8")), nums)
+        if found:
+            bad[f.name] = found
+    assert not bad, f"three-decimal numbers in sections that are not in results/: {bad}"
+
+
+def test_section_checker_catches_a_wrong_number():
+    nums = source_numbers()
+    assert section_mismatches("Precision is 0.985.", nums) == []
+    assert section_mismatches("Precision is 0.986.", nums) == ["0.986"]
+
+
+def test_worked_example_matches_metrics():
+    """Section 08 explains scores with the LLM's test counts; they must be the real counts."""
+    metrics = json.loads((REPO / "results" / "metrics.json").read_text(encoding="utf-8"))
+    llm = next(r for r in metrics["comparison"]["table"] if r["model"] == "final_llm")
+    text = (REPO / "content" / "sections" / "08-results.md").read_text(encoding="utf-8").split("## The code")[0]
+    for count in (llm["tp"], llm["tp"] + llm["fn"], llm["fp"], llm["fp"] + llm["tn"]):
+        assert re.search(rf"\b{count}\b", text), f"worked example lacks the count {count}"
+    for score in ("precision", "recall", "f1"):
+        assert f"{llm[score]:.{DIGITS}f}" in text, f"worked example lacks {score}"
+    assert "optimistic" in text

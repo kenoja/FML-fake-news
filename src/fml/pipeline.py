@@ -607,15 +607,13 @@ def code_disagreements(sets: pd.DataFrame, frame: pd.DataFrame, cfg: dict, seed:
     return coded
 
 
-def pick_examples(lr: pd.DataFrame, llm: pd.DataFrame, sets: pd.DataFrame, frame: pd.DataFrame) -> pd.DataFrame:
-    """One short excerpt for each kind of case, including articles both models got right."""
-    both = lr[["doc_id", "label", "pred"]].merge(llm[["doc_id", "pred"]], on="doc_id", suffixes=("_lr", "_llm"))
-    both_right = both[(both["pred_lr"] == both["label"]) & (both["pred_llm"] == both["label"])]
-    ex = errors.pick_examples(sets, both_right.rename(columns={"label": "true_label"}))
+def pick_examples(coded: pd.DataFrame, frame: pd.DataFrame, seed: int) -> pd.DataFrame:
+    """Four disagreement examples with a short excerpt, picked by a seeded rule among coded articles."""
+    ex = errors.pick_examples(coded, frame["txt"], seed)
     ex["website"] = ex["doc_id"].map(frame["website"])
-    ex["excerpt"] = [" ".join(frame.loc[d, "txt"].split()[:errors.EXCERPT_WORDS]) + " ..." for d in ex["doc_id"]]
-    ex["true_label"] = ex["true_label"].map(CLASS_NAMES)
-    return ex
+    for col in ("true_label", "lr_pred", "llm_pred"):
+        ex[col] = ex[col].map(CLASS_NAMES)
+    return ex.rename(columns={"lr_pred": "lr_prediction", "llm_pred": "llm_prediction"})
 
 
 def write_error_tables(coded: pd.DataFrame, sets: pd.DataFrame, examples: pd.DataFrame, sample: pd.DataFrame) -> bool:
@@ -624,7 +622,9 @@ def write_error_tables(coded: pd.DataFrame, sets: pd.DataFrame, examples: pd.Dat
     write_table("error_classification", errors.error_classification_table(coded, sets))
     written = errors.write_check_sample(sample, tables / "stance_check_sample.csv")
     errors.write_claude_answers(sample, tables / "stance_claude_answers.csv")
-    write_table("error_examples", examples[["cell", "doc_id", "website", "true_label", "excerpt"]])
+    write_table("error_examples", examples[["cell", "doc_id", "website", "true_label", "lr_prediction",
+                                            "llm_prediction", "stance", "excerpt"]])
+    write_table("error_examples_plain", errors.plain_examples(examples))
     return written
 
 
@@ -660,7 +660,7 @@ def errors_stage() -> dict:
     sets = errors.disagreement_sets(lr, llm)
     sets["website"] = sets["doc_id"].map(frame["website"])
     coded = code_disagreements(sets, frame, cfg, seed)
-    examples = pick_examples(lr, llm, sets, frame)
+    examples = pick_examples(coded, frame, seed)
     sample = check_sample(frame, cfg, seed)
     written = write_error_tables(coded, sets, examples, sample)
     values = {"data": "TEST rows, filtered documents; predictions from evaluate_final files only",

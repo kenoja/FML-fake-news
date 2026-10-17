@@ -5,25 +5,32 @@ hypothesis: Counting words is weaker than weighting them, extra features help a 
 ---
 ## Explained simply
 
-**One exam, four students.** Up to now every choice was made on the validation articles. Now each of the four final models takes the final exam once, on test articles nobody has looked at. All four get the same articles, so the comparison is fair.
+Each of the four final models takes the final exam once, on test articles nobody has looked at. All four get the same articles, so the comparison is fair. We explain the scores with one real case: the LLM on the test set.
 
-**Confusion matrix.** A small table that counts the four things that can happen. A conspiracy article can be caught or missed. A mainstream article can be left alone or wrongly flagged. Everything else is calculated from these four counts.
+**Part 1: what did the model get right?**
 
-**Precision.** When the model says "conspiracy", how often is it right? Think of a smoke alarm: precision asks how often there is really a fire when it rings.
+The test set has 96 conspiracy articles and 314 mainstream ones. The LLM's answers fill a **confusion matrix**, a small table with four counts:
 
-**Recall.** Of all the real conspiracy articles, how many did the model find? For the smoke alarm: of all real fires, how many did it catch? High precision with low recall means: it rings rarely but is almost always right.
+- 64 conspiracy articles caught,
+- 32 conspiracy articles missed,
+- 1 mainstream article wrongly flagged (a false alarm),
+- 313 mainstream articles correctly left alone.
 
-**F1.** One number that blends precision and recall. It is low if either one is low. We always look at the conspiracy class, because that is the group we want to find.
+**Precision** asks: when the model says "conspiracy", how often is it right? It flagged 65 articles and 64 were right: 64 / 65 = 0.985. Like a smoke alarm: how often is there really a fire when it rings?
 
-**Confidence interval.** Our test set is only a sample. With other articles the scores would be a bit different. The confidence interval is a range that shows how much. A wide range means "do not trust small differences". If two ranges barely overlap, the models probably differ.
+**Recall** asks: of all real conspiracy articles, how many did it find? 64 of 96: 0.667. For the alarm: of all real fires, how many did it catch?
 
-**Bootstrap.** This is how we get that range. We draw articles from the test set at random, one at a time, putting each back after drawing (so an article can appear twice), until we have as many as the test set. We score the model on this new set and repeat many times. The range that holds the middle bulk of the scores is the interval.
+**F1** blends the two into one number that is low if either is low: 0.795. We always look at the conspiracy class, because that is the group we want to find.
 
-**McNemar test.** Do two models really differ, or did one just get lucky? The test looks only at articles where exactly one of the two models is right. If one model wins almost all of these, the difference is clear. If the wins are split about evenly, it is not.
+**Part 2: is the difference real?**
 
-**P-value.** The p-value answers: if the two models were equally good, how likely is a split at least this lopsided? A small p-value means "unlikely to be luck", which we call *statistically significant*. It does not say the difference is large.
+Our test set is only a sample, so every score could be a bit different with other articles. A **confidence interval** shows how much. We get it with the **bootstrap**: draw 410 articles from the test set at random, putting each back after drawing, score the model, and repeat many times. The range holding the middle bulk of the scores is the interval. For the LLM's recall it is 0.570 to 0.759: the true value could easily be a bit lower or higher.
 
-**Why only three comparisons?** We fixed three comparisons before looking at results, because testing many pairs would eventually produce a "significant" result by luck. The last one compares the best logistic regression with the LLM, because that is the main question of the study.
+One warning: this method treats every article as independent. But articles from one website resemble each other, and websites are the real unit of dependence. With few websites, the intervals are therefore too narrow, that is, optimistic.
+
+The **McNemar test** asks whether two models really differ. It looks only at articles where exactly one of them is right. If one model wins almost all of these, the difference is clear; if the wins are split evenly, it may be luck. The **p-value** says how likely a split this lopsided is if both models were equally good. A small one is called *statistically significant*; it does not say the difference is large.
+
+We fixed three comparisons in advance, because testing many pairs would sooner or later give a "significant" result by luck.
 
 ## The code
 
@@ -67,7 +74,7 @@ Three McNemar tests (exact, two-sided) compare pairs of models. Word counts agai
 
 **H3: The LLM beats the best logistic regression.** Confirmed. F1 is 0.795 against 0.610, the intervals do not overlap, and the test is clearly significant (p < 0.0001). The gain comes from precision, not from recall.
 
-**How to read these verdicts.** The test set contains few websites, and articles from one website resemble each other, so the intervals are probably still somewhat optimistic. "Not confirmed" means that the data do not show the effect, not that it is absent. Only the gap to the LLM is large enough to be clearly visible.
+**How to read these verdicts.** The intervals resample documents, but websites are the real unit of dependence: articles from one website resemble each other and the test set contains few websites, so the intervals are optimistic, that is, narrower than they should be. "Not confirmed" means that the data do not show the effect, not that it is absent. Only the gap to the LLM is large enough to be clearly visible.
 
 **What the numbers say about the models.** The logistic regressions behave alike: they find about half of the conspiracy articles and raise a moderate number of false alarms. Of the 314 mainstream test articles, word counts flag 33, TF-IDF flags 21 and TF-IDF with features flags 18, so the features mainly make the model more careful rather than more sensitive. The LLM hardly ever flags a mainstream article, but it lets one third of the conspiracy articles pass. Why each model misses the articles it misses is taken up in the section on where the models fail.
 

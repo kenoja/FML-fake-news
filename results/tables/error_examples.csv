@@ -1,6 +1,5 @@
-cell,doc_id,website,true_label,excerpt
-lr_only_wrong,C0007c,conspiracydailyupdate.com,conspiracy,"Lt Col Tony Shaffer (retired) is highly experienced intelligence officer, and recipient of the Bronze Star, with 30 years of field and operational experience. Tony ..."
-llm_only_wrong,C024ca,neonnettle.com,conspiracy,Soleimani’s Daughter Warns US Soldiers Await Death as Revenge Against 'Crazy Trump' The daughter of slain Iranian terrorist Gen. Qasem Soleimani has issued a threat ...
-both_wrong,C00459,neonnettle.com,conspiracy,Ilhan Omar Gets New 2020 Challenger: Iraq War Hero and Veteran Police Officer Radical Democrat Rep. Ilhan Omar (D-MN) has a new challenger for her ...
-correct_mainstream,M07849,foxnews.com,mainstream,"The former mayor of New York City, Rudy Giuliani, appeared on ""Fox & Friends"" Wednesday to commemorate the anniversary of the 9/11 terror attacks, and ..."
-correct_conspiracy,C0013c,needtoknow.news,conspiracy,"Click on headlines to see full articles If original sources are missing, click on Cached. Star indicates article worth printing for future reference. Camera indicates ..."
+cell,doc_id,website,true_label,lr_prediction,llm_prediction,stance,excerpt
+lr_only_wrong,M0e6b0,foxnews.com,mainstream,conspiracy,mainstream,reports_neutrally,"""This story that we are hearing from the families of those who were killed on ..."
+llm_only_wrong,C0623c,neonnettle.com,conspiracy,conspiracy,mainstream,reports_neutrally,The vacuum left after the invasion is widely believed to have spawned terror group ISIS. ...
+false_positive,M11c1c,politico.eu,mainstream,conspiracy,mainstream,no_claim,"The FBI document indicated that, before the 9-11 attack, agents were ordered to close down ..."
+false_negative,C04a8a,neonnettle.com,conspiracy,mainstream,mainstream,no_claim,"An organization with links to terrorism, that's backed by radical ..."

@@ -37,7 +37,6 @@ NAME_ALLOWLIST = {
 _CAP_TOKEN = re.compile(r"[A-Z][\w'’-]*")
 CHECK_COLUMNS = ["doc_id", "website", "human_stance"]     # no Claude stance: the team reads blind
 EXCERPT_WORDS = 25
-EXAMPLE_KINDS = ("lr_only_wrong", "llm_only_wrong", "both_wrong")
 
 STANCE_PROMPT = (
     "You code how a web article treats CONSPIRACY CLAIMS about the 9/11 attacks (for example: the attacks "
@@ -291,21 +290,75 @@ def write_claude_answers(sample: pd.DataFrame, path: Path) -> None:
     sample[["doc_id", "claude_stance", "claude_justification"]].to_csv(path, index=False)
 
 
+def stance_agreement(check_file: Path, claude_file: Path) -> float:
+    """Cohen's kappa between the team's returned stances and Claude's, on the rows the team filled in."""
+    from sklearn.metrics import cohen_kappa_score
+
+    human = pd.read_csv(check_file, dtype=str, keep_default_na=False)
+    human = human[human["human_stance"].str.strip() != ""]
+    both = human.merge(pd.read_csv(claude_file, dtype=str), on="doc_id")
+    return float(cohen_kappa_score(both["human_stance"].str.strip(), both["claude_stance"]))
+
+
 # ---------------------------------------------------------------- examples
 
-def pick_examples(sets: pd.DataFrame, correct: pd.DataFrame) -> pd.DataFrame:
-    """One document per error cell, plus one correctly handled mainstream and conspiracy article.
+BOILERPLATE = re.compile(r"click|cached|subscribe|cookie|posted by|copyright|share this|read more|sign up|"
+                         r"follow us|advertis|newsletter|all rights|menu|http|www\.|@|\d{4}", re.IGNORECASE)
+EXAMPLE_CASES = {"lr_only_wrong": "Only Claude was right", "llm_only_wrong": "Only the logistic regression was right",
+                 "false_positive": "Mainstream article called conspiracy",
+                 "false_negative": "Conspiracy-site article called mainstream"}
+STANCE_WORDS = {"endorses": "endorses a claim", "rejects_or_debunks": "debunks claims",
+                "reports_neutrally": "reports neutrally", "no_claim": "makes no claim"}
 
-    `sets` comes from `disagreement_sets`; `correct` (doc_id, true_label) holds articles both models got right.
-    The first doc_id in each cell is taken, so a rerun shows the same examples.
+
+def plain_examples(examples: pd.DataFrame) -> pd.DataFrame:
+    """The example table with plain column names, only the columns the report discusses."""
+    return pd.DataFrame({"Case": examples["cell"].map(EXAMPLE_CASES), "Website type": examples["true_label"],
+                         "Logistic regression said": examples["lr_prediction"],
+                         "Claude said": examples["llm_prediction"],
+                         "What the article does": examples["stance"].map(STANCE_WORDS),
+                         "Excerpt": examples["excerpt"]})
+
+
+def find_excerpt(text: str, words: int = EXCERPT_WORDS, scan: int = 400) -> str | None:
+    """First sentence-start window of up to `words` words that is no boilerplate and names nobody.
+
+    Tries `words`, then shorter windows, so an article with few clean passages still gets an excerpt.
     """
-    rows = []
-    for kind in EXAMPLE_KINDS:
-        sub = sets[sets["set"] == kind].sort_values("doc_id")
-        if len(sub):
-            rows.append({"cell": kind, "doc_id": sub.iloc[0]["doc_id"], "true_label": sub.iloc[0]["true_label"]})
-    for label, name in ((False, "correct_mainstream"), (True, "correct_conspiracy")):
-        sub = correct[correct["true_label"] == label].sort_values("doc_id")
-        if len(sub):
-            rows.append({"cell": name, "doc_id": sub.iloc[0]["doc_id"], "true_label": label})
+    tokens = str(text).split()[:scan]
+    for size in (words, 15, 10):
+        for start in range(0, max(len(tokens) - size, 0) + 1):
+            if start and not re.search(r"[.!?]$", tokens[start - 1]):
+                continue                              # start only at the beginning of a sentence
+            window = " ".join(tokens[start:start + size])
+            if len(window.split()) < size or BOILERPLATE.search(window):
+                continue
+            if scrub_justification(window, size) == window:
+                return window + " ..."
+    return None
+
+
+def pick_examples(sets: pd.DataFrame, texts: pd.Series, seed: int) -> pd.DataFrame:
+    """One example per case, drawn with a seeded shuffle from documents with a clean excerpt.
+
+    `sets` needs doc_id, set, error_type, true_label, lr_pred, llm_pred, claude_stance (coded documents only);
+    `texts` maps doc_id to the article text. Cases: LR right / LLM wrong, LLM right / LR wrong, a false
+    positive and a false negative. One document is used once.
+    """
+    rng = np.random.default_rng(seed)
+    pools = {"lr_only_wrong": sets[sets["set"] == "lr_only_wrong"], "llm_only_wrong": sets[sets["set"] == "llm_only_wrong"],
+             "false_positive": sets[sets["error_type"] == "false positive"],
+             "false_negative": sets[sets["error_type"] == "false negative"]}
+    rows, used = [], set()
+    for case, pool in pools.items():
+        pool = pool[~pool["doc_id"].isin(used)].sort_values("doc_id")
+        for k in rng.permutation(len(pool)):
+            row = pool.iloc[k]
+            excerpt = find_excerpt(texts[row["doc_id"]])
+            if excerpt:
+                used.add(row["doc_id"])
+                rows.append({"cell": case, "doc_id": row["doc_id"], "true_label": row["true_label"],
+                             "lr_pred": row["lr_pred"], "llm_pred": row["llm_pred"],
+                             "stance": row["claude_stance"], "excerpt": excerpt})
+                break
     return pd.DataFrame(rows)

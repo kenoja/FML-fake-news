@@ -153,12 +153,43 @@ def test_check_sample_caps_rows_per_website_and_balances_classes():
     assert sample["website"].value_counts().max() <= 4
 
 
-def test_examples_cover_every_error_cell_and_a_correct_contrast():
+def _example_sets():
     sets = errors.disagreement_sets(LR, LLM)
-    correct = pd.DataFrame({"doc_id": ["f", "z"], "true_label": [False, True]})
-    ex = errors.pick_examples(sets, correct)
-    assert set(ex["cell"]) == {"lr_only_wrong", "llm_only_wrong", "both_wrong", "correct_mainstream", "correct_conspiracy"}
+    sets["claude_stance"] = "no_claim"
+    return sets
+
+
+def test_examples_show_real_disagreement_and_both_error_types():
+    texts = pd.Series({d: "The news today in town was plain and quiet for most of the long week. The plan was delayed by the weather."
+                       for d in "abcde"})
+    ex = errors.pick_examples(_example_sets(), texts, seed=1)
+    assert set(ex["cell"]) == {"lr_only_wrong", "llm_only_wrong", "false_positive", "false_negative"}
     assert ex["doc_id"].is_unique
+    one = ex.set_index("cell")
+    assert one.loc["lr_only_wrong", "lr_pred"] != one.loc["lr_only_wrong", "llm_pred"]   # models disagree
+
+
+def test_examples_are_seeded_not_first_article():
+    texts = pd.Series({d: "The news today in town was plain and quiet for most of the long week. The plan was delayed by the weather."
+                       for d in "abcde"})
+    runs = {tuple(errors.pick_examples(_example_sets(), texts, seed=s)["doc_id"]) for s in range(20)}
+    assert errors.pick_examples(_example_sets(), texts, seed=3).equals(errors.pick_examples(_example_sets(), texts, seed=3))
+    assert len(runs) > 1
+
+
+def test_excerpts_skip_boilerplate_and_named_people():
+    assert errors.find_excerpt("The page says click on headlines to see full articles here and read more.") is None
+    assert errors.find_excerpt("The speaker Barack Obama spoke to the crowd about the long plan for the country today.") is None
+    clean = errors.find_excerpt("The plan was delayed by weather in the region for most of the week.")
+    assert clean and len(clean.split()) <= errors.EXCERPT_WORDS + 1
+
+
+def test_stance_agreement_is_kappa(tmp_path):
+    pd.DataFrame({"doc_id": ["a", "b", "c", "d"], "website": "w", "human_stance": ["no_claim", "endorses", "no_claim", ""]}
+                 ).to_csv(tmp_path / "h.csv", index=False)
+    pd.DataFrame({"doc_id": ["a", "b", "c", "d"], "claude_stance": ["no_claim", "endorses", "no_claim", "endorses"]}
+                 ).to_csv(tmp_path / "c.csv", index=False)
+    assert errors.stance_agreement(tmp_path / "h.csv", tmp_path / "c.csv") == 1.0
 
 
 # ---------------------------------------------------------------- excerpt discipline (AGENTS.md hard rule)

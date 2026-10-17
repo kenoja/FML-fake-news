@@ -55,13 +55,11 @@ Because websites cannot be divided, the shares only approximate the targets. Aft
 
 ## Word counts
 
-The first analysis represents each article as a bag of words: a vector with the number of times each word occurs, ignoring order. Words were counted on the training articles only, and words occurring in fewer than two training articles were dropped. A logistic regression with balanced class weights was fitted on these counts. The regularisation strength C was chosen from {0.1, 1, 10} by the F1 score of the conspiracy class on the validation set. The test set was not used.
+The first analysis represents each article as a bag of words: a vector with the number of times each word occurs, ignoring order. Words were counted on the training articles only, and words occurring in fewer than two training articles were dropped. A logistic regression with balanced class weights was fitted on these counts; we chose it for all trained models because it is simple and its weights are readable, and we deliberately tried no other classifiers, no fine-tuned language model and no emotion features, since the question concerns the features and the language model, not the best algorithm. The regularisation strength C was chosen from {0.1, 1, 10} by the F1 score of the conspiracy class on the validation set. The test set was not used.
 
 The smallest value, C = 0.1, scored best. On validation this model reached a precision of 0.832, a recall of 0.846 and an F1 score of 0.839. Larger values of C scored lower, which is the typical sign of overfitting: with raw counts, the model starts to rely on rare words that only describe the training articles. The best value lies at the edge of the grid, so a smaller C could be slightly better. We did not widen the grid after seeing the results.
 
 The words with the largest weights are informative, but not all of them are about content. Several of the strongest conspiracy words, for example "posted", "am" and "article", look like habits of how a website presents its articles, not like conspiracy thinking. Strong mainstream words such as "killed", "tower" and "anniversary" fit factual news reporting. The model therefore partly recognises websites and not only arguments, which matters for how the results are read in the results section.
-
-What we did not do and why. We used logistic regression for all three trained models because it is simple, its weights can be read as word lists, and it fits the wide, mostly empty tables that text produces. We did not fine-tune a language model: that costs more data and money than a small project has, and it would blur the comparison. For the same reason we tried no other classifiers, such as support vector machines or tree ensembles; the question was how the features and the language model differ, not which algorithm is best. We also left out emotion features, which lie outside the question and rest on word lists that are unreliable for a topic where fear and anger are normal.
 
 
 
@@ -95,7 +93,7 @@ The table lists the validation F1 of every model and its change against TF-IDF a
 | + style | 0.894 | -0.020 |
 | + all three groups | 0.887 | -0.027 |
 
-The final tested model therefore contains the certainty words alone; whether it helps on test is answered in the results section. Style and the full combination made the model worse, probably because many weak clues add noise.
+The final tested model therefore contains the certainty words alone. On test its F1 was 0.610 against 0.582 for TF-IDF alone, but the intervals overlap widely and the McNemar test gives p = 0.332, so the chosen model rests on a gain within noise. Style and the full combination made the model worse, probably because many weak clues add noise.
 
 
 
@@ -131,10 +129,10 @@ All four final models were scored once on the same 410 test articles (96 from co
 
 | Model | Precision | Recall | F1 |
 |---|---|---|---|
-| Word counts | 0.60 (0.49 to 0.71) | 0.52 (0.43 to 0.62) | 0.56 (0.47 to 0.64) |
-| TF-IDF | 0.70 (0.59 to 0.80) | 0.50 (0.40 to 0.60) | 0.58 (0.49 to 0.66) |
-| TF-IDF + features | 0.74 (0.63 to 0.84) | 0.52 (0.42 to 0.62) | 0.61 (0.52 to 0.69) |
-| LLM | 0.98 (0.95 to 1.00) | 0.67 (0.57 to 0.76) | 0.80 (0.72 to 0.86) |
+| Word counts | 0.602 (0.494 to 0.709) | 0.521 (0.426 to 0.620) | 0.559 (0.471 to 0.642) |
+| TF-IDF | 0.696 (0.588 to 0.800) | 0.500 (0.404 to 0.603) | 0.582 (0.493 to 0.663) |
+| TF-IDF + features | 0.735 (0.631 to 0.836) | 0.521 (0.424 to 0.622) | 0.610 (0.517 to 0.693) |
+| LLM | 0.985 (0.949 to 1.000) | 0.667 (0.570 to 0.759) | 0.795 (0.723 to 0.857) |
 
 *Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals*
 
@@ -162,7 +160,7 @@ Three McNemar tests (exact, two-sided) compare pairs of models. Word counts agai
 
 **H3: The LLM beats the best logistic regression.** Confirmed. F1 is 0.795 against 0.610, the intervals do not overlap, and the test is clearly significant (p < 0.0001). The gain comes from precision, not from recall.
 
-**How to read these verdicts.** The test set contains few websites, and articles from one website resemble each other, so the intervals are probably still somewhat optimistic. "Not confirmed" means that the data do not show the effect, not that it is absent. Only the gap to the LLM is large enough to be clearly visible.
+**How to read these verdicts.** The intervals resample documents, but websites are the real unit of dependence: articles from one website resemble each other and the test set contains few websites, so the intervals are optimistic, that is, narrower than they should be. "Not confirmed" means that the data do not show the effect, not that it is absent. Only the gap to the LLM is large enough to be clearly visible.
 
 **What the numbers say about the models.** The logistic regressions behave alike: they find about half of the conspiracy articles and raise a moderate number of false alarms. Of the 314 mainstream test articles, word counts flag 33, TF-IDF flags 21 and TF-IDF with features flags 18, so the features mainly make the model more careful rather than more sensitive. The LLM hardly ever flags a mainstream article, but it lets one third of the conspiracy articles pass. Why each model misses the articles it misses is taken up in the section on where the models fail.
 
@@ -170,9 +168,9 @@ Three McNemar tests (exact, two-sided) compare pairs of models. Word counts agai
 
 ## Where they fail
 
-This is an estimate from one unchecked source: the stance codes come from a single language model and no person has checked them. We examined the test articles on which the best logistic regression and the LLM disagree with the label. The groups are articles missed only by the logistic regression, only by the LLM, and by both. A false positive is a mainstream article called conspiracy, a false negative the reverse. The counts per group are given in the first table of this part.
+We examined the test articles on which the best logistic regression and the LLM disagree with the label. The groups are articles missed only by the logistic regression, only by the LLM, and by both. A false positive is a mainstream article called conspiracy, a false negative the reverse. The counts per group are given in the first table of this part. The stance codes come from a single language model and no person has checked them yet.
 
-The labels describe websites, not articles. To separate model errors from label problems, a second model (Claude Sonnet 5.5) coded the stance of every disagreement article towards conspiracy claims about 9/11: endorses, rejects or debunks, reports neutrally, or no claim. The question did not mention the website. A fixed rule, written before the results were read, turns label and stance into a verdict. A conspiracy-site article that does not endorse a claim, or a mainstream article that endorses one, is counted as a label problem. All other cases are model errors. A mainstream article that debunks a theory counts as a model error, because it is still mainstream content.
+The labels describe websites, not articles. To separate model errors from label problems, a second model (Claude Sonnet 5.5) coded the stance of every disagreement article towards conspiracy claims about 9/11: endorses, rejects or debunks, reports neutrally, or no claim. The question did not mention the website. A fixed rule, written before the results were read, turns label and stance into a verdict. A conspiracy-site article that does not endorse a claim, or a mainstream article that endorses one, is counted as a label problem. All other cases are model errors. A mainstream article that debunks a theory counts as a model error, because it is still mainstream content. By this rule, a conspiracy-site article that makes no conspiracy claim is a label problem by definition, so the share of label problems follows partly from the rule.
 
 
 
@@ -193,27 +191,28 @@ The labels describe websites, not articles. To separate model errors from label 
 
 
 
-By this rule most of the errors are label problems, especially missed conspiracy-site articles. Many of them are ordinary news or commentary with no conspiracy claim, so a model that reads only the text has little to find. Mistakes on mainstream articles are mostly model errors: the models react to the topic words and not to the stance of the article. These shares depend on the automatic coding. Of the 67 coded articles, 2 received an answer that could not be read and are left out of the shares.
+By this rule most of the errors are label problems, especially missed conspiracy-site articles. Many of them are ordinary news or commentary with no conspiracy claim, so a model that reads only the text has little to find. Mistakes on mainstream articles are mostly model errors, since the rule counts a mainstream article that does not endorse a claim as correctly labelled. We did not test why the models call these articles conspiracy. These shares depend on the automatic coding. Of the 67 articles with an error, 65 received a readable stance and 2 an answer that could not be read; the shares use the 65.
+
+Four examples show what these cases look like.
 
 
 
-| cell | doc_id | website | true_label | excerpt |
-|---|---|---|---|---|
-| lr_only_wrong | C0007c | conspiracydailyupdate.com | conspiracy | Lt Col Tony Shaffer (retired) is highly experienced intelligence officer, and recipient of the Bronze Star, with 30 years of field and operational experience. Tony ... |
-| llm_only_wrong | C024ca | neonnettle.com | conspiracy | Soleimani’s Daughter Warns US Soldiers Await Death as Revenge Against 'Crazy Trump' The daughter of slain Iranian terrorist Gen. Qasem Soleimani has issued a threat ... |
-| both_wrong | C00459 | neonnettle.com | conspiracy | Ilhan Omar Gets New 2020 Challenger: Iraq War Hero and Veteran Police Officer Radical Democrat Rep. Ilhan Omar (D-MN) has a new challenger for her ... |
-| correct_mainstream | M07849 | foxnews.com | mainstream | The former mayor of New York City, Rudy Giuliani, appeared on "Fox & Friends" Wednesday to commemorate the anniversary of the 9/11 terror attacks, and ... |
-| correct_conspiracy | C0013c | needtoknow.news | conspiracy | Click on headlines to see full articles If original sources are missing, click on Cached. Star indicates article worth printing for future reference. Camera indicates ... |
+| Case | Website type | Logistic regression said | Claude said | What the article does | Excerpt |
+|---|---|---|---|---|---|
+| Only Claude was right | mainstream | conspiracy | mainstream | reports neutrally | "This story that we are hearing from the families of those who were killed on ... |
+| Only the logistic regression was right | conspiracy | conspiracy | mainstream | reports neutrally | The vacuum left after the invasion is widely believed to have spawned terror group ISIS. ... |
+| Mainstream article called conspiracy | mainstream | conspiracy | mainstream | makes no claim | The FBI document indicated that, before the 9-11 attack, agents were ordered to close down ... |
+| Conspiracy-site article called mainstream | conspiracy | mainstream | mainstream | makes no claim | An organization with links to terrorism, that's backed by radical ... |
 
 
 
 The 40 articles of the human check come from 19 websites, 6 conspiracy-oriented and 13 mainstream, with at most 4 articles from any one website.
 
-The automatic stance coding is not verified: no person has checked it yet, and the team plans a human check of 40 of these articles. The label-problem share (47 of 65 readable codings) is therefore an estimate from one unchecked source.
+The automatic stance coding is not verified: no person has checked it yet, and the team will check 40 articles by hand. Each teammate returns the file `results/tables/stance_check_sample.csv` with the column `human_stance` filled in, through a pull request or by email to the project lead, and agreement with Claude's stance is computed as Cohen's kappa. The label-problem share (47 of 65 readable codings) is therefore an estimate from one unchecked source.
 
 ## Limitations
 
-Several limitations qualify the results. First, the label describes the website that published a document, not its content. Conspiracy-oriented websites publish many neutral articles, and mainstream websites sometimes discuss conspiracy theories, so a prediction that disagrees with the label is not necessarily an error of the model. The scores measure how well each method recovers the type of website, not whether a text contains conspiracy claims. This label noise limits the recall of every method and can only be reduced by manual coding of the texts.
+Several limitations qualify the results. First, the label describes the website that published a document, not its content. Conspiracy-oriented websites publish many neutral articles, and mainstream websites sometimes discuss conspiracy theories, so a prediction that disagrees with the label is not necessarily an error of the model. The scores measure how well each method recovers the type of website, not whether a text contains conspiracy claims. In the error analysis, the rule that a conspiracy-site article with no conspiracy claim is a label problem by definition makes part of the label-problem share a consequence of the rule, not a finding. This label noise limits the recall of every method and can only be reduced by manual coding of the texts.
 
 Second, the number of websites is small: the validation and test sets each contain only a handful of conspiracy websites. Documents from one website resemble each other, so the confidence intervals, which resample documents, are probably somewhat too narrow, and a different assignment of websites to sets could change the ranking of close methods. The size of this effect is visible in the LLM, whose F1 score on validation was 0.987 and on test 0.795, almost all of it lost in recall (0.974 on validation, 0.667 on test). We did not test the reasons; likely ones are different websites in the two sets and label noise. We also repeated the validation run of the LLM once and report the share of identical answers.
 

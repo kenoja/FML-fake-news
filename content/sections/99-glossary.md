@@ -49,6 +49,11 @@ Also: Classifiers
 
 A program that puts each item into one of a few groups. Ours decides whether an article comes from a conspiracy-oriented or a mainstream website. Like a mail sorter who looks at each letter and drops it in one of two boxes.
 
+### Cohen's kappa
+Also: Kappa
+
+A score for how much two raters agree, after removing the agreement expected by luck. 1 is perfect agreement, 0 is no better than chance. Like two teachers grading the same essays: if both give most essays a B, they agree often even without thinking, and kappa discounts that.
+
 ### Confidence interval
 Also: 95% confidence interval, interval, Confidence intervals, Intervals
 
