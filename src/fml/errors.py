@@ -140,6 +140,26 @@ def stratified_sample(df: pd.DataFrame, n: int, seed: int, by: str = "set") -> p
     return df.loc[sorted(picks)].reset_index(drop=True)
 
 
+def balanced_website_sample(df: pd.DataFrame, n: int, cap: int, seed: int) -> pd.DataFrame:
+    """`n` rows, half per class, at most `cap` per website, taken one website at a time (seeded)."""
+    rng = np.random.default_rng(seed)
+    picks = []
+    for label in (False, True):
+        by_site = {}
+        for site, sub in df[df["label"] == label].groupby("website"):
+            by_site[site] = list(rng.permutation(sub.index.to_numpy())[:cap])
+        sites = list(rng.permutation(sorted(by_site)))
+        chosen = []
+        while len(chosen) < n // 2 and any(by_site.values()):
+            for site in sites:                    # one article per website per round
+                if by_site[site] and len(chosen) < n // 2:
+                    chosen.append(by_site[site].pop())
+        if len(chosen) < n // 2:
+            raise ValueError(f"only {len(chosen)} rows for label {label} with at most {cap} per website")
+        picks.extend(chosen)
+    return df.loc[sorted(picks)].reset_index(drop=True)
+
+
 # ---------------------------------------------------------------- stance coding
 
 def parse_stance(raw: str) -> dict:

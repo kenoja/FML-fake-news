@@ -52,7 +52,8 @@ stance_coding:                          # error analysis (cycle 1): Claude codes
   max_input_words: 3000
   cache_file: results/stance_cache.jsonl  # doc_id + prompt hash + answer only; never article text
   max_per_other_set: 40                 # lr_only_wrong / llm_only_wrong: code all, or a seeded sample of this size
-  human_sample_size: 40                 # rows in results/tables/stance_check_sample.csv
+  max_per_website: 6                    # most rows one website may add to the check sample
+  human_sample_size: 40                # rows in results/tables/stance_check_sample.csv
 
 excerpts:
   max_words: 50                         # longest article excerpt allowed in any public output

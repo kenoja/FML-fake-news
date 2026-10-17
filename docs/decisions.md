@@ -355,3 +355,16 @@ Checks done by T12 (not a full run):
 
 - `StyleFeatures` and the long stage functions in `pipeline.py` were split into short helpers; tables are byte-identical.
 - `tests/test_agent_graph.py` tests the protected `agent/` code, not the study. It could not be deleted in this run (the delete command was blocked), so it is left in place. Needs a team decision: delete it if CI does not require it.
+
+## T3 (cycle 2): stance-check sample now spreads over websites
+
+- The 40-article sheet (`results/tables/stance_check_sample.csv`) was 25 rows from one website. It is now drawn
+  from **validation** articles only (never test): 20 conspiracy + 20 mainstream, at most
+  `stance_coding.max_per_website` (6) per website, taken one website at a time with the split seed.
+  Result: 40 rows from 19 websites, at most 4 per website.
+- Claude's stance for these 40 articles needed 40 new API calls (key `LLM_CLASSIFIER_API_KEY` was present);
+  they are now in `results/stance_cache.jsonl` (doc_id + hash + answer only), so `fml run-all` makes no new calls.
+- The human `human_stance` column is still **blank on purpose**: the agent cannot produce human labels, the
+  team fills it in. The previous sheet (test-set errors) is replaced, so any earlier partial human entries
+  would be lost; none existed (`has_human_input` guards against overwriting).
+- Test: `test_check_sample_caps_rows_per_website_and_balances_classes`.

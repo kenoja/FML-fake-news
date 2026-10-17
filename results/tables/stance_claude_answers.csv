@@ -1,41 +1,41 @@
 doc_id,claude_stance,claude_justification
-C0051b,no_claim,"The article covers a [name] statue at the WTC site and lawsuits alleging Saudi support for al-Qaeda. These are litigation allegations, not conspiracy claims about"
-C00597,no_claim,"The article reports on a hack of 9/11-related insurance documents; the only conspiracy mention is a [name] spokesperson's passing dismissal of 'conspiracy theories', with no"
-C01237,no_claim,The article is a first-person diary of a therapeutic fast at a hygienic institution and says nothing about 9/11 or any related conspiracy claims.
-C023de,no_claim,"The article is a brief promo for a podcast about [name] journals and [name], with no mention of 9/11 or related conspiracy claims."
-C044c8,no_claim,The article covers [name] criticism of the FBI terrorist watchlist and mentions 9/11 only in reference to her 'some did something' remark and the database's
-C0470b,no_claim,"The article reports on the [name] shooting. Its only 9/11 mention is an insinuated link (hijackers' licenses listing the base), with no claim of an"
-C04b53,no_claim,The article covers a petition to ban [name] from social media over his [name] video; it makes no claims that 9/11 was an inside
-C052a9,no_claim,"The article covers a petition against [name], mentioning her 'some people did something' remark about 9/11, but makes no conspiracy claim about the attacks"
-C05353,no_claim,The article criticizes the [name] wording of a tweet about 9/11 and affirms Al Qaeda hijackers were responsible; it neither makes nor discusses conspiracy claims
-C064dc,no_claim,The article covers a protester fired after insulting an alleged 9/11 widow; it makes and discusses no conspiracy claims about the 9/11 attacks.
-C066d6,no_claim,"The article is about [name] political endorsement and associations. It mentions a speaker calling al Qaeda the 'presumed perpetrators' of 9/11, but only as a"
-M07f55,rejects_or_debunks,"The article criticises 9/11 conspiracy theories as incoherent and implausibly intricate, and says Russia [name] exploits them as a non-issue, while granting that the official"
-M0a0fe,no_claim,The article reviews first [name] sessions by opposition leaders. It mentions 9/11 only as a date marker and makes no conspiracy claims.
-M0ba2f,no_claim,The article criticizes [name] and [name] post-9/11 war policy and strategic errors; it accepts the standard account of Al Qaeda's responsibility and discusses no 9/11
-M0e6b0,reports_neutrally,"The article reports [name] and victims' families' calls to declassify documents on alleged Saudi links to hijackers, noting Saudi denials, without endorsing or refuting any"
-M10001,rejects_or_debunks,"The article describes the [name] general's claim that the US staged 9/11 as 'crazy,' 'crackpot' and 'laughable,' and treats it as one of many [name]"
-M1436d,no_claim,"The article reports on the [name] crane collapse, noting the date coincided with the 9/11 anniversary and the [name] role, but makes no conspiracy"
-M15a37,no_claim,The article covers CIA warnings before 9/11 and spymasters' views on torture and drones. It criticizes [name] administration inaction but advances no inside-job or cover-up
-M1c66a,reports_neutrally,"The article reports on the declassified 28 pages and alleged Saudi links, presenting both the suspicions and the denials, and concludes officials found no Saudi"
-M1cf5f,no_claim,"The article covers the [name] investigation, Russia probe origins, and [name]/[name] matters; it makes and discusses no 9/11 conspiracy claims."
-C024ca,rejects_or_debunks,"The article mentions an [name] writer calling 9/11 'the mother of all false flag attacks' and labels the column 'hysterical,' implying Washington did it, framing"
-M1359f,no_claim,"The article praises bin [name] and compares US military conduct, but it accepts that he carried out the attacks and makes no inside-job, cover-up, or"
-C0121b,reports_neutrally,"The article reports a court ruling allowing lawsuits alleging Saudi involvement in 9/11 to proceed, noting Saudi denial, without endorsing or debunking the claims."
-C012b6,no_claim,The article covers a political dispute over [name] 'some did something' remark and [name] reaction; it makes and discusses no 9/11 conspiracy claims such as
-C0134d,no_claim,"The article reports [name] controversial remarks that US foreign policy contributed to 9/11. This is a blowback argument, not an inside-job or cover-up conspiracy"
-C01b7d,no_claim,"The article reports [name] flag proclamation and the 9/11 trial date, stating [name] was responsible; it only briefly notes [name] vague remark without endorsing or"
-C0265f,no_claim,The article is ordinary news about a rocket attack on the US [name] in [name] on the 9/11 anniversary and Taliban peace talks. It makes
-C031c8,no_claim,The article only introduces [name] and teases a discussion about hidden history; it makes no claims about 9/11 or its conspiracy theories.
-C03231,no_claim,"The article reports on the trial date and background of the 9/11 defendants, accepting the official account, and makes or discusses no conspiracy claims."
-C03c0b,no_claim,"The article covers a [name] rally and his feud with [name], mentioning her 9/11 remark, but makes no conspiracy claim about the attacks being"
-C04040,no_claim,The article covers the political controversy over [name] 'some people did something' remark and [name] defense; it makes and discusses no 9/11 conspiracy claims.
-C04a8a,no_claim,The article covers [name] 'some people did something' remark about 9/11 and a [name] rally; it makes no claim that the attacks were an
-C0568d,no_claim,The article covers a 9/11 memorial speech criticizing [name] remark; it affirms the official account (19 al Qaeda terrorists) but discusses no conspiracy claims.
-C05901,no_claim,The article is political commentary about [name] and the [name]; it recounts the 9/11 attacks by al-Qaeda conventionally and makes no conspiracy claims.
-C05ccd,no_claim,The article criticizes [name] remark about 9/11 as trivializing the attacks; it makes and discusses no conspiracy claims about 9/11 being an inside job
-C05f24,no_claim,The article covers [name] tweet comparing [name] to bin [name] over gun violence. It makes no conspiracy claim about 9/11 being an inside
-C060b1,no_claim,The article covers criticism of [name] 'some people did something' remark about 9/11. It makes and discusses no conspiracy claims about the attacks.
-C06220,no_claim,"The article covers [name] remarks about 9/11 and [name] and makes no conspiracy claims about the attacks, such as an inside job, a cover-up,"
-C06a37,no_claim,The article covers [name] demanding an apology from [name] over her 9/11 remarks. It makes no conspiracy claims about the attacks and does
-C070b1,no_claim,The article covers a 9/11 victim's son criticizing [name] remarks; it makes and discusses no conspiracy claims about the attacks.
+C00eec,no_claim,"The article reports [name] interview on terrorism threats, waterboarding and the [name]. It makes and discusses no conspiracy claims about 9/11 being an inside job"
+C015c3,no_claim,"The article is about coronavirus surveillance and civil liberties; it cites 9/11 only as a precedent for emergency powers and surveillance, without claiming the attacks"
+C01752,no_claim,"The page is a list of conspiracy-themed headlines. Only one mentions 9/11 ('9-11 [name]), and only as an analogy, with no explicit claim about the"
+C01865,endorses,"The article argues 9/11 was a [name]/[name] false-flag operation, calls the 9/11 [name] a whitewash, and names alleged 'architects' as part of a [name] network."
+C01971,no_claim,"The article is a listing of chemtrail/geoengineering radio shows and conspiracy themes, but never mentions or discusses 9/11 or claims about the 9/11 attacks."
+C01afd,unreadable,
+C02348,endorses,"[name] financial insiders profited from 9/11, calls [name] collapse 'mysterious,' claims media announced it early, and links to insurance-scam and prior-knowledge articles, implying foreknowledge or"
+C035bd,no_claim,"The article is about coronavirus and [name]; 9/11 appears only as an example of crisis-driven policy ([name]), without claiming the attacks were an inside"
+C035ff,unreadable,
+C03c1b,no_claim,The article covers the 1973 [name] coup on September 11 and US involvement; it only mentions the 2001 attacks in passing for comparison and makes
+C03d75,no_claim,"The article is about [name], the 2001 anthrax attacks and [name] conspiracy insinuations; 9/11 appears only as timing context and in [name] claims, with"
+C04afe,endorses,"The author argues that intelligence agencies and a global elite plan terrorist attacks including 9/11, says bin [name] is their creature, recommends sites on the"
+C05181,endorses,"The article presents [name] claims as 'compelling' and 'outstanding' evidence, and adds its own arguments that a missile hit the Pentagon, the towers were demolished,"
+C05437,endorses,"[name] the official 9/11 narrative is built on false torture testimony, calls the [name] proceedings a fake trial perpetuating willful ignorance of '9/11 crimes', and"
+C05630,endorses,"The article argues 9/11 was an Israeli false-flag operation, asserts WTC 7 was demolished by explosives, and that the official collapse account was a media-sold"
+C0574d,endorses,"The article asserts the government and elites executed the 9/11 terror, calls the commission a self-investigation by perpetrators, and frames the attacks as a deliberate"
+C05997,no_claim,"The article tallies deaths caused by US interventions since [name], using 9/11 only as a comparison unit. It makes no claim that 9/11 was an"
+C05cb5,endorses,"The article frames 9/11 as a coup-like event for [name], claims a 'relay team' of officials subverted the 9/11 inquiry, and says skyscrapers crumbled beneath"
+C06883,endorses,"[name] to [name] book argues the official 9/11 story is false, that war plans predated 9/11, Al Qaeda was a CIA creation, and [name]/US links"
+C06a90,no_claim,The article is a chemtrail testimonial. It mentions 9-11 only as a date of a past helicopter incident and makes no claims about the 9/11
+M08403,no_claim,"The article discusses the [name] planning and security responses after 9/11, mentioning the attacks only as context, with no conspiracy claims made or discussed."
+M09745,no_claim,[name] release about a therapy dog study in cancer patients. The only 9/11 mention is the foundation helping survivors recover; no conspiracy claims appear.
+M0a1d5,rejects_or_debunks,"[name] fact-check labels the claim that a missile hit the Pentagon false, citing security camera footage showing [name] 77 and noting the footage was released"
+M0b72c,no_claim,The article compares the number of congressional hearings on [name] versus 9/11 to criticize partisan priorities; it makes and discusses no 9/11 conspiracy claims.
+M0c30c,no_claim,The article reports 9/11 victims' relatives criticising [name] travel ban; it makes and discusses no conspiracy claims about the 9/11 attacks.
+M0c51e,no_claim,The article is a straightforward news report on the deportation of a convicted 9/11 accomplice and makes no conspiracy claims about the attacks.
+M0e3b2,no_claim,The article is a [name] briefing to the [name] on the [name] outbreak in the [name] and contains no discussion of 9/11 or related
+M0e3bf,no_claim,"The article is a medical report on blood supply in [name]. It mentions the September 11 attacks only in passing, as context for emergency blood"
+M11dc0,no_claim,The article reviews an art exhibit about how 9/11 changed perceptions of earlier artworks. It makes and discusses no conspiracy claims about the attacks.
+M12c72,no_claim,The article is a historical overview of the post-9/11 war on terror and the rise of ISIS. It makes and discusses no conspiracy claims about
+M12ccd,no_claim,"The article covers [name] emergency preparedness for terrorist attacks, mentioning September 11 only as context, and makes no conspiracy claims about it."
+M13d21,no_claim,The article reports the death of 9/11 first responder [name] and his compensation fund advocacy; it makes and discusses no conspiracy claims about the
+M15da7,no_claim,"The article reports [name] speech on terrorism, Middle East policy and the nuclear deal. It mentions 9/11 only as a tragedy and makes no"
+M1bcb1,no_claim,"The article recounts a survivor's story from the [name] collapse and makes no mention of conspiracy claims about 9/11 being an inside job, cover-up,"
+M1d56b,no_claim,The article covers NATO's Article 5 invocation after 9/11 and the attacks' geopolitical consequences. It makes and discusses no conspiracy claims.
+M1e90d,no_claim,"[name] article on attitudinal and emotional effects of terrorism, including 9/11 as a case, and [name] attack desensitization; it makes and discusses no conspiracy claims."
+M1ed07,no_claim,[name] press briefing covering 9/11 anniversary commemorations and unrelated [name] business; it makes and discusses no conspiracy claims about the attacks.
+M1ed82,no_claim,The article is a press release about a cancer vaccine clinical trial partnership. It mentions no 9/11 conspiracy claims; the dateline is the only link
+M1f88e,reports_neutrally,"The article reports [name] renunciation and his description of bin [name] as a CIA/Saudi 'useful idiot', and mentions the Saudi complicity lawsuit, without endorsing or"
+M1f9be,rejects_or_debunks,"The article briefly dismisses '9/11 truthers' as having minds warped so they cannot process observable reality, while affirming the official account of al Qaeda's attacks."

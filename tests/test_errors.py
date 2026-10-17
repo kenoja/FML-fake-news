@@ -143,6 +143,16 @@ def test_check_sheet_is_blind_and_claude_answers_are_separate(tmp_path):
     assert list(pd.read_csv(tmp_path / "answers.csv").columns) == ["doc_id", "claude_stance", "claude_justification"]
 
 
+def test_check_sample_caps_rows_per_website_and_balances_classes():
+    """One prolific site must not fill the human check, or it would tell us about that site only."""
+    sites = ["big.com"] * 20 + [f"s{i}.org" for i in range(10)] + ["c1.net"] * 15 + [f"c{i}.net" for i in range(2, 8)]
+    df = pd.DataFrame({"doc_id": [f"d{i}" for i in range(len(sites))], "website": sites,
+                       "label": [False] * 30 + [True] * 21})
+    sample = errors.balanced_website_sample(df, 20, cap=4, seed=1)
+    assert len(sample) == 20 and sample["label"].sum() == 10
+    assert sample["website"].value_counts().max() <= 4
+
+
 def test_examples_cover_every_error_cell_and_a_correct_contrast():
     sets = errors.disagreement_sets(LR, LLM)
     correct = pd.DataFrame({"doc_id": ["f", "z"], "true_label": [False, True]})

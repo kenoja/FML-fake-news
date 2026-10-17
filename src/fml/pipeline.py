@@ -614,15 +614,26 @@ def pick_examples(lr: pd.DataFrame, llm: pd.DataFrame, sets: pd.DataFrame, frame
     return ex
 
 
-def write_error_tables(coded: pd.DataFrame, sets: pd.DataFrame, examples: pd.DataFrame, cfg: dict, seed: int) -> tuple[pd.DataFrame, bool]:
-    """Write the error tables and the stance check sample; return the sample and whether the file was rewritten."""
+def write_error_tables(coded: pd.DataFrame, sets: pd.DataFrame, examples: pd.DataFrame, sample: pd.DataFrame) -> bool:
+    """Write the error tables and the stance check sample; return whether the sample file was rewritten."""
     tables = results_dir() / "tables"
     write_table("error_classification", errors.error_classification_table(coded, sets))
-    sample = errors.stratified_sample(coded, cfg["human_sample_size"], seed)
     written = errors.write_check_sample(sample, tables / "stance_check_sample.csv")
     errors.write_claude_answers(sample, tables / "stance_claude_answers.csv")
     write_table("error_examples", examples[["cell", "doc_id", "website", "true_label", "excerpt"]])
-    return sample, written
+    return written
+
+
+def check_sample(frame: pd.DataFrame, cfg: dict, seed: int) -> pd.DataFrame:
+    """Validation articles for the human check: balanced classes, few per website, Claude's stance (cached)."""
+    split = load_split().set_index("doc_id")["split"]
+    pool = frame.reset_index()
+    pool = pool[pool["doc_id"].map(split) == "validation"]
+    pool = pool[["doc_id", "website", "label", "txt"]].reset_index(drop=True)
+    sample = errors.balanced_website_sample(pool, cfg["human_sample_size"], cfg["max_per_website"], seed)
+    client = errors.stance_client(cfg) if errors.missing_stances(sample["doc_id"]) else None
+    stance = errors.code_stances(sample, client=client)
+    return sample.drop(columns="txt").merge(stance, on="doc_id")
 
 
 def error_counts(sets: pd.DataFrame, coded: pd.DataFrame) -> dict:
@@ -646,7 +657,8 @@ def errors_stage() -> dict:
     sets["website"] = sets["doc_id"].map(frame["website"])
     coded = code_disagreements(sets, frame, cfg, seed)
     examples = pick_examples(lr, llm, sets, frame)
-    sample, written = write_error_tables(coded, sets, examples, cfg, seed)
+    sample = check_sample(frame, cfg, seed)
+    written = write_error_tables(coded, sets, examples, sample)
     values = {"data": "TEST rows, filtered documents; predictions from evaluate_final files only",
               "lr_model": chosen, "stance_model": cfg["model"],
               "counts": error_counts(sets, coded),
