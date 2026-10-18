@@ -1,11 +1,11 @@
 # Settings for the team walkthrough site (built by `python -m sitegen build`, published by .github/workflows/pages.yml).
-# Left empty on purpose (AGENTS.md: no GitHub usernames). Empty hides the code link; see docs/decisions.md.
+# Leave empty: the Pages workflow fills it from GITHUB_REPOSITORY, so no username is stored here.
 repo_url: ""
 # First line of reports/report.md (the report is assembled from the '## Report' part of every section).
 report_title: "Conspiracy or mainstream? Classifying 9/11 articles with logistic regression and an LLM"
 
-# Comments under each section (giscus -> GitHub Discussions). The Pages workflow fills the two ids
-# automatically; fill them here only if you build the site yourself. See docs/SETUP.md.
+# Comments under each section (giscus -> GitHub Discussions). The Pages workflow fills the repository
+# name and both ids automatically; fill them here only if you build the site yourself. See docs/SETUP.md.
 giscus:
   repo: ""
   repo_id: ""

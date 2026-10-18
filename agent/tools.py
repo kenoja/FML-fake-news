@@ -345,7 +345,8 @@ def gate_no_article_text(window: int = 30, stride: int = 10) -> list[str]:
     return fails
 
 
-PROTECTED = ["agent", "sitegen", "scripts", ".github", "config/rubric.yaml", "config/agent.yaml", "requirements"]
+PROTECTED = ["agent", "sitegen", "scripts", ".github", "config/rubric.yaml", "config/agent.yaml",
+             "config/site.yaml", "requirements"]
 
 
 def gate_protected_paths() -> list[str]:
