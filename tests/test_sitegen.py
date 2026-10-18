@@ -109,3 +109,12 @@ def test_a_single_number_can_be_quoted_in_the_report_text(tmp_path):
         assert res.warnings == [] and "**Agreement:** 0.961" in (tmp_path / "r.md").read_text()
     finally:
         probe.unlink()
+
+
+def test_comments_and_code_links_get_the_repository_from_github(monkeypatch):
+    # Why: giscus shows nothing without the repository name, but the name contains the owner's
+    # username, which must not be stored in the repo. GitHub supplies it during the Pages build.
+    monkeypatch.setenv("GITHUB_REPOSITORY", "someone/some-repo")
+    settings = sitegen.site_settings()
+    assert settings["giscus"]["repo"] == "someone/some-repo"
+    assert settings["repo_url"] == "https://github.com/someone/some-repo"

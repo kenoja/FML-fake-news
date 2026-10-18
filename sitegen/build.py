@@ -358,11 +358,19 @@ def report_text(content: Path = CONTENT) -> str:
 
 
 def site_settings() -> dict:
-    """config/site.yaml, with giscus ids optionally supplied by the Pages workflow (env vars)."""
+    """config/site.yaml, completed from the environment of the Pages workflow.
+
+    The repository name ("owner/name") comes from GITHUB_REPOSITORY, which GitHub sets in every
+    workflow run, so the owner's username never has to be written into the repo.
+    """
     import os
     cfg_path = REPO / "config" / "site.yaml"
-    settings = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) if cfg_path.is_file() else {}
+    settings = (yaml.safe_load(cfg_path.read_text(encoding="utf-8")) if cfg_path.is_file() else None) or {}
     g = settings.setdefault("giscus", {})
+    repo = os.environ.get("GITHUB_REPOSITORY", "")
+    if repo:
+        g["repo"] = g.get("repo") or repo
+        settings["repo_url"] = settings.get("repo_url") or f"https://github.com/{repo}"
     for key, env in (("repo_id", "GISCUS_REPO_ID"), ("category_id", "GISCUS_CATEGORY_ID")):
         if os.environ.get(env):
             g[key] = os.environ[env]

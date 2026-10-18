@@ -56,7 +56,7 @@ your choice in `docs/decisions.md`. If you cannot resolve something from the fil
   final run scores every final model on test exactly once (new model ids, see the test-set rule).
   Comparisons and test numbers appear only in `08-results` and later.
 - **Protected paths.** Do not edit `agent/`, `sitegen/`, `scripts/`, `.github/`, `config/rubric.yaml`,
-  `config/agent.yaml` or `requirements/`. They define how you are run and graded.
+  `config/agent.yaml`, `config/site.yaml` or `requirements/`. They define how you are run and graded.
 - **Fail loud.** "Done" is wrong if anything was skipped; "tests pass" is wrong if any were skipped.
   Write what you could not do into your final summary and into `docs/decisions.md`.
 
