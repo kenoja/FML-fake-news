@@ -278,6 +278,17 @@ def write_claude_answers(sample: pd.DataFrame, path: Path) -> None:
     sample[["doc_id", "claude_stance", "claude_justification"]].to_csv(path, index=False)
 
 
+def plain_counts(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
+    """Three rows for the report: articles per group, how many were coded, and the label-problem share."""
+    rows = []
+    for s in SETS:
+        c = coded[coded["set"] == s]
+        problems = int((c["verdict"] == LABEL_PROBLEM).sum())
+        rows.append({"Group": PLAIN_LABELS[s], "Articles": int((totals["set"] == s).sum()), "Coded": len(c),
+                     "Label problems": problems, "Label-problem share": round(problems / len(c), 3)})
+    return pd.DataFrame(rows)
+
+
 # ---------------------------------------------------------------- examples
 
 BOILERPLATE = re.compile(r"click|cached|subscribe|cookie|posted by|copyright|share this|read more|sign up|"

@@ -55,15 +55,14 @@ Finally we list the words with the largest weights in each direction, in two tab
 
 ## Report
 
-The first analysis represents each article as a bag of words: a vector with the number of times each word occurs, ignoring order. Words were counted on the training articles only, and words occurring in fewer than two training articles were dropped. The model is a logistic regression (Hastie, Tibshirani and Friedman, 2009) with balanced class weights (section 1 gives the reasons for this choice and for leaving out other classifiers). Its regularisation strength (C) was chosen from {0.01, 0.1, 1, 10, 100} by the F1 score of the conspiracy class on the validation set. Precision is the share of articles predicted as conspiracy that are conspiracy; recall is the share of conspiracy articles that are found; F1 is their harmonic mean. All numbers in this section are validation numbers.
+The first analysis represents each article as a bag of words: a vector with the number of times each word occurs, ignoring order. Words were counted on the training articles only, and words occurring in fewer than two training articles were dropped. The model is a logistic regression (Hastie, Tibshirani and Friedman, 2009) with balanced class weights (section 1 gives the reasons for this choice and for leaving out other classifiers). Its regularisation strength (C) was chosen from {0.01, 0.1, 1, 10, 100} by the F1 score of the conspiracy class on the validation set. All numbers in this section are validation numbers.
 
-The smallest value, C = 0.01, scored best, with a precision of 0.828, a recall of 0.906 and an F1 score of 0.865. Larger values scored lower (F1 0.797 at C = 100), the typical sign of overfitting: with raw counts the model starts to rely on rare words that only describe the training articles. The best value lies at the edge of the grid; we did not widen the grid after seeing the results. Of the 117 conspiracy articles in validation the model found 106, and of the 259 mainstream articles it called 22 conspiracy.
+The smallest value, C = 0.01, scored best, with a precision of 0.828, a recall of 0.906 and an F1 score of 0.865. Larger values scored lower (F1 0.797 at C = 100), the typical sign of overfitting: with raw counts the model starts to rely on rare words that only describe the training articles. Of the 117 conspiracy articles in validation the model found 106, and of the 259 mainstream articles it called 22 conspiracy.
 
 <!-- output: results/figures/word_counts_validation_confusion.png | Word counts: validation confusion matrix -->
 
 The words with the largest weights are informative, but not all are about content. Words such as "posted", "am" and "article" among the strongest conspiracy words look like habits of how a website presents its articles. Mainstream words such as "killed", "says" and "anniversary" fit factual news reporting. The model therefore partly recognises websites and not only arguments.
 
-Hypothesis H1 expects TF-IDF to beat these counts. This section provides the reference value for that comparison, an F1 score of 0.865; the comparison is made in the next section.
 
 ## Check yourself
 

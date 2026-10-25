@@ -37,11 +37,11 @@ This section describes limits of the study, so it has no analysis of its own. Th
 
 Several limitations qualify the results. First, the label describes the website that published a document, not its content. Conspiracy-oriented websites publish many neutral articles, and mainstream websites sometimes discuss conspiracy theories, so a prediction that disagrees with the label is not necessarily an error of the model. The scores measure how well each method recovers the type of website, not whether a text contains conspiracy claims. This label noise limits the recall of every method.
 
-Second, the number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. Documents from one website resemble each other, so the confidence intervals are probably somewhat too narrow, and a different assignment of websites to sets could change the ranking of close methods.
+Second, the number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. Documents from one website resemble each other, so the confidence intervals are probably too narrow.
 
 Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
 
-Fourth, some choices are thresholds that could be set differently, such as the cosine similarity of 0.9 for copies, which removed 54 articles. The split between label problems and model errors depends on a fixed rule and on the stance coding of a second language model, so it is an estimate. The certainty and doubt features ignore negation, and the typical style of a website can remain and serve as a shortcut for the models.
+Fourth, some choices are thresholds that could be set differently, such as the cosine similarity of 0.9 for copies, which removed 54 articles. The split between label problems and model errors is an estimate. The certainty and doubt features ignore negation, and website style can serve as a shortcut.
 
 Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer to other topics or websites. The test set was used during development; every final model was chosen on validation and scored on test once.
 

@@ -595,10 +595,21 @@ def conspiracy_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], websi
     return pd.DataFrame(rows)
 
 
-def write_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], llm_all: pd.DataFrame) -> pd.DataFrame:
-    """Write the recall of every model for each conspiracy website in the test set."""
+def test_websites(llm_all: pd.DataFrame) -> np.ndarray:
+    """The website of every test document, in the same order as the aligned predictions."""
     doc_ids = llm_all[llm_all["pass"] == 1]["doc_id"]
-    websites = doc_ids.map(analysis_frame().set_index("doc_id")["website"]).to_numpy()
+    return doc_ids.map(analysis_frame().set_index("doc_id")["website"]).to_numpy()
+
+
+def f1_without_site(y: np.ndarray, preds: dict[str, np.ndarray], websites: np.ndarray, site: str) -> dict:
+    """Conspiracy-class F1 of every model after dropping all test articles of one website."""
+    keep = websites != site                                  # leave the large hard site out
+    return {"site": site, "documents": int(keep.sum()), "conspiracy": int(y[keep].sum()),
+            **{m: float(model_row(m, y[keep], preds[m][keep])["f1"]) for m in preds}}
+
+
+def write_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], websites: np.ndarray) -> pd.DataFrame:
+    """Write the recall of every model for each conspiracy website in the test set."""
     per_website = conspiracy_website_recall(y, preds, websites)
     names = {"website": "Website", "test_articles": "Test articles"}
     names.update({f"recall_{m}": f"Recall: {MODEL_NAMES[m]}" for m in preds})      # plain column labels
@@ -611,13 +622,15 @@ def comparison_stage() -> dict:
     lr, llm_all = read_final_predictions()
     y, preds = align_predictions(lr, llm_all)
     table = write_comparison_tables(y, preds)
-    per_website = write_website_recall(y, preds, llm_all)
+    websites = test_websites(llm_all)
+    per_website = write_website_recall(y, preds, websites)
     metrics = _metrics()
     best_lr = best_final_lr(metrics)
     values = {"models": list(preds), "lr_best": best_lr, "test_documents": int(len(y)), "test_conspiracy": int(y.sum()),
               "bootstrap": {"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95},
               "baseline": {"model": BASELINE_ID, "accuracy": float((~y).mean())},
               "per_website": per_website.to_dict("records"),
+              "f1_without_large_site": f1_without_site(y, preds, websites, "neonnettle.com"),
               "table": table.to_dict("records"), "mcnemar": run_mcnemar_pairs(y, preds, best_lr),
               "llm_stability": metrics["llm"]["repeat_agreement"]}
     write_metrics("comparison", round_floats(values, 4))
@@ -664,6 +677,7 @@ def write_error_tables(coded: pd.DataFrame, sets: pd.DataFrame, examples: pd.Dat
     write_table("error_examples", examples[["cell", "doc_id", "website", "true_label", "lr_prediction",
                                             "llm_prediction", "stance", "excerpt"]])
     write_table("error_examples_plain", errors.plain_examples(examples))
+    write_table("error_counts_plain", errors.plain_counts(coded, sets))
     return written
 
 

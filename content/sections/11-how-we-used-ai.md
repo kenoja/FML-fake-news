@@ -33,13 +33,13 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 ## Report
 
-**Setup.** The analysis was produced with Claude Code, an AI coding assistant that reads and edits the files of a project. A planner split the team's requirements into small tasks, an implementer carried out one task at a time and ran the tests, and a reviewer, started in a fresh session, scored the result against a checklist. The website and this report are generated from the project files, so the code shown is the code that ran. After each cycle the team wrote feedback per section, which formed the next cycle's requirements.
+**Setup.** The analysis was produced with Claude Code, an AI coding assistant that reads and edits the files of a project. A planner split the team's requirements into small tasks, an implementer carried out one task at a time and ran the tests, and a reviewer, started in a fresh session, scored the result against a checklist. The website and this report are generated from the project files, so the code shown is the code that ran.
 
-**What the AI produced.** The assistant drafted the plan, the code, the tests, the tables, figures and text. Claude Haiku 5.5 is the fourth method under study, not a helper. Claude Sonnet 5.5 coded how disputed articles treat conspiracy claims.
+**What the AI produced.** The assistant drafted the plan, the code, the tests, the tables, figures and text. Claude Sonnet 5.5 coded how disputed articles treat conspiracy claims.
 
-**What the team checked or changed.** The team fixed the research question, the four methods, the feature groups and the rule that each final model is scored on test once, and removed emotion scores from the AI's draft plan. The article counts were compared with those published for the corpus. Tests fail when a rule is broken, such as fitting on training articles only. A hand check of 40 articles, which tests the automatic stance coding, is done by the team and follows.
+**What the team checked or changed.** The team fixed the research question, the four methods, the feature groups and the rule that each final model is scored on test once, and removed emotion scores from the AI's draft plan. Tests fail when a rule is broken, such as fitting on training articles only. A hand check of 40 articles, which tests the automatic stance coding, is done by the team and follows.
 
-**What we learned.** Tests confirm that numbers match files, not that they mean the right thing, so a person must judge the reasoning. Saving the language model answers makes every figure reproducible without new cost.
+**What we learned.** Tests confirm that numbers match files, not that they mean the right thing, so a person must judge the reasoning.
 
 ## Check yourself
 

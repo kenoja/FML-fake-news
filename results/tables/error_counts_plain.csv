@@ -1,0 +1,4 @@
+Group,Articles,Coded,Label problems,Label-problem share
+Only the logistic regression is wrong,37,37,18,0.486
+Only the LLM is wrong,4,4,3,0.75
+Both are wrong,29,28,28,1.0

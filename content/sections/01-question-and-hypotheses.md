@@ -39,22 +39,19 @@ This section only sets the question. The first function builds the "at a glance"
 
 ### Executive summary
 
-We asked whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website. Three logistic regressions (on word counts, on TF-IDF weights, and on TF-IDF plus three hand-made feature groups) and one low-cost language model, Claude Haiku 5.5, were compared on 410 held-out test articles. The language model reached the highest F1 score for the conspiracy class, 0.795 (95% confidence interval 0.723 to 0.857), against 0.567 for word counts, 0.598 for TF-IDF and 0.560 for TF-IDF with features. Weighting words was weakly supported as a help (H1), the hand-made features did not help (H2), and the language model clearly beat the best logistic regression (H3 confirmed). All models found fewer than seven in ten conspiracy articles on the test websites, so none is reliable enough for automatic flagging.
+We asked whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website. Three logistic regressions (on word counts, on TF-IDF weights, and on TF-IDF plus three hand-made feature groups) and one low-cost language model, Claude Haiku 5.5, were compared on 410 held-out test articles. The language model reached the highest F1 score for the conspiracy class, 0.795 (95% confidence interval 0.723 to 0.857), against 0.567 for word counts, 0.598 for TF-IDF and 0.560 for TF-IDF with features. H1 (weighting words helps) was weakly supported, H2 (hand-made features help) was not confirmed, and H3 (the language model beats the best logistic regression) was confirmed. All models found fewer than seven in ten conspiracy articles on the test websites, so none is reliable enough for automatic flagging.
 
 ### Introduction
 
-The 9/11 attacks are a lasting subject of online conspiracy content, and conspiracy-oriented websites publish far more text than can be checked by hand (Miani, Hills & Bangerter, 2022). Earlier work has shown that conspiracy language differs measurably from ordinary language (Fong et al., 2021). This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, using machine-learning methods for text classification. The articles come from the LOCO corpus, and the label describes the website, not the single article.
+The 9/11 attacks are a lasting subject of online conspiracy content, (Miani, Hills & Bangerter, 2022). This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, using machine-learning methods for text classification. The articles come from the LOCO corpus, and the label describes the website, not the single article.
 
-We compare four methods. Analyses 1 to 3 are logistic regression on different inputs: word counts, TF-IDF weights, and TF-IDF weights plus three hand-made feature groups (word sequences of up to three words, certainty and hedging words, and style measures). Analysis 4 is one low-cost large language model (LLM) used without any training on our data. A single simple classifier with changing inputs shows which input matters. Other classifiers, fine-tuning an LLM and emotion features were left out for reasons of scope and reliability.
+We compare four methods. Analyses 1 to 3 are logistic regression on different inputs: word counts, TF-IDF weights, and TF-IDF weights plus three hand-made feature groups (word sequences of up to three words, certainty and hedging words, and style measures). Analysis 4 is one low-cost large language model (LLM) used without training on our data. One simple classifier with changing inputs shows which input matters; other classifiers, fine-tuning and emotion features were left out.
 
 Table 1 gives the four methods at a glance.
-
 <!-- output: results/tables/methods_overview.csv -->
 
-All three logistic regressions ran on a laptop-class machine (see the run information in the results folder; 4 CPUs, no graphics card) in about a minute each. Only the LLM needs an internet connection and a paid interface; its cost is shown in the table.
-
 We test three hypotheses. **H1:** TF-IDF weights give a higher conspiracy-class F1 than plain word counts, because distinctive words carry more information than common ones. **H2:** adding the three feature groups (word sequences, certainty words, style) to TF-IDF raises the F1, because they capture how conspiracy texts argue. **H3:** The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05.
-All methods are judged by precision, recall and F1 for the conspiracy class, because most articles are mainstream and the share of correct answers would reward a model that never finds a conspiracy article. A hypothesis is called confirmed only if the difference points in the predicted direction, the McNemar test gives p < 0.05 and the 95% confidence intervals do not overlap. If the test is significant but the intervals overlap, it is called weakly supported; otherwise it is not confirmed. The intervals treat articles as independent and ignore that articles from one website belong together, so they are probably too narrow.
+All methods are judged by precision, recall and F1 for the conspiracy class, because most articles are mainstream and the share of correct answers would reward a model that never finds a conspiracy article. A hypothesis is called confirmed only if the difference points in the predicted direction, the McNemar test gives p < 0.05 and the 95% confidence intervals do not overlap. If the test is significant but the intervals overlap, it is called weakly supported; otherwise it is not confirmed.
 
 ## Check yourself
 
@@ -68,4 +65,4 @@ Q: Why can a model with high accuracy still be useless here?
 A: Most articles are mainstream, so always answering "mainstream" is right most of the time while finding no conspiracy article.
 
 Q: A calm news item sits on a conspiracy website. Why is it still labelled "conspiracy"?
-A: The label describes the website that published the article, not the content of the single article.
+A: We did not read and label each article; we labelled the website. So a calm article inherits its site's label, and a model that calls it "mainstream" may be reading the text correctly. This is why some "errors" are really label problems.

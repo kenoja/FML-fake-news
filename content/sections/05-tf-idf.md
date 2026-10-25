@@ -48,9 +48,9 @@ The value C = 10 scored best, with a precision of 0.930, a recall of 0.906 and a
 
 <!-- output: results/figures/tfidf_validation_confusion.png | TF-IDF: validation confusion matrix -->
 
-Hypothesis H1 expected TF-IDF to beat plain word counts, because rare, telling words carry more information than everyday ones. On validation the expectation holds. The gain comes from precision and not from recall, which fits the idea: down-weighting everyday words removes noise that made the count model call mainstream articles conspiracy. The validation set holds only 376 articles from a few websites, so the final comparison on unseen websites decides whether H1 is kept.
+Hypothesis H1 expected TF-IDF to beat plain word counts, because rare, telling words carry more information than everyday ones. On validation the expectation holds. The gain comes from precision and not from recall, which fits the idea: down-weighting everyday words removes noise that made the count model call mainstream articles conspiracy. The final comparison on unseen websites decides whether H1 is kept.
 
-The strongest words resemble those of the word-count model. "Posted", "truth" and "article" point to conspiracy websites; "killed", "tower" and "york" point to mainstream websites. Part of this signal therefore reflects how websites write and present their articles, and TF-IDF does not remove this limitation.
+The strongest words resemble those of the word-count model. "Posted", "truth" and "article" point to conspiracy websites; "killed", "tower" and "york" point to mainstream websites. Part of this signal reflects how websites present their articles.
 
 ## Check yourself
 
