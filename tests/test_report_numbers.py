@@ -19,7 +19,7 @@ import yaml
 REPO = Path(__file__).resolve().parents[1]
 REPORT = REPO / "reports" / "report.md"
 SECTIONS = ["Question and hypotheses", "Data and cleaning", "Splitting by website", "Word counts", "TF-IDF",
-            "TF-IDF plus extra features", "The LLM classifier", "Results", "Where they fail", "Limitations",
+            "TF-IDF plus extra features", "The LLM classifier", "Results and why they fail", "Limitations",
             "Conclusion", "How we used AI"]
 DIGITS = 3   # one rounding rule: every precision, recall, F1 and p-value is written with three decimals
 
@@ -177,7 +177,7 @@ def test_ablation_numbers_in_prose_match_the_table(rel):
 
 def test_ablation_checker_catches_a_changed_number():
     rows = _ablation_rows()
-    assert ablation_mismatches("Style features gave 0.894, a change of -0.020 in validation F1.", rows) == []
+    assert ablation_mismatches("Style features gave 0.909, a change of -0.009 in validation F1.", rows) == []
     assert ablation_mismatches("Style features gave 0.913, a change of -0.001 in validation F1.", rows) == ["0.913", "0.001"]
 
 
@@ -210,7 +210,7 @@ def test_worked_example_matches_metrics():
     """Section 08 explains scores with the LLM's test counts; they must be the real counts."""
     metrics = json.loads((REPO / "results" / "metrics.json").read_text(encoding="utf-8"))
     llm = next(r for r in metrics["comparison"]["table"] if r["model"] == "final_llm")
-    text = (REPO / "content" / "sections" / "08-results.md").read_text(encoding="utf-8").split("## The code")[0]
+    text = (REPO / "content" / "sections" / "08-results-and-why-they-fail.md").read_text(encoding="utf-8").split("## The code")[0]
     for count in (llm["tp"], llm["tp"] + llm["fn"], llm["fp"], llm["fp"] + llm["tn"]):
         assert re.search(rf"\b{count}\b", text), f"worked example lacks the count {count}"
     for score in ("precision", "recall", "f1"):

@@ -138,7 +138,8 @@ def run_logistic_analysis(name, make_vectorizer, title):
 def write_analysis_files(name, title, grid, words, counts):
     """Write the grid, the top words and the validation confusion matrix."""
     write_table(f"{name}_grid", grid)
-    write_table(f"{name}_top_words", words)
+    for side in ("conspiracy", "mainstream"):       # one table for each side
+        write_table(f"{name}_top_{side}_words", words[words["direction"] == side].drop(columns="direction"))
     savefig(plot_confusion(counts, f"{title} (validation)"), f"{name}_validation_confusion")
 
 

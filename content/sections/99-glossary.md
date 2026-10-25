@@ -27,7 +27,7 @@ Redrawing articles at random with replacement, many times, and recomputing the s
 ### C (regularisation strength)
 Also: C, C value
 
-The number that sets how strong the regularisation penalty is, with an odd twist: small C means a strong penalty and large C a weak one. Like a strictness dial where low C asks for short, simple answers. We tried 0.1, 1 and 10 and kept the best on validation.
+The number that sets how strong the regularisation penalty is, with an odd twist: small C means a strong penalty and large C a weak one. Like a strictness dial where low C asks for short, simple answers. We tried 0.01, 0.1, 1, 10 and 100 and kept the best on validation.
 
 ### Cache
 Also: Saved answers
@@ -149,6 +149,11 @@ A way to squash big numbers so that growth slows down: 1, 10 and 100 become 0, 1
 Also: Logistic regressions, Regressions
 
 A simple model that gives each feature a weight, adds up the weighted values for an article and turns the total into a probability. Like a judge adding points for and against, then stating how likely the case is.
+
+### MATTR
+Also: moving-average type-token ratio, type-token ratio
+
+A measure of how much a text repeats itself: the share of different words in a window of 100 words, averaged over every such window along the text. Like asking, in every page of a book, how many words are new. Averaging over windows keeps long texts from looking repetitive just because they are long.
 
 ### McNemar test
 

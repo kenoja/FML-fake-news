@@ -5,23 +5,21 @@ hypothesis: Adding features about certainty and writing style improves the TF-ID
 ---
 ## Explained simply
 
-> **Do the extra features help?** On validation only certainty words pass; on test we cannot show a gain beyond noise. See section 08 for the test numbers.
-
-**A tiny example.** Take an invented text of 100 words that contains 3 certainty words such as "obviously". Its certainty score is 3.0 per 100 words. A text of 200 words with the same 3 words scores 1.5, so a long text does not look more certain just because it is long.
-
-**The idea.** TF-IDF only sees single words. The course feedback asked whether a few hand-made clues help on top. A clue is called a **feature**: one number that describes an article. We tried three families of clues, each backed by earlier research.
+**The idea.** TF-IDF only sees single words. Do a few hand-made clues help on top? A clue is called a **feature**: one number that describes an article. We tried three families, each backed by earlier research.
 
 1. **Phrases (n-grams of one to three words).** "Inside job" or "no evidence of" mean more than their single words (Wang and Manning, 2012).
-2. **Certainty and doubt words.** Writers show how sure they are through their words, as in "I know" against "I guess". Our short lists hold doubt words ("perhaps"), certainty words ("clearly"), hidden-truth words ("cover-up") and debunking words ("no evidence"). Research links conspiracy writing to certainty and hidden truths, but the evidence is mixed (Marini and Jezek, 2024; Fong et al., 2021).
+2. **Certainty and doubt words.** Writers show how sure they are through their words, as in "I know" against "I guess". Our short lists hold doubt words ("perhaps"), certainty words ("clearly"), hidden-truth words ("cover-up") and debunking words ("no evidence"). Evidence is mixed (Fong et al., 2021).
 3. **Style.** Share of CAPITAL words, exclamation and question marks, quotation marks, sentence length and repetition (Horne and Adali, 2017; Perez-Rosas et al., 2018).
 
-**A fair test.** We compare five models on the same articles and split: TF-IDF alone, TF-IDF plus each family, and TF-IDF plus all three. Each family is built from the training articles only. Numbers such as "capital words per article" are put on one common scale (this is called **standardising**, like converting miles and kilometres to one unit) with a scale learned on the training articles only. We judge by F1 on the validation articles.
+**Counting per 1,000 words.** An invented text of 100 words with 3 certainty words scores 30 per 1,000 words. A text of 200 words with the same 3 words scores 15. A long text does not look more certain just because it is long. We then put every number on one common scale, learned on the training articles only, like converting miles and kilometres to one unit.
 
-**How we read it.** We set a minimum gain before the test: a family counts as helping only if F1 rises by at least 0.01. A smaller change could be luck, because one or two articles can move F1 that much. Otherwise we keep plain TF-IDF.
+**Why MATTR for repetition?** The simple idea is the share of different words in a text. But long texts must repeat words, so that share falls as a text grows, and it would measure length instead of style. MATTR (moving-average type-token ratio) fixes this: take every window of 100 words, compute the share of different words in it, and average over all windows. Every text is judged in pieces of the same size.
 
-**Why extra clues can add little.** The words already carry the information: if "cover-up" is telling, TF-IDF has it. Our short lists ignore meaning, so "there was no cover-up" still counts "cover-up". And a style habit can belong to one website, not to a belief.
+**The comparison table (an "ablation").** We compare five models on the same articles and split: TF-IDF alone, TF-IDF plus each family, and TF-IDF plus all three. Each row is a full model with its own best regularisation strength (C). The last column is the change in validation F1 against TF-IDF alone: plus means better, minus worse. The table explains what each family contributes; it is not a model choice. The final model is TF-IDF plus all three, as planned.
 
-We added no emotion scores: emotional wording is normal in reports on a terror attack.
+**Our verdict.** The three families together do not help: the table shows a lower F1 than TF-IDF alone. Hypothesis H2 expected an improvement, and on validation it is not supported.
+
+**Why more clues can make it worse.** Suppose the model must learn from 1,768 articles but gets hundreds of thousands of phrase columns. It can memorise single articles. Many columns also repeat each other, which makes weights unstable. And a style habit may belong to one website, not to a belief, so it fails on new websites.
 
 ## The code
 
@@ -33,7 +31,11 @@ Phrases come from a TF-IDF step that reads word runs of length one to three.
 
 <!-- cell: src/fml/features/ngrams.py#build_ngram_vectorizer -->
 
-Certainty words are counted per 1,000 words, so a long article does not look more certain just because it is long.
+Counts become counts per 1,000 words, so length does not matter.
+
+<!-- cell: src/fml/features/_text.py#per_n_words -->
+
+Certainty words are counted with this function.
 
 <!-- cell: src/fml/features/epistemic.py#count_markers -->
 
@@ -41,17 +43,13 @@ Style features are computed from the text alone.
 
 <!-- cell: src/fml/features/style.py#style_row -->
 
-Repetition is measured with a sliding window over the words.
+Repetition is measured with MATTR: a window of 100 words slides along the text.
 
 <!-- cell: src/fml/features/style.py#mattr -->
 
 Each model is tuned on validation, then the rows are compared with plain TF-IDF.
 
 <!-- cell: src/fml/ablation.py#run_ablation -->
-
-A family counts as helping only with a gain of at least 0.01.
-
-<!-- cell: src/fml/ablation.py#verdict -->
 
 <!-- output: results/tables/ablation.csv -->
 <!-- output: results/figures/ablation_f1.png | Validation F1 of the five models -->
@@ -61,36 +59,39 @@ A family counts as helping only with a gain of at least 0.01.
 
 ## Report
 
-The third analysis asks whether hand-made features improve the TF-IDF model. We added three groups, each motivated by earlier work. N-grams of one to three words capture phrases such as "inside job"; word and bigram features are a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short hand-made lists (hedges, boosters, hidden-truth phrases, debunking words), following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020), although evidence on certainty is mixed (Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and repetition; fake-news bodies use more capitals and repetition (Horne and Adali, 2017), but such features generalise poorly across domains (Perez-Rosas et al., 2018).
+The third analysis asks whether hand-made features improve the TF-IDF model (hypothesis H2: adding the three feature groups improves TF-IDF). We added three groups, each motivated by earlier work. N-grams of one to three words capture phrases such as "inside job"; word and bigram features are a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short hand-made lists (hedges, boosters, hidden-truth phrases, debunking words), following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020), although evidence on certainty is mixed (Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and repetition; fake-news bodies use more capitals and repetition (Horne and Adali, 2017), but such features generalise poorly across domains (Perez-Rosas et al., 2018). Repetition is measured with the moving-average type-token ratio (MATTR) over windows of 100 words, because the plain type-token ratio falls with text length and would measure length rather than style.
 
-We compared five logistic regressions on the same cleaned articles and split: TF-IDF alone, with each group, and with all three. Each feature matrix was built once on the training articles, numeric groups were standardised with training statistics only, and every model chose the regularisation strength (C) and the class weight from the same grid by validation F1 of the conspiracy class. A group passes the threshold if it raises validation F1 by at least 0.01; otherwise plain TF-IDF is kept. With 376 validation articles, smaller differences cannot be told from chance.
-
-The table lists the validation F1 of every model and its change against TF-IDF alone. Only the certainty words reach our threshold.
+Counts are expressed per 1,000 words so that article length does not matter, and the numeric groups were standardised with training statistics only. We compared five logistic regressions on the same cleaned articles and split: TF-IDF alone, with each group, and with all three. Every model chose its regularisation strength (C) from the same grid by validation F1 of the conspiracy class, with balanced class weights. The table below is an ablation: it explains the contribution of each group and is not a model selection, because the model used in the final comparison is TF-IDF plus all three groups, as planned. All numbers in this section are validation numbers.
 
 | Model | Validation F1 | Change against TF-IDF alone |
 |---|---|---|
-| TF-IDF alone | 0.914 | reference |
-| + n-grams (1-3) | 0.916 | +0.002 |
-| + certainty words | 0.930 | +0.017 |
-| + style | 0.894 | -0.020 |
-| + all three groups | 0.887 | -0.027 |
-
-The final tested model therefore contains the certainty words alone. On test its gain (F1 0.610 against 0.582) was within noise (p = 0.332). Style and the full combination made the model worse, probably because many weak clues add noise.
+| TF-IDF alone | 0.918 | reference |
+| + n-grams (1-3) | 0.920 | +0.002 |
+| + certainty words | 0.930 | +0.013 |
+| + style | 0.909 | -0.009 |
+| + all three groups | 0.896 | -0.022 |
 
 <!-- output: results/figures/ablation_f1.png | Validation F1 of the five models -->
 
-Three reasons explain why the groups add so little. First, the information is already in the words: "cover-up" is a TF-IDF feature as soon as it is a word. Second, the lists reach only part of the data: the hidden-truth list occurs in 45% of training conspiracy articles against 3% of mainstream ones, but is absent from more than half of the conspiracy articles. Third, the lists count words and ignore meaning, so an article that denies a cover-up still scores as hidden-truth vocabulary.
+The verdict on H2 is no: the three feature groups together lower the validation F1 from 0.918 to 0.896. Phrases changed almost nothing, certainty words alone raised F1 by 0.013, and style alone lowered it by 0.009. With 376 validation articles, differences of one or two hundredths can be chance, so even the certainty gain is only a weak hint.
+
+Why can the full combination be worse than TF-IDF alone? The table cannot prove a cause, but it fits three explanations. First, the models have far more columns than articles: the phrase vocabulary is capped at 200,000 columns while only 1,768 articles are available for training, so the model can fit single articles. The best C for the full model is the largest value in the grid, which also means that it was allowed to follow the training data freely. Second, the groups overlap: a phrase column repeats its words, and the certainty lists count words that TF-IDF already holds, so many columns carry the same information and the weights become unstable. Third, style habits may belong to single websites. Style alone scored below TF-IDF alone, which fits the idea that these numbers describe how particular websites write and do not transfer to new websites; we did not test this directly.
+
+The hand-made word lists also reach only part of the data: the hidden-truth list occurs in 0.439 of training conspiracy articles against 0.031 of mainstream ones, but is absent from more than half of the conspiracy articles. The lists count words and ignore meaning, so an article that denies a cover-up still scores as hidden-truth vocabulary.
 
 ## Check yourself
 
 Q: Why can a new feature fail to improve a model that already uses TF-IDF?
 A: The information may already be in the words. If "cover-up" matters, TF-IDF has it as a word, so a count of the same word adds almost nothing new.
 
-Q: What would go wrong if we accepted a feature group for any gain at all, however small?
-A: With a few hundred validation articles, one or two articles can move F1 by that much by chance. A rule with a margin stops us from calling luck an improvement.
+Q: Why do we count certainty words per 1,000 words and not just count them?
+A: A long article contains more words of every kind. Counting per 1,000 words makes a short and a long article comparable.
+
+Q: Why does MATTR use windows of 100 words instead of the whole text?
+A: The share of different words falls as a text gets longer, so over the whole text it would mostly measure length. Equal windows compare equal-sized pieces.
+
+Q: Why can adding more features make a model worse?
+A: With many more columns than articles the model can memorise single articles. Overlapping columns also make the weights unstable, and style habits of single websites do not carry over to new ones.
 
 Q: What would go wrong if the common scale for the style numbers were worked out from validation or test articles too?
-A: If the scale used validation or test articles, information about them would leak into training and the scores would look better than they are.
-
-Q: Why does a clear difference in hidden-truth words between the two kinds of website not guarantee that they help the classifier?
-A: A difference in averages only describes the data. The words may already be in TF-IDF, and the list covers only some articles.
+A: Information about those articles would leak into training and the scores would look better than they are.

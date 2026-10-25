@@ -57,14 +57,14 @@ def feature_matrix(blocks: list, df: pd.DataFrame) -> csr_matrix:
 
 
 def fit_logistic(X_train, y_train, C: float, class_weight) -> LogisticRegression:
-    """Fit one logistic regression (L2 penalty is sklearn's default) on the training rows."""
+    """Fit one logistic regression; C is the regularisation strength (a small C keeps weights small)."""
     seed = project_config()["split"]["seed"]
     model = LogisticRegression(C=C, class_weight=class_weight, solver="liblinear", max_iter=2000, random_state=seed)
     return model.fit(X_train, y_train)
 
 
 def tune_on_validation(X_train, y_train, X_valid, y_valid, c_grid=None) -> tuple[LogisticRegression, pd.DataFrame]:
-    """Fit one model per C on train, score each on validation, return the best model and the grid."""
+    """Fit one model per regularisation strength (C) on train, score each on validation, keep the best F1."""
     lr = project_config()["lr"]
     rows = []
     for C in (lr["c_grid"] if c_grid is None else c_grid):
