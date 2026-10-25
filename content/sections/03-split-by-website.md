@@ -11,7 +11,7 @@ hypothesis: We expect scores on whole unseen websites to be lower than on a rand
 - **Validation set (15%).** We use these to compare settings and choose the best. Think of a practice exam.
 - **Test set (15%).** We use these once, at the very end, to get an honest score. Think of the real exam.
 
-**Why by website.** Articles from one website look alike: the same layout, the same typical words, the same topics. If some articles of a website are in training and others in the test set, the model can score well by simply recognising the website. Then we would not learn whether it understands anything about the texts. So we keep every website in one part only. A website in the test set is a complete stranger to the model, which is the situation we care about. Expect scores to be lower than with a random split, and more honest.
+**Why by website.** Articles from one website look alike: the same typical words and topics. If some articles of a website are in training and others in the test set, the model can score well by simply recognising the website. So we keep every website in one part only. A website in the test set is a complete stranger to the model, which is the situation we care about. Expect scores to be lower than with a random split, and more honest.
 
 **Team question 1: does "grouped by website" mean the model is fed one website at a time?** No. The model sees all training articles mixed together. "Grouped" only decides which articles end up in the training set at all. The rule is: a website is never in two parts.
 
@@ -25,9 +25,9 @@ An example with three invented websites of ten articles each:
 
 **Keeping the shares equal.** Conspiracy articles are fewer than mainstream ones. We divide the conspiracy websites and the mainstream websites separately, so each part has about the same mix. A fixed random number keeps the result repeatable. Because websites are not cut up, the parts are only close to 70/15/15.
 
-**Why we also remove the website names.** Splitting by website and removing website names do two different jobs. The split stops the model from memorising a site: it is tested on sites it has never seen. Removing names stops it from using the site's name as a shortcut: a name in the text would give the label away, because "the name of a known conspiracy site" is an easy clue. Think of an exam where the split keeps the questions new, and covering the pupil's name on the paper keeps the marker fair.
+**Why we also remove the website names.** The two steps do different jobs. The split stops the model from memorising a site. Removing names stops it from using a name in the text as an easy clue. Think of an exam where the split keeps the questions new, and covering the pupil's name keeps the marker fair.
 
-**Frozen.** We made the split once, before any result existed, and saved it in a file. We never change it, because re-dividing after seeing scores would be a way of cheating. Cleaning removes articles from the parts but never moves one to another part.
+**Frozen.** We made the split once, before any result existed, and saved it in a file. We never change it, because re-dividing after seeing scores would be cheating. Cleaning removes articles from the parts but never moves one to another part.
 
 **What to look out for.** Only a few conspiracy websites are in the validation and test sets, so one unusual website can move a score noticeably.
 

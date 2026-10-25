@@ -1,5 +1,5 @@
 method,input,reads,trained_on_our_data,settings,runtime,cost
-1. Word counts + logistic regression,word counts,"first 3,000 words of each article",yes,"C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation",26 seconds,free (runs locally)
+1. Word counts + logistic regression,word counts,"first 3,000 words of each article",yes,"C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation",3 seconds,free (runs locally)
 2. TF-IDF + logistic regression,TF-IDF weights,"first 3,000 words of each article",yes,"C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation",2 seconds,free (runs locally)
-3. TF-IDF + features + logistic regression,"TF-IDF weights, n-grams, certainty words, style","first 3,000 words of each article",yes,"C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation",57 seconds,free (runs locally)
+3. TF-IDF + features + logistic regression,"TF-IDF weights, n-grams, certainty words, style","first 3,000 words of each article",yes,"C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation",59 seconds,free (runs locally)
 4. LLM (claude-haiku-5-5),"the article text itself, with a written question","first 3,000 words of each article",no,"prompt v1 of 3, default sampling",about 1.0 seconds per article,"about $0.26 per 1,000 articles"
