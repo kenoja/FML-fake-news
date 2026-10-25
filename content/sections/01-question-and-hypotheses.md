@@ -1,7 +1,7 @@
 ---
 title: Question and hypotheses
 part: Introduction
-hypothesis: Weighting words helps, our three feature groups help, and the language model differs from the best model we trained.
+hypothesis: The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05.
 ---
 ## Explained simply
 
@@ -14,20 +14,14 @@ hypothesis: Weighting words helps, our three feature groups help, and the langua
 
 Analysis 4 is different: a ready-made AI system (an **LLM**) that has never seen our training articles. It reads each article and answers. It is not trained by us.
 
-**Why these four.** They form a ladder from simple to rich. Word counts are the plainest baseline. TF-IDF is the standard small improvement. The extra features test our own ideas about how conspiracy writing sounds. The LLM shows what a very different, untrained approach can do.
+**Why these four.** They form a ladder from simple to rich. Word counts are the plainest baseline, TF-IDF is the standard small improvement, the extra features test our own ideas about how conspiracy writing sounds, and the LLM shows what a very different, untrained approach can do.
 
-**What we did not do, and why.** We did not try other classifiers (such as support vector machines or neural networks), because comparing many methods would hide which *input* matters; one simple method with different inputs answers our question. We did not fine-tune an LLM, because that needs far more data, money and care than this course project allows. We did not use emotion features, because the team judged them too unreliable to measure with simple word lists.
-
-**The four methods at a glance.**
-
-<!-- output: results/tables/methods_overview.csv -->
-
-Everything except the LLM runs on an ordinary laptop in about a minute or two. Only the LLM needs an internet connection and a paid service.
+**What we did not do.** We did not try other classifiers, because comparing many methods would hide which *input* matters. We did not fine-tune an LLM, which needs more data and money than we have. We did not use emotion features, which simple word lists measure too unreliably.
 
 **What is a hypothesis?** A clear guess that the results can prove wrong. We have three:
-- **H1.** TF-IDF beats plain word counts, because telling words carry more information than everyday ones.
-- **H2.** Adding the three feature groups (phrases, certainty words, style) improves TF-IDF, because they capture how conspiracy texts argue.
-- **H3.** The LLM does about as well as the best logistic regression, or differs from it; we have no firm direction.
+- **H1.** TF-IDF beats plain word counts, because telling words carry more information.
+- **H2.** Adding the three feature groups (phrases, certainty words, style) improves TF-IDF.
+- **H3.** The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05.
 
 **How we judge "better".** Most articles come from mainstream websites, so a model that always says "mainstream" is right most of the time and finds nothing. We use the F1 score for the conspiracy class instead.
 
@@ -45,7 +39,7 @@ This section only sets the question. The first function builds the "at a glance"
 
 ### Executive summary
 
-We asked whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website. Three logistic regressions (on word counts, on TF-IDF weights, and on TF-IDF plus three hand-made feature groups) and one low-cost language model, Claude Haiku 5.5, were compared on 410 held-out test articles. The language model reached the highest F1 score for the conspiracy class, 0.795 (95% confidence interval 0.723 to 0.857), against 0.567 for word counts, 0.598 for TF-IDF and 0.560 for TF-IDF with features. Weighting words helped slightly (H1), the hand-made features did not (H2), and the language model clearly differed from the best logistic regression (H3). All models found fewer than seven in ten conspiracy articles on the test websites, so none is reliable enough for automatic flagging.
+We asked whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website. Three logistic regressions (on word counts, on TF-IDF weights, and on TF-IDF plus three hand-made feature groups) and one low-cost language model, Claude Haiku 5.5, were compared on 410 held-out test articles. The language model reached the highest F1 score for the conspiracy class, 0.795 (95% confidence interval 0.723 to 0.857), against 0.567 for word counts, 0.598 for TF-IDF and 0.560 for TF-IDF with features. Weighting words was weakly supported as a help (H1), the hand-made features did not help (H2), and the language model clearly beat the best logistic regression (H3 confirmed). All models found fewer than seven in ten conspiracy articles on the test websites, so none is reliable enough for automatic flagging.
 
 ### Introduction
 
@@ -59,8 +53,8 @@ Table 1 gives the four methods at a glance.
 
 All three logistic regressions ran on a laptop-class machine (see the run information in the results folder; 4 CPUs, no graphics card) in about a minute each. Only the LLM needs an internet connection and a paid interface; its cost is shown in the table.
 
-We test three hypotheses. **H1:** TF-IDF weights give a higher conspiracy-class F1 than plain word counts, because distinctive words carry more information than common ones. **H2:** adding the three feature groups (word sequences, certainty words, style) to TF-IDF raises the F1, because they capture how conspiracy texts argue. **H3:** the LLM performs about as well as the best logistic regression, or differs from it; no direction is assumed.
-All methods are judged by precision, recall and F1 for the conspiracy class, because most articles are mainstream and the share of correct answers would reward a model that never finds a conspiracy article. A hypothesis counts as supported only if the confidence interval and the significance test agree with the direction of the difference.
+We test three hypotheses. **H1:** TF-IDF weights give a higher conspiracy-class F1 than plain word counts, because distinctive words carry more information than common ones. **H2:** adding the three feature groups (word sequences, certainty words, style) to TF-IDF raises the F1, because they capture how conspiracy texts argue. **H3:** The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05.
+All methods are judged by precision, recall and F1 for the conspiracy class, because most articles are mainstream and the share of correct answers would reward a model that never finds a conspiracy article. A hypothesis is called confirmed only if the difference points in the predicted direction, the McNemar test gives p < 0.05 and the 95% confidence intervals do not overlap. If the test is significant but the intervals overlap, it is called weakly supported; otherwise it is not confirmed. The intervals treat articles as independent and ignore that articles from one website belong together, so they are probably too narrow.
 
 ## Check yourself
 

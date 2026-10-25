@@ -107,8 +107,8 @@ resolve a conflict (see AGENTS.md).
   `metrics.json#comparison.baseline`. It is left out of the two comparison figures (F1 = 0).
 - **Stance coding** for the new disagreement articles ran with `LLM_CLASSIFIER_API_KEY` set; new answers were added to
   `results/stance_cache.jsonl`. A later run without the key works from that cache; a missing entry fails loudly.
-- **Not done in this task:** the three old `results/tables/predictions_final_{word_counts,tfidf,tfidf_features}.csv`
-  files could not be deleted (no permission to remove files); nothing reads them. Section prose and
+- The three old `results/tables/predictions_final_{word_counts,tfidf,tfidf_features}.csv`
+  files were deleted later (nothing read them). Section prose and
   `docs/reproducibility.md` still quote earlier numbers and file names; the queued section rewrites must update them
   (`tests/test_report_numbers.py` fails until then).
 
@@ -135,3 +135,7 @@ resolve a conflict (see AGENTS.md).
 - References added (all well known, cited in the matching Report parts): Hastie et al. 2009, Manning et al. 2008, McNemar 1947, Efron & Tibshirani 1993, Pedregosa et al. 2011.
 - **Skipped:** no 9/11-conspiracy background sources were added, because none could be confirmed without a web check (no invented references). Still a team decision.
 - **Skipped:** I did not run `fml run-all` twice or the full test suite in this task (the task rules say the harness does that); only the glossary, gates, privacy, report-numbers, comparison, sections and sitegen tests were run (86 passed).
+
+## D8 background sources on 9/11 conspiracy content (declined, cycle 3 T3)
+- WebSearch was denied in this session (no approval surface), so no extra source could be verified. No reference was added from memory; the 01 introduction keeps only claims supported by Miani et al. (2022) and Fong et al. (2021). Still a team decision: a member can verify one or two sources and add them.
+- 01 "Explained simply" trimmed (method table marker removed there; it stays in the Report).

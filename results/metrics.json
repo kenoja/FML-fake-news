@@ -55,6 +55,12 @@
       "documents_under_threshold": 0,
       "median_words": 622.0
     },
+    "clue_removal": {
+      "documents_removed": 0,
+      "documents_changed": 2498,
+      "words_before": 2681860,
+      "words_removed": 23390
+    },
     "split_after_cleaning": {
       "train": 1768,
       "validation": 376,
@@ -228,6 +234,7 @@
       "validation": 376
     },
     "final_model": "lr_extended",
+    "n_columns_full": 146172,
     "validation": {
       "model_id": "lr_extended",
       "label": "+ all three",

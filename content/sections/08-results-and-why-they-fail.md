@@ -1,7 +1,7 @@
 ---
 title: Results and why they fail
 part: Evaluation
-hypothesis: Weighting words beats counting them, the extra features help a little, and the LLM beats every model we trained; some "mistakes" are label problems, not model problems.
+hypothesis: The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05.
 ---
 ## Explained simply
 
@@ -33,6 +33,8 @@ The stage reads the saved test predictions, builds the table and the figures, an
 
 <!-- cell: src/fml/pipeline.py#run_mcnemar_pairs -->
 
+<!-- cell: src/fml/pipeline.py#write_website_recall -->
+
 <!-- cell: src/fml/pipeline.py#comparison_stage -->
 
 <!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals -->
@@ -48,7 +50,7 @@ To see where the test scores are lost, this cell counts, for every conspiracy we
 
 <!-- output: results/tables/test_website_recall.csv | Recall of each model on the conspiracy articles of each test website -->
 
-Reading the table, finding by finding. The site with one article cannot tell us anything. The large site neonnettle.com supplies 44 of the 96 conspiracy test articles, and every model finds only about a third of them or fewer, so this one site pulls every test score down. On the other sites the models find most articles, so the drop from validation to test is mostly the work of this site and of the change of websites. The LLM finds more articles than every logistic regression on each site with more than one article.
+Reading the table, finding by finding. The site with one article cannot tell us anything. The large site neonnettle.com supplies 44 of the 96 conspiracy test articles, and every model finds only about a third of them or fewer, so this one site pulls every test score down. On the other sites the models find most articles, so the drop from validation to test is mostly the work of this site and of the change of websites. On the five sites with more than one article, the LLM finds at least as many articles as every logistic regression, and more on 4 of the 5 sites. The one tie is thelibertybeacon.com, where the LLM and the TF-IDF model both reach a recall of 1.0.
 
 Now the errors. First we find, for each test article, who is wrong.
 
@@ -68,6 +70,10 @@ The examples are picked with a seeded shuffle among articles that have a clean e
 
 The stage puts it all together and writes the tables.
 
+<!-- cell: src/fml/pipeline.py#label_problem_values -->
+
+<!-- cell: src/fml/pipeline.py#errors_values -->
+
 <!-- cell: src/fml/pipeline.py#errors_stage -->
 
 <!-- output: results/tables/error_classification.csv -->
@@ -86,19 +92,19 @@ The LLM has the highest F1 (0.795, interval 0.723 to 0.857), followed by TF-IDF 
 
 Three exact two-sided McNemar tests (McNemar, 1947) compare pairs of models on the same articles.
 
-**H1: TF-IDF weighting beats plain word counts.** Confirmed, narrowly. TF-IDF has the higher F1 (0.598 against 0.567), mainly through fewer false alarms (precision 0.721 against 0.607). Of the articles on which they differ, 7 are right only for word counts and 19 only for TF-IDF (p = 0.029), although the confidence intervals overlap.
+**H1: TF-IDF weighting beats plain word counts.** Weakly supported: the test is significant, but the intervals overlap. TF-IDF has the higher F1 (0.598 against 0.567), mainly through fewer false alarms (precision 0.721 against 0.607). Of the articles on which they differ, 7 are right only for word counts and 19 only for TF-IDF (p = 0.029), although the confidence intervals overlap.
 
 **H2: Adding the three feature groups improves the TF-IDF model.** Not confirmed. On validation the model with the extra features scored an F1 of 0.896 against 0.918 for TF-IDF alone, and on test it is lower again (0.560 against 0.598); 22 articles are right only for TF-IDF and 14 only with the features, within chance (p = 0.243).
 
-**H3: The LLM differs from the best logistic regression.** Confirmed: the LLM is better. F1 is 0.795 against 0.598, the intervals do not overlap, and 4 articles are right only for the best logistic regression (TF-IDF) against 37 only for the LLM (p < 0.0001). The gain comes from precision (0.985 against 0.721) and from recall (0.667 against 0.510).
+**H3: The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05.** Confirmed: the LLM is better. F1 is 0.795 against 0.598, the intervals do not overlap, and 4 articles are right only for the best logistic regression (TF-IDF) against 37 only for the LLM (p < 0.0001). The gain comes from precision (0.985 against 0.721) and from recall (0.667 against 0.510).
 
-"Not confirmed" means that the data do not show an effect, not that there is none.
+"Not confirmed" means that the data do not show an effect, not that there is none. "Weakly supported" means the test is significant but the intervals overlap; the intervals also ignore that articles from one website belong together.
 
 **Why the scores are lower on test than on validation.** Validation F1 was 0.865 for word counts, 0.918 for TF-IDF, 0.896 for TF-IDF with features and 0.987 for the LLM. The table gives recall per conspiracy website on the test set.
 
 <!-- output: results/tables/test_website_recall.csv | Recall of each model on the conspiracy articles of each test website -->
 
-The test set holds six conspiracy websites, and one of them, neonnettle.com, supplies 44 of the 96 conspiracy articles. All four models find at most about a third of its articles (recall 0.204 to 0.318), while on the other sites the logistic regressions find 0.579 to 1.000 of them. One large, hard site therefore lowers every test score.
+The test set holds six conspiracy websites, and one of them, neonnettle.com, supplies 44 of the 96 conspiracy articles. All four models find at most about a third of its articles (recall 0.204 to 0.318), while on the other sites the logistic regressions find 0.579 to 1.000 of them. Among the five sites with more than one test article, the LLM finds at least as many articles as every logistic regression, and more on four of them; the tie is thelibertybeacon.com, where the LLM and the TF-IDF model both reach a recall of 1.000. One large, hard site therefore lowers every test score.
 
 **Where the models fail, and why.** The labels describe websites, not articles. We examined the test articles on which the best logistic regression or the LLM disagrees with the label: missed only by the logistic regression, only by the LLM, or by both. A second model (Claude Sonnet 5.5) coded the stance of each towards conspiracy claims about 9/11, without being told the website. A rule fixed in advance counts a conspiracy-site article that does not endorse a claim, or a mainstream article that endorses one, as a label problem; all other cases are model errors.
 

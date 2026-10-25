@@ -1,16 +1,16 @@
 ---
 title: Conclusion
 part: Interpretation
-hypothesis: The language model is clearly better than our trained models, better word weighting helps a little, and the hand-made features do not help.
+hypothesis: The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05.
 ---
 ## Explained simply
 
 **What we asked.** Can a computer tell from the text of a 9/11 article whether it comes from a conspiracy-oriented or a mainstream website, and which of four ways works best?
 
 **One plain answer per hypothesis.**
-- **H1, weighting words (TF-IDF) beats counting them: yes, a little.** TF-IDF raised the score slightly, mainly because it raised fewer false alarms. The gain is small but not just luck.
+- **H1, weighting words (TF-IDF) beats counting them: weakly supported.** TF-IDF raised the score slightly, mainly because it raised fewer false alarms. The test says the gain is probably not luck, but the confidence intervals overlap.
 - **H2, the three feature groups improve TF-IDF: no.** Phrases, certainty words and style clues did not help. The model with all three did slightly worse than TF-IDF alone, on the validation articles and on the test articles. The difference on test is small enough for chance.
-- **H3, the language model differs from the best model we trained: yes, it is clearly better.** It almost never calls a mainstream article "conspiracy", but it still misses about a third of the conspiracy articles.
+- **H3, the zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05: confirmed.** It almost never calls a mainstream article "conspiracy", but it still misses about a third of the conspiracy articles.
 
 **The verdict on our hand-made features.** They did not help. The section on feature engineering looks at why.
 
@@ -32,18 +32,18 @@ The conclusion has no analysis of its own. This function scores one final model 
 
 The study compared four methods for deciding whether a full 9/11 article comes from a conspiracy-oriented or a mainstream website. The results are summarised per hypothesis. All numbers are F1 scores of the conspiracy class on the 410 test articles.
 
-H1 (TF-IDF improves on word counts) is confirmed, narrowly: F1 0.598 against 0.567 (p = 0.029).
+H1 (TF-IDF improves on word counts) is weakly supported: F1 0.598 against 0.567 (p = 0.029), but the confidence intervals overlap.
 
 H2 (adding the three feature groups improves the TF-IDF model) is not confirmed: on test the F1 was 0.560 against 0.598, within chance (p = 0.243). The hand-made features did not help.
 
-H3 (the LLM differs from the best logistic regression) is confirmed, and the LLM is better: F1 0.795 against 0.598 (p < 0.0001). It almost never labels a mainstream article as conspiracy but misses one third of the conspiracy articles.
+H3 (The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05) is confirmed: F1 0.795 against 0.598 (p < 0.0001). It almost never labels a mainstream article as conspiracy but misses one third of the conspiracy articles.
 
 In sum, only the advantage of the LLM is clear, and no method finds enough conspiracy articles to be used alone for automatic flagging. Because the labels describe websites and the number of websites is small, the findings describe how well each method recovers the type of website. Further work should test other topics and more websites, and should add the human check of the label problems.
 
 ## Check yourself
 
 Q: Which hypotheses were confirmed and which were not?
-A: H1 (TF-IDF beats word counts) was confirmed narrowly, and H3 (the LLM differs from the best trained model, being better) clearly. H2 (the three feature groups improve TF-IDF) was not confirmed.
+A: H3 (the LLM beats the best trained model) was confirmed. H1 (TF-IDF beats word counts) was only weakly supported, because the intervals overlap. H2 (the three feature groups improve TF-IDF) was not confirmed.
 
 Q: What does "not confirmed" mean here?
 A: The data do not show the effect clearly. It does not prove that the effect is absent.

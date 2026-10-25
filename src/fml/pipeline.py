@@ -399,7 +399,8 @@ def ablation() -> dict:
     values = {"data": "filtered documents, split_v1, validation rows only",
               "protocol": "per model: C and class weight from config lr (same grid as word counts and TF-IDF), best conspiracy-F1 on validation",
               "documents": {"train": int(len(train)), "validation": int(len(valid))},
-              "final_model": LR_EXTENDED_ID, "validation": models[LR_EXTENDED_ID], "models": models,
+              "final_model": LR_EXTENDED_ID, "n_columns_full": table.attrs["n_columns"][LR_EXTENDED_ID],
+              "validation": models[LR_EXTENDED_ID], "models": models,
               "coverage": coverage.to_dict("records")}
     write_metrics("tfidf_features", round_floats(values, 4))
     return values
@@ -578,9 +579,10 @@ def write_comparison_tables(y: np.ndarray, preds: dict[str, np.ndarray]) -> pd.D
 
 def run_mcnemar_pairs(y: np.ndarray, preds: dict[str, np.ndarray], best_lr: str) -> dict:
     """McNemar test for the three pairs we compare."""
-    return {"words_vs_tfidf": mcnemar_pair(y, preds[WORDS_FINAL], preds[TFIDF_FINAL], WORDS_FINAL, TFIDF_FINAL),
-            "tfidf_vs_features": mcnemar_pair(y, preds[TFIDF_FINAL], preds[FEATURES_FINAL], TFIDF_FINAL, FEATURES_FINAL),
-            "best_lr_vs_llm": mcnemar_pair(y, preds[best_lr], preds[LLM_ID], best_lr, LLM_ID)}
+    pairs = {"words_vs_tfidf": (WORDS_FINAL, TFIDF_FINAL),
+             "tfidf_vs_features": (TFIDF_FINAL, FEATURES_FINAL),
+             "best_lr_vs_llm": (best_lr, LLM_ID)}
+    return {name: mcnemar_pair(y, preds[first], preds[second], first, second) for name, (first, second) in pairs.items()}
 
 
 def conspiracy_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], websites: np.ndarray) -> pd.DataFrame:
@@ -593,17 +595,23 @@ def conspiracy_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], websi
     return pd.DataFrame(rows)
 
 
-def comparison_stage() -> dict:
-    """Compare the four final models on the same test documents, from the saved prediction files only."""
-    lr, llm_all = read_final_predictions()
-    y, preds = align_predictions(lr, llm_all)
-    table = write_comparison_tables(y, preds)
+def write_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], llm_all: pd.DataFrame) -> pd.DataFrame:
+    """Write the recall of every model for each conspiracy website in the test set."""
     doc_ids = llm_all[llm_all["pass"] == 1]["doc_id"]
     websites = doc_ids.map(analysis_frame().set_index("doc_id")["website"]).to_numpy()
     per_website = conspiracy_website_recall(y, preds, websites)
     names = {"website": "Website", "test_articles": "Test articles"}
     names.update({f"recall_{m}": f"Recall: {MODEL_NAMES[m]}" for m in preds})      # plain column labels
     write_table("test_website_recall", per_website.round(4).rename(columns=names))
+    return per_website
+
+
+def comparison_stage() -> dict:
+    """Compare the four final models on the same test documents, from the saved prediction files only."""
+    lr, llm_all = read_final_predictions()
+    y, preds = align_predictions(lr, llm_all)
+    table = write_comparison_tables(y, preds)
+    per_website = write_website_recall(y, preds, llm_all)
     metrics = _metrics()
     best_lr = best_final_lr(metrics)
     values = {"models": list(preds), "lr_best": best_lr, "test_documents": int(len(y)), "test_conspiracy": int(y.sum()),
@@ -687,6 +695,27 @@ def error_counts(sets: pd.DataFrame, coded: pd.DataFrame) -> dict:
                 "coded": int((coded["set"] == s).sum())} for s in errors.SETS}
 
 
+def label_problem_values(coded: pd.DataFrame) -> dict:
+    """How many coded articles look like label problems (Claude's stance only)."""
+    return {"label_problems": int((coded["verdict"] == errors.LABEL_PROBLEM).sum()),
+            "of_coded": int(len(coded)),
+            "source": "Claude stance coding only, not checked by people"}
+
+
+def errors_values(chosen: str, cfg: dict, sets: pd.DataFrame, coded: pd.DataFrame, sample: pd.DataFrame, written: bool) -> dict:
+    """The numbers of the errors stage, as written to metrics.json."""
+    return {"data": "TEST rows, filtered documents; predictions from evaluate_final files only",
+            "lr_model": chosen, "stance_model": cfg["model"],
+            "counts": error_counts(sets, coded),
+            "coded_documents": int(len(coded)),
+            "stance_counts": coded["claude_stance"].value_counts().to_dict(),
+            "verdict_counts": coded["verdict"].value_counts().to_dict(),
+            "label_problem_share": label_problem_values(coded),
+            "rule": "conspiracy site + (rejects|neutral|no_claim) -> label problem; mainstream site + endorses -> label problem; else model wrong",
+            "human_check": {"sample_file": "results/tables/stance_check_sample.csv", "rows": int(len(sample)),
+                            "file_rewritten_this_run": written, "status": "to be filled by the team"}}
+
+
 def errors_stage() -> dict:
     """Test articles where the best LR and the LLM disagree -> stance coding (cached) -> tables."""
     cfg = errors.stance_config()
@@ -699,18 +728,7 @@ def errors_stage() -> dict:
     examples = pick_examples(coded, frame, seed)
     sample = check_sample(frame, cfg, seed)
     written = write_error_tables(coded, sets, examples, sample)
-    values = {"data": "TEST rows, filtered documents; predictions from evaluate_final files only",
-              "lr_model": chosen, "stance_model": cfg["model"],
-              "counts": error_counts(sets, coded),
-              "coded_documents": int(len(coded)),
-              "stance_counts": coded["claude_stance"].value_counts().to_dict(),
-              "verdict_counts": coded["verdict"].value_counts().to_dict(),
-              "label_problem_share": {"label_problems": int((coded["verdict"] == errors.LABEL_PROBLEM).sum()),
-                                      "of_coded": int(len(coded)),
-                                      "source": "Claude stance coding only, not checked by people"},
-              "rule": "conspiracy site + (rejects|neutral|no_claim) -> label problem; mainstream site + endorses -> label problem; else model wrong",
-              "human_check": {"sample_file": "results/tables/stance_check_sample.csv", "rows": int(len(sample)),
-                              "file_rewritten_this_run": written, "status": "to be filled by the team"}}
+    values = errors_values(chosen, cfg, sets, coded, sample, written)
     write_metrics("errors", round_floats(values, 4))
     return values
 

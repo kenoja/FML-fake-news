@@ -214,6 +214,16 @@ def short_text_info(raw: pd.DataFrame, texts: pd.DataFrame) -> dict:
             "median_words": float(words.median())}
 
 
+def clue_removal_info(raw: pd.DataFrame, texts: pd.DataFrame) -> dict:
+    """What step 3 (removing website clues) did to the kept articles: it edits texts, never drops one."""
+    old = raw.set_index("doc_id")["txt"][texts["doc_id"]]
+    new = texts.set_index("doc_id")["txt"]
+    words_before = int(old.str.split().map(len).sum())
+    words_after = int(new.str.split().map(len).sum())
+    return {"documents_removed": 0, "documents_changed": int((old != new[old.index]).sum()),
+            "words_before": words_before, "words_removed": words_before - words_after}
+
+
 def duplicate_info(pairs: pd.DataFrame, drops: set, where: pd.Series) -> dict:
     """Counts about the near-duplicate pairs and the articles dropped."""
     across = pairs["doc_id_a"].map(where) != pairs["doc_id_b"].map(where)
@@ -255,5 +265,6 @@ def clean_documents(raw: pd.DataFrame | None = None, split: pd.DataFrame | None 
         "near_duplicate_threshold": threshold,
         **duplicate_info(pairs, drops, where),
         "short_texts": short_text_info(raw, texts),
+        "clue_removal": clue_removal_info(raw, texts),
     }
     return texts, step_log(steps), info

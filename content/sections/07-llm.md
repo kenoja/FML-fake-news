@@ -19,7 +19,7 @@ hypothesis: We expect a cheap language model with no training to do roughly as w
 
 **Cost and runtime.** The LLM costs money for every article and needs an internet connection. The logistic regressions run free on a laptop in about a minute. Section 01 lists the figures.
 
-**Our expectation (H3).** We expected the LLM to do about as well as the trained models, or to differ from them. The validation numbers say it differs, but the final comparison decides.
+**Our expectation (H3).** The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05. The validation numbers point that way, but the final comparison decides.
 
 ## The code
 
@@ -63,7 +63,7 @@ All three prompts reached almost the same F1 score on the 376 validation article
 
 <!-- output: results/figures/llm_validation_confusion.png | LLM: validation confusion matrix of the chosen prompt -->
 
-Hypothesis H3 expected the language model to do about as well as the best trained model, or to differ from it. On validation it differs: its F1 of 0.987 lies well above the best logistic regression on the same articles (0.918 for TF-IDF). This is not yet a verdict, because the validation websites are not the test websites and the final comparison decides.
+Hypothesis H3 states: The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05. On validation it is already ahead: its F1 of 0.987 lies well above the best logistic regression on the same articles (0.918 for TF-IDF). This is not yet a verdict, because the validation websites are not the test websites and the final comparison decides.
 
 Scoring the LLM against website labels is not a fully fair comparison with the trained models, for four reasons. First, the LLM never saw our labels or our training websites, so it cannot overfit to them; this favours it as an independent reference but also means it was never taught what our labels mean. Second, the labels describe websites, not texts, so a "wrong" answer may be a correct reading of the text. Third, the model may recognise a site from its style or bylines through its own training; a correct answer can then be memory rather than reading, which the logistic regressions cannot use. Fourth, all methods see only the first 3,000 words. The score therefore shows how well the model reproduces our website labels, not how well it understands conspiracy writing.
 
