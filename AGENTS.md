@@ -54,7 +54,7 @@ your choice in `docs/decisions.md`. If you cannot resolve something from the fil
   uses the cleaned set and the same split.
 - **All runs first, then compare.** Settings are chosen on validation for all four analyses; then one
   final run scores every final model on test exactly once (new model ids, see the test-set rule).
-  Comparisons and test numbers appear only in `08-results` and later.
+  Comparisons and test numbers appear only in `08-results-and-why-they-fail` and later.
 - **Protected paths.** Do not edit `agent/`, `sitegen/`, `scripts/`, `.github/`, `config/rubric.yaml`,
   `config/agent.yaml`, `config/site.yaml` or `requirements/`. They define how you are run and graded.
 - **Fail loud.** "Done" is wrong if anything was skipped; "tests pass" is wrong if any were skipped.
@@ -92,8 +92,8 @@ minutes** on a 2-CPU machine, and the full test suite in under 3 minutes.
 Sections, in this order (slugs are fixed because feedback threads use them; delete section files
 whose slug is not in this list):
 `00-how-to-use`, `01-question-and-hypotheses`, `02-data-and-cleaning`, `03-split-by-website`,
-`04-word-counts`, `05-tf-idf`, `06-feature-engineering`, `07-llm`, `08-results`,
-`09-where-they-fail`, `10-limitations`, `11-conclusion`, `12-how-we-used-ai`, `99-glossary`.
+`04-word-counts`, `05-tf-idf`, `06-feature-engineering`, `07-llm`, `08-results-and-why-they-fail`,
+`09-limitations`, `10-conclusion`, `11-how-we-used-ai`, `99-glossary`.
 
 Every section except `00-how-to-use` and `99-glossary` has exactly these four parts, in this order:
 
@@ -133,7 +133,7 @@ every technical word used anywhere must have an entry.
 
 **What stays off the site.** Plans, task lists, decision logs, "Member __ confirm" lines, agent errors
 and retries belong in `docs/` only. The site and the report describe the study, not how the agent
-built it. The test set was used during development: `10-limitations` says so in one honest sentence
+built it. The test set was used during development: `09-limitations` says so in one honest sentence
 and states that every final model was chosen on validation and scored on test once.
 
 **Statistics, and nothing more.** Confusion matrix, precision, recall, F1 (conspiracy class), one 95%

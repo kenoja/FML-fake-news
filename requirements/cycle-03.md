@@ -1,10 +1,64 @@
 # Requirements for cycle 3
 
-Drafted from the team's feedback on cycle 2 (collected 2026-10-25) by `scripts/collect_feedback.py`. **Edit this file before merging**: delete items the team rejected, and resolve the conflicts at the end. The agent treats every numbered item as a requirement.
+Drafted from the team's feedback on cycle 2 (collected 2026-10-25) by `scripts/collect_feedback.py`, then edited with the repo owner on 2026-10-25: decisions, resolved conflicts and the reviewer's open points from cycle 2 are added below. The agent treats every numbered item as a requirement; where an item and a decision below differ, **the decision wins**.
 
 ## Carried over
 
 All requirements in earlier files (`requirements/cycle-01.md` ... `cycle-02.md`) still apply unless an item below changes them. Later items win over earlier ones.
+
+## Decisions taken with the owner (25 Oct 2026)
+
+- **D1. Merge results and error analysis (item 16).** Sections `08-results` and `09-where-they-fail` become one
+  section, `08-results-and-why-they-fail`: the four models' results, then where and *why* they fail (examples,
+  model errors vs label problems), as one connected analysis. Limitations of the study itself stay in a short
+  separate section. New slugs (also in `AGENTS.md`):
+  `08-results` + `09-where-they-fail` → `08-results-and-why-they-fail`; `10-limitations` → `09-limitations`;
+  `11-conclusion` → `10-conclusion`; `12-how-we-used-ai` → `11-how-we-used-ai`. Delete the old files.
+- **D2. Which model is which (items 5, 9).** `01-question-and-hypotheses` says once, plainly: analyses 1–3 are
+  logistic regression on different inputs, analysis 4 is the LLM (no training). Later sections refer back to
+  this instead of repeating it. The logistic regression code is still shown first in `04-word-counts`, because
+  that is where the reader first meets it (Member A's reply to item 9).
+- **D3. Hand check (items 2, 17).** The team does the 40-article check with a separate private tool during
+  this cycle's feedback period; its results arrive for cycle 4. In this cycle: **do not change the 40 `doc_id`s
+  in `results/tables/stance_check_sample.csv`** (the tool is built on them), and word the error-analysis text
+  so that it states plainly which part rests on the automatic coding and that the team's hand check follows.
+  No "unverified"/"unchecked" status language beyond that one statement.
+- **D4. LLM prompts (item 14).** Keep all three prompt variants (the reply withdrew "only keep v1"). Do add the
+  critical assessment of whether scoring the LLM against website labels is a fair comparison with the trained
+  models.
+- **D5. Executive summary vs introduction (item 6).** The report starts with a short executive summary (results
+  allowed), followed by the introduction (no results). Both go in the `## Report` part of
+  `01-question-and-hypotheses`, under `### Executive summary` and `### Introduction`.
+- **D6. Hypotheses (items 5, 15).** Number them H1, H2, ... with no sub-letters (no H2a–c); each written out in
+  full with its expectation, so it can be read without the others.
+- **D7. Training environment (item 1, reply).** State where and how fast the models ran (machine and runtime
+  from `results/run_info.json`) and what that means: everything runs on an ordinary laptop-class machine in
+  minutes; only the LLM needs an internet connection and a paid API.
+- **D8. References (items 2, 3).** Back design choices with classic machine-learning references (e.g. textbooks
+  on logistic regression, regularisation, TF-IDF, evaluation, McNemar's test) and the 9/11 conspiracy
+  background with published sources. Never invent a reference: if a source cannot be confirmed, leave the claim
+  out.
+- **D9. Item 16 wording.** The comment says "validation vs training set"; the comparison shown is validation vs
+  **test**. Explain why scores are higher on validation than on test (different and fewer websites, one large
+  site in test).
+
+## Open points from the cycle-2 review (still to fix)
+
+- **R1.** Remove Cohen's kappa everywhere it is still explained or coded (section 09, glossary,
+  `src/fml/errors.py`): requirement 13 of cycle 2 removed it. (The cycle-4 agreement measure is decided then.)
+- **R2.** No test-set numbers in the method sections `04`–`07` (section 06 still quotes test F1 and a p-value).
+- **R3.** The error table in the report shows raw column names (`lr_only_wrong`, `stance_no_claim`,
+  `not_sampled`): use plain labels a non-technical reader understands.
+- **R4.** Remove process remarks from report text: the repeated "split file was made before cleaning"
+  paragraph and the per_split/metrics.json remark in `03`, "None of them is recorded as done", and similar.
+- **R5.** The licence status stays in `docs/decisions.md` only; the site and report only say where the data
+  come from and that the texts are not redistributed (cycle-2 requirement 17).
+- **R6.** Code shown in cells must meet the beginner style (cycle-2 requirement 14), including `mattr` and
+  `style_row` in `06`; remove unused code.
+- **R7.** Resolve the open items in `docs/decisions.md` "Needs a team decision" that are not team decisions
+  (e.g. report length counting, near-duplicate choice): decide conservatively, state the choice once in the
+  right section, and close them.
+- **R8.** Report length: stay well inside 3,000–5,000 words (aim for about 4,500) so later edits fit.
 
 ## Sign-off status
 
@@ -117,6 +171,8 @@ The last sentence, of the first paragraph, in this section says "The test set wa
 
 ## Conflicts to decide
 
-List here any items that contradict each other, with the team's decision. The agent will not blend contradicting requests.
-
-- none recorded yet
+- Item 9 (do not repeat "logistic regression" in 04) vs Member A's reply (the code is first shown there):
+  resolved by D2.
+- Item 14 ("only keep v1") vs its reply ("keep all three"): resolved by D4, keep all three.
+- Items 2/17 (the hand check is needed for the error analysis to make sense) vs running this cycle before it
+  is done: resolved by D3.
