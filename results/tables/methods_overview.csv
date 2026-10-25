@@ -1,4 +1,4 @@
-method,input,reads,trained_on_our_data,settings,runtime,cost
+Method,Input,Reads,Trained on our data,Settings,Runtime,Cost
 1. Word counts + logistic regression,word counts,"first 3,000 words of each article",yes,"C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation",3 seconds,free (runs locally)
 2. TF-IDF + logistic regression,TF-IDF weights,"first 3,000 words of each article",yes,"C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation",2 seconds,free (runs locally)
 3. TF-IDF + features + logistic regression,"TF-IDF weights, n-grams, certainty words, style","first 3,000 words of each article",yes,"C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation",56 seconds,free (runs locally)

@@ -1,7 +1,7 @@
 Website,Test articles,Recall: Word counts,Recall: TF-IDF,Recall: TF-IDF + features,Recall: LLM
-conspiracydailyupdate.com,19,0.684,0.579,0.684,0.947
-escapeallthesethings.com,6,0.833,0.833,0.833,1.0
-needtoknow.news,19,0.79,0.842,0.737,0.947
-neonnettle.com,44,0.25,0.204,0.204,0.318
-oye.news,1,1.0,1.0,1.0,1.0
-thelibertybeacon.com,7,0.857,1.0,0.714,1.0
+Website 1,19,0.684,0.579,0.684,0.947
+Website 2,6,0.833,0.833,0.833,1.0
+Website 3,19,0.79,0.842,0.737,0.947
+Website 4,44,0.25,0.204,0.204,0.318
+Website 5,1,1.0,1.0,1.0,1.0
+Website 6,7,0.857,1.0,0.714,1.0

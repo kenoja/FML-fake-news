@@ -206,6 +206,14 @@ def test_section_checker_catches_a_wrong_number():
     assert section_mismatches("Precision is 0.214.", nums) == ["0.214"]
 
 
+def test_environment_sentence_matches_run_info():
+    """The introduction states machine size and run time; they must match the last run."""
+    info = json.loads((REPO / "results" / "run_info.json").read_text(encoding="utf-8"))
+    text = (REPO / "content" / "sections" / "01-question-and-hypotheses.md").read_text(encoding="utf-8")
+    assert f"{info['machine']['cpus']}-CPU {info['machine']['system']} machine" in text
+    assert f"about {info['run_all_seconds']:.0f} seconds" in text
+
+
 def test_worked_example_matches_metrics():
     """Section 08 explains scores with the LLM's test counts; they must be the real counts."""
     metrics = json.loads((REPO / "results" / "metrics.json").read_text(encoding="utf-8"))

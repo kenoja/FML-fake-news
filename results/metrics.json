@@ -430,7 +430,7 @@
     },
     "per_website": [
       {
-        "website": "conspiracydailyupdate.com",
+        "website": "Website 1",
         "test_articles": 19,
         "recall_final2_word_counts": 0.6842,
         "recall_final2_tfidf": 0.5789,
@@ -438,7 +438,7 @@
         "recall_final_llm": 0.9474
       },
       {
-        "website": "escapeallthesethings.com",
+        "website": "Website 2",
         "test_articles": 6,
         "recall_final2_word_counts": 0.8333,
         "recall_final2_tfidf": 0.8333,
@@ -446,7 +446,7 @@
         "recall_final_llm": 1.0
       },
       {
-        "website": "needtoknow.news",
+        "website": "Website 3",
         "test_articles": 19,
         "recall_final2_word_counts": 0.7895,
         "recall_final2_tfidf": 0.8421,
@@ -454,7 +454,7 @@
         "recall_final_llm": 0.9474
       },
       {
-        "website": "neonnettle.com",
+        "website": "Website 4",
         "test_articles": 44,
         "recall_final2_word_counts": 0.25,
         "recall_final2_tfidf": 0.2045,
@@ -462,7 +462,7 @@
         "recall_final_llm": 0.3182
       },
       {
-        "website": "oye.news",
+        "website": "Website 5",
         "test_articles": 1,
         "recall_final2_word_counts": 1.0,
         "recall_final2_tfidf": 1.0,
@@ -470,7 +470,7 @@
         "recall_final_llm": 1.0
       },
       {
-        "website": "thelibertybeacon.com",
+        "website": "Website 6",
         "test_articles": 7,
         "recall_final2_word_counts": 0.8571,
         "recall_final2_tfidf": 1.0,
@@ -479,7 +479,7 @@
       }
     ],
     "f1_without_large_site": {
-      "site": "neonnettle.com",
+      "site": "Website 4",
       "documents": 366,
       "conspiracy": 52,
       "final2_word_counts": 0.64,

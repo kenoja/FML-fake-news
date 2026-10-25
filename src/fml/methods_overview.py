@@ -51,8 +51,8 @@ def methods_table(info: dict, metrics: dict, usage: dict, cfg: dict, lr_cfg: dic
          f"about {usage['seconds']:.1f} seconds per article",
          f"about ${llm_cost_per_1000(usage, cfg):.2f} per 1,000 articles"),
     ]
-    table = pd.DataFrame(rows, columns=["method", "input", "trained_on_our_data", "settings", "runtime", "cost"])
-    table.insert(2, "reads", reads)
+    table = pd.DataFrame(rows, columns=["Method", "Input", "Trained on our data", "Settings", "Runtime", "Cost"])
+    table.insert(2, "Reads", reads)
     return table
 
 

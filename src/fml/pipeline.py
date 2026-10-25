@@ -83,12 +83,19 @@ def round_floats(obj, digits: int = 3):
     return obj
 
 
+CLEANING_HEADERS = {"step": "Step", "removed": "Removed", "remaining": "Remaining", "removed_conspiracy": "Conspiracy removed",
+                    "removed_mainstream": "Mainstream removed", "remaining_conspiracy": "Conspiracy remaining",
+                    "remaining_mainstream": "Mainstream remaining"}
+SPLIT_HEADERS = {"split": "Set", "class": "Class", "websites": "Websites", "documents": "Documents",
+                 "share_of_documents": "Share of documents"}
+
+
 def cleaning_stage() -> dict:
     """Write the cleaning log, the before/after figure and metrics.json `cleaning`."""
     frame, log, info = _clean_documents_cached()
-    write_table("cleaning_log", log)
+    write_table("cleaning_log", log.rename(columns=CLEANING_HEADERS))
     summ = split_summary(frame, load_split())       # the split file predates cleaning; count what is left
-    write_table("split_summary", summ)
+    write_table("split_summary", summ.rename(columns=SPLIT_HEADERS))
     savefig(plot_split_sizes(summ), "split_sizes")
     split_metrics = json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))["split"]
     write_metrics("split", {**split_metrics, "websites_per_split_after_cleaning": websites_per_split(summ)})
@@ -563,6 +570,37 @@ def plot_comparison_confusion(table: pd.DataFrame):
     return fig
 
 
+def plot_validation_vs_test(valid: dict, test: dict):
+    """Confusion matrices on validation (top) and test (bottom) for the best logistic regression and the LLM."""
+    fig, axes = plt.subplots(2, len(test), figsize=(3.4 * len(test), 6.4))
+    for col, name in enumerate(test):
+        for row, (counts, when) in enumerate(((valid[name], "validation"), (test[name], "test"))):
+            mat = np.array([[counts["tn"], counts["fp"]], [counts["fn"], counts["tp"]]])
+            ax = axes[row, col]
+            ax.imshow(mat, cmap="Greens")
+            for (i, j), v in np.ndenumerate(mat):
+                ax.text(j, i, str(v), ha="center", va="center", fontsize=12,
+                        color="white" if v > mat.max() / 2 else "black")
+            ax.set_xticks([0, 1], ["main.", "consp."])
+            ax.set_yticks([0, 1], ["main.", "consp."])
+            ax.set_title(f"{name} ({when})", fontsize=10)
+            ax.set_xlabel("Predicted")
+            ax.set_ylabel("True website type")
+    fig.tight_layout()
+    return fig
+
+
+def mcnemar_table(tests: dict) -> pd.DataFrame:
+    """The three McNemar tests with plain headers: who is right alone, and the p-value."""
+    rows = []
+    for test in tests.values():
+        rows.append({"First model": MODEL_NAMES.get(test["a"], "Best logistic regression"),
+                     "Second model": MODEL_NAMES[test["b"]],
+                     "Right only for the first": test["a_only_correct"],
+                     "Right only for the second": test["b_only_correct"], "p-value": test["p_text"]})
+    return pd.DataFrame(rows)
+
+
 def align_predictions(lr: pd.DataFrame, llm_all: pd.DataFrame) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     """True labels and each model's predictions, on the same test documents in the same order."""
     llm = llm_all[llm_all["pass"] == 1].set_index("doc_id")
@@ -602,22 +640,33 @@ def conspiracy_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], websi
     return pd.DataFrame(rows)
 
 
+def website_labels(y: np.ndarray, websites: np.ndarray) -> dict:
+    """Plain labels (Website 1, 2, ...) for the conspiracy test websites, so real domains stay out of the text."""
+    return {site: f"Website {i}" for i, site in enumerate(sorted(set(websites[y])), start=1)}
+
+
 def test_websites(llm_all: pd.DataFrame) -> np.ndarray:
     """The website of every test document, in the same order as the aligned predictions."""
     doc_ids = llm_all[llm_all["pass"] == 1]["doc_id"]
     return doc_ids.map(analysis_frame().set_index("doc_id")["website"]).to_numpy()
 
 
+def large_site(y: np.ndarray, websites: np.ndarray) -> str:
+    """The website with the most conspiracy articles in the test set."""
+    return pd.Series(websites[y]).value_counts().index[0]
+
+
 def f1_without_site(y: np.ndarray, preds: dict[str, np.ndarray], websites: np.ndarray, site: str) -> dict:
     """Conspiracy-class F1 of every model after dropping all test articles of one website."""
     keep = websites != site                                  # leave the large hard site out
-    return {"site": site, "documents": int(keep.sum()), "conspiracy": int(y[keep].sum()),
+    return {"site": website_labels(y, websites)[site], "documents": int(keep.sum()), "conspiracy": int(y[keep].sum()),
             **{m: float(model_row(m, y[keep], preds[m][keep])["f1"]) for m in preds}}
 
 
 def write_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], websites: np.ndarray) -> pd.DataFrame:
     """Write the recall of every model for each conspiracy website in the test set."""
     per_website = conspiracy_website_recall(y, preds, websites)
+    per_website["website"] = per_website["website"].map(website_labels(y, websites))      # hide real domains
     names = {"website": "Website", "test_articles": "Test articles"}
     names.update({f"recall_{m}": f"Recall: {MODEL_NAMES[m]}" for m in preds})      # plain column labels
     write_table("test_website_recall", per_website.round(4).rename(columns=names))
@@ -633,12 +682,18 @@ def comparison_stage() -> dict:
     per_website = write_website_recall(y, preds, websites)
     metrics = _metrics()
     best_lr = best_final_lr(metrics)
+    mcnemar = run_mcnemar_pairs(y, preds, best_lr)
+    write_table("mcnemar_tests", mcnemar_table(mcnemar))
+    test_counts = {r["model"]: {k: int(r[k]) for k in ("tp", "fn", "fp", "tn")} for r in table.to_dict("records")}
+    savefig(plot_validation_vs_test({"TF-IDF": metrics["tfidf"]["confusion"], "LLM": metrics["llm"]["validation"]["confusion"]},
+                                    {"TF-IDF": test_counts[TFIDF_FINAL], "LLM": test_counts[LLM_ID]}),
+            "validation_vs_test_confusion")
     values = {"models": list(preds), "lr_best": best_lr, "test_documents": int(len(y)), "test_conspiracy": int(y.sum()),
               "bootstrap": {"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95},
               "baseline": {"model": BASELINE_ID, "accuracy": float((~y).mean())},
               "per_website": per_website.to_dict("records"),
-              "f1_without_large_site": f1_without_site(y, preds, websites, "neonnettle.com"),
-              "table": table.to_dict("records"), "mcnemar": run_mcnemar_pairs(y, preds, best_lr),
+              "f1_without_large_site": f1_without_site(y, preds, websites, large_site(y, websites)),
+              "table": table.to_dict("records"), "mcnemar": mcnemar,
               "llm_stability": metrics["llm"]["repeat_agreement"]}
     write_metrics("comparison", round_floats(values, 4))
     return values

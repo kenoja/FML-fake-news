@@ -1,0 +1,4 @@
+First model,Second model,Right only for the first,Right only for the second,p-value
+Word counts,TF-IDF,7,19,0.029
+TF-IDF,TF-IDF + features,22,14,0.243
+TF-IDF,LLM,4,37,< 0.0001

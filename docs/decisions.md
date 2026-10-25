@@ -147,3 +147,13 @@ Each item has a status and an owner.
 ## D8 background sources on 9/11 conspiracy content (declined, cycle 3 T3)
 - WebSearch was denied in this session (no approval surface), so no extra source could be verified. No reference was added from memory; the 01 introduction keeps only claims supported by Miani et al. (2022) and Fong et al. (2021). Still a team decision: a member can verify one or two sources and add them.
 - 01 "Explained simply" trimmed (method table marker removed there; it stays in the Report).
+
+## Cycle 3, T4 (01 introduction)
+- The "platforms and fact-checkers rely on automatic filters" claim was dropped: no published source could be confirmed (no web check available), so no reference was invented. The "inside job / controlled demolition / false flag" framing is cited only to Miani et al. (2022) as general 9/11 material.
+- No textbook references were added beyond those already listed (Hastie et al. 2009, Manning et al. 2008, McNemar 1947); Manning et al. is now cited in the 01 introduction for TF-IDF.
+- Methods table headers are plain words ("Trained on our data"); the CSV was rewritten from existing results without rerunning the pipeline.
+
+## Cycle 3, T5 (website counts, headers, website names)
+- Website counts: 39 conspiracy websites is the count before cleaning; the split tables count what is left after cleaning (25 + 6 + 6 = 37). The code was right; the 02 report now gives both numbers and 03 says "after cleaning".
+- Headers of `cleaning_log.csv` and `split_summary.csv` are plain words (set in `pipeline.py`; the CSVs were rewritten from existing results without a pipeline rerun).
+- Website names: real domains next to labels in 08 are replaced by "Website 1-6" (alphabetical order of the six test conspiracy websites). `test_website_recall.csv` and `metrics.json#comparison` use the same labels. Conservative choice: naming sites next to a "conspiracy" label could be read as a judgement on real publishers. Domains elsewhere (e.g. error examples) are left to the queued 08 tasks.

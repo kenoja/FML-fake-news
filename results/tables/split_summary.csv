@@ -1,4 +1,4 @@
-split,class,websites,documents,share_of_documents
+Set,Class,Websites,Documents,Share of documents
 train,conspiracy,25,542,0.212
 train,mainstream,54,1226,0.48
 validation,conspiracy,6,117,0.046
