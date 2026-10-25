@@ -97,3 +97,19 @@ resolve a conflict (see AGENTS.md).
   counting.
 - **Near-duplicate choice.** Confirm keeping the validation copy of a validation/test pair.
 - **Test file for the agent.** Delete `tests/test_agent_graph.py` if CI does not need it.
+
+## Cycle 3, T4: final2 run
+- **Final2 logistic regressions scored once on test** under `final2_word_counts`, `final2_tfidf`, `final2_tfidf_features`
+  (settings and C from the new validation run: balanced class weight, shared C grid, first 3,000 words). The old
+  `final_word_counts`, `final_tfidf`, `final_tfidf_features` ids stay in `results/test_access_log.jsonl` and
+  `results/frozen_models.json` but are no longer built, scored or reported. `final_llm` is unchanged and not scored again.
+- **Best logistic regression for the LR-vs-LLM McNemar test and the error analysis**: the one of the three with the highest
+  validation F1 (tie: the earlier one). It is `final2_tfidf` in this run.
+- **Baseline row** "always guess mainstream" is in `comparison_test.csv` and `comparison_compact.csv`; its accuracy is in
+  `metrics.json#comparison.baseline`. It is left out of the two comparison figures (F1 = 0).
+- **Stance coding** for the new disagreement articles ran with `LLM_CLASSIFIER_API_KEY` set; new answers were added to
+  `results/stance_cache.jsonl`. A later run without the key works from that cache; a missing entry fails loudly.
+- **Not done in this task:** the three old `results/tables/predictions_final_{word_counts,tfidf,tfidf_features}.csv`
+  files could not be deleted (no permission to remove files); nothing reads them. Section prose and
+  `docs/reproducibility.md` still quote earlier numbers and file names; the queued section rewrites must update them
+  (`tests/test_report_numbers.py` fails until then).

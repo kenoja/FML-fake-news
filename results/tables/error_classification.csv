@@ -1,13 +1,13 @@
-set,error_type,errors_total,coded,model wrong,label does not describe the text,not_sampled,stance_endorses,stance_rejects_or_debunks,stance_reports_neutrally,stance_no_claim
-lr_only_wrong,false positive,18,17,16,1,1,1,2,3,11
-lr_only_wrong,false negative,16,16,1,15,0,1,0,0,15
-lr_only_wrong,all,34,33,17,16,1,2,2,3,26
-llm_only_wrong,false positive,1,1,1,0,0,0,0,0,1
-llm_only_wrong,false negative,2,2,0,2,0,0,1,1,0
-llm_only_wrong,all,3,3,1,2,0,0,1,1,1
-both_wrong,false positive,0,0,0,0,0,0,0,0,0
-both_wrong,false negative,30,29,0,29,1,0,0,1,28
-both_wrong,all,30,29,0,29,1,0,0,1,28
-all,false positive,19,18,17,1,1,1,2,3,12
-all,false negative,48,47,1,46,1,1,1,2,43
-all,all,67,65,18,47,2,2,3,5,55
+Group,Error type,Errors,Coded,Model wrong,Label does not describe the text,Not coded,Article endorses a conspiracy claim,Article debunks claims,Article reports claims neutrally,Article makes no claim about 9/11
+Only the logistic regression is wrong,Mainstream article called conspiracy,19,19,18,1,0,1,3,4,11
+Only the logistic regression is wrong,Conspiracy-site article called mainstream,18,18,1,17,0,1,0,0,17
+Only the logistic regression is wrong,All errors,37,37,19,18,0,2,3,4,28
+Only the LLM is wrong,Mainstream article called conspiracy,1,1,1,0,0,0,0,0,1
+Only the LLM is wrong,Conspiracy-site article called mainstream,3,3,0,3,0,0,0,1,2
+Only the LLM is wrong,All errors,4,4,1,3,0,0,0,1,3
+Both are wrong,Mainstream article called conspiracy,0,0,0,0,0,0,0,0,0
+Both are wrong,Conspiracy-site article called mainstream,29,28,0,28,1,0,1,1,26
+Both are wrong,All errors,29,28,0,28,1,0,1,1,26
+All errors,Mainstream article called conspiracy,20,20,19,1,0,1,3,4,12
+All errors,Conspiracy-site article called mainstream,50,49,1,48,1,1,1,2,45
+All errors,All errors,70,69,20,49,1,2,4,6,57

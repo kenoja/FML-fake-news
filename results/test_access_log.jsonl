@@ -6,3 +6,6 @@
 {"model_id": "final_tfidf", "config_hash": "a5e080d22f963c78", "at": "2026-10-17T17:32:00+00:00", "n_docs": 410}
 {"model_id": "final_tfidf_features", "config_hash": "a497169f47356df1", "at": "2026-10-17T17:32:06+00:00", "n_docs": 410}
 {"model_id": "final_llm", "config_hash": "646ddbb90d77579c", "at": "2026-10-17T17:34:08+00:00", "n_docs": 410}
+{"model_id": "final2_word_counts", "config_hash": "ac0b9ee92760a1a0", "at": "2026-10-25T22:50:50+00:00", "n_docs": 410}
+{"model_id": "final2_tfidf", "config_hash": "bba844dfd4c01c1d", "at": "2026-10-25T22:50:51+00:00", "n_docs": 410}
+{"model_id": "final2_tfidf_features", "config_hash": "3fe4b3203816d5ca", "at": "2026-10-25T22:51:15+00:00", "n_docs": 410}

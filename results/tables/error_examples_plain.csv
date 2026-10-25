@@ -1,5 +1,5 @@
 Case,Website type,Logistic regression said,Claude said,What the article does,Excerpt
-Only Claude was right,mainstream,conspiracy,mainstream,reports neutrally,"""This story that we are hearing from the families of those who were killed on ..."
+Only Claude was right,mainstream,conspiracy,mainstream,makes no claim,"New York time, paced to display as they were broadcast at the corresponding time on ..."
 Only the logistic regression was right,conspiracy,conspiracy,mainstream,reports neutrally,The vacuum left after the invasion is widely believed to have spawned terror group ISIS. ...
-Mainstream article called conspiracy,mainstream,conspiracy,mainstream,makes no claim,"The FBI document indicated that, before the 9-11 attack, agents were ordered to close down ..."
+Mainstream article called conspiracy,mainstream,conspiracy,mainstream,debunks claims,"government investigations, whose reports are all available online, have concluded that there is no evidence ..."
 Conspiracy-site article called mainstream,conspiracy,mainstream,mainstream,makes no claim,"An organization with links to terrorism, that's backed by radical ..."

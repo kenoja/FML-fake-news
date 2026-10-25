@@ -469,9 +469,9 @@ def _llm_spec(model_id: str) -> ModelSpec:
     return ModelSpec(config, fit_predict, details=details)
 
 
-MODEL_BUILDERS.update({"final_word_counts": lambda: _logistic_spec("final_word_counts", word_counts_vectorizer, "word_counts"),
-                       "final_tfidf": lambda: _logistic_spec("final_tfidf", tfidf_vectorizer, "tfidf"),
-                       "final_tfidf_features": lambda: _features_spec("final_tfidf_features"),
+MODEL_BUILDERS.update({"final2_word_counts": lambda: _logistic_spec("final2_word_counts", word_counts_vectorizer, "word_counts"),
+                       "final2_tfidf": lambda: _logistic_spec("final2_tfidf", tfidf_vectorizer, "tfidf"),
+                       "final2_tfidf_features": lambda: _features_spec("final2_tfidf_features"),
                        "final_llm": lambda: _llm_spec("final_llm")})
 FINAL_IDS = tuple(MODEL_BUILDERS)
 
@@ -483,7 +483,8 @@ def final_stage() -> dict:
 
 # ---------------------------------------------------------------- stage: comparison
 
-WORDS_FINAL, TFIDF_FINAL, FEATURES_FINAL = "final_word_counts", "final_tfidf", "final_tfidf_features"
+WORDS_FINAL, TFIDF_FINAL, FEATURES_FINAL = "final2_word_counts", "final2_tfidf", "final2_tfidf_features"
+BASELINE_ID = "always_mainstream"
 
 
 def read_final_predictions() -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -491,20 +492,22 @@ def read_final_predictions() -> tuple[pd.DataFrame, pd.DataFrame]:
     tables = results_dir() / "tables"
     lr = pd.concat([pd.read_csv(tables / f"predictions_{m}.csv")
                     for m in (WORDS_FINAL, TFIDF_FINAL, FEATURES_FINAL)], ignore_index=True)
-    return lr, pd.read_csv(tables / "predictions_final_llm.csv")
+    return lr, pd.read_csv(tables / f"predictions_{LLM_ID}.csv")
 
 
 def best_final_lr(metrics: dict) -> str:
-    """Of the two TF-IDF models, the one with the higher validation F1 (a tie keeps plain TF-IDF)."""
-    plain, extra = metrics["tfidf"]["validation"]["f1"], metrics["tfidf_features"]["validation"]["f1"]
-    return FEATURES_FINAL if extra > plain else TFIDF_FINAL
+    """Of the three logistic regressions, the one with the highest validation F1 (a tie keeps the earlier one)."""
+    scores = {WORDS_FINAL: metrics["word_counts"]["validation"]["f1"], TFIDF_FINAL: metrics["tfidf"]["validation"]["f1"],
+              FEATURES_FINAL: metrics["tfidf_features"]["validation"]["f1"]}
+    return max(scores, key=scores.get)
 
 
-MODEL_NAMES = {"final_word_counts": "Word counts", "final_tfidf": "TF-IDF",
-               "final_tfidf_features": "TF-IDF + features", "final_llm": "LLM"}
+MODEL_NAMES = {WORDS_FINAL: "Word counts", TFIDF_FINAL: "TF-IDF", FEATURES_FINAL: "TF-IDF + features",
+               LLM_ID: "LLM", BASELINE_ID: "Always guess mainstream"}
 
 
 def plot_comparison_f1(table: pd.DataFrame):
+    table = table[table["model"] != BASELINE_ID].reset_index(drop=True)      # the baseline has F1 = 0: table only
     fig, ax = plt.subplots(figsize=(7, 4))
     x = np.arange(len(table))
     f1 = table["f1"].to_numpy()
@@ -521,6 +524,7 @@ def plot_comparison_f1(table: pd.DataFrame):
 
 
 def plot_comparison_confusion(table: pd.DataFrame):
+    table = table[table["model"] != BASELINE_ID].reset_index(drop=True)
     fig, axes = plt.subplots(1, len(table), figsize=(3.4 * len(table), 3.6))
     for ax, (_, r) in zip(axes, table.iterrows()):
         mat = np.array([[r["tn"], r["fp"]], [r["fn"], r["tp"]]])
@@ -548,8 +552,9 @@ def align_predictions(lr: pd.DataFrame, llm_all: pd.DataFrame) -> tuple[np.ndarr
 
 
 def write_comparison_tables(y: np.ndarray, preds: dict[str, np.ndarray]) -> pd.DataFrame:
-    """Write the comparison tables and figures, one row per model."""
-    table = pd.DataFrame([model_row(name, y, pred) for name, pred in preds.items()])
+    """Write the comparison tables and figures, one row per model plus the 'always guess mainstream' baseline."""
+    baseline = np.zeros(len(y), dtype=bool)                  # never says conspiracy
+    table = pd.DataFrame([model_row(name, y, pred) for name, pred in {**preds, BASELINE_ID: baseline}.items()])
     write_table("comparison_test", table)
     write_table("comparison_compact", compact_table(table, MODEL_NAMES))
     savefig(plot_comparison_f1(table), "comparison_f1")
@@ -564,14 +569,31 @@ def run_mcnemar_pairs(y: np.ndarray, preds: dict[str, np.ndarray], best_lr: str)
             "best_lr_vs_llm": mcnemar_pair(y, preds[best_lr], preds[LLM_ID], best_lr, LLM_ID)}
 
 
+def conspiracy_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], websites: np.ndarray) -> pd.DataFrame:
+    """For each conspiracy website in the test set: its article count and the recall of every model."""
+    rows = []
+    for site in sorted(set(websites[y])):
+        mine = (websites == site) & y                        # conspiracy articles of this website
+        rows.append({"website": site, "test_articles": int(mine.sum()),
+                     **{f"recall_{m}": float(preds[m][mine].mean()) for m in preds}})
+    return pd.DataFrame(rows)
+
+
 def comparison_stage() -> dict:
     """Compare the four final models on the same test documents, from the saved prediction files only."""
-    y, preds = align_predictions(*read_final_predictions())
+    lr, llm_all = read_final_predictions()
+    y, preds = align_predictions(lr, llm_all)
     table = write_comparison_tables(y, preds)
+    doc_ids = llm_all[llm_all["pass"] == 1]["doc_id"]
+    websites = doc_ids.map(analysis_frame().set_index("doc_id")["website"]).to_numpy()
+    per_website = conspiracy_website_recall(y, preds, websites)
+    write_table("test_website_recall", per_website.round(4))
     metrics = _metrics()
     best_lr = best_final_lr(metrics)
     values = {"models": list(preds), "lr_best": best_lr, "test_documents": int(len(y)), "test_conspiracy": int(y.sum()),
               "bootstrap": {"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95},
+              "baseline": {"model": BASELINE_ID, "accuracy": float((~y).mean())},
+              "per_website": per_website.to_dict("records"),
               "table": table.to_dict("records"), "mcnemar": run_mcnemar_pairs(y, preds, best_lr),
               "llm_stability": metrics["llm"]["repeat_agreement"]}
     write_metrics("comparison", round_floats(values, 4))

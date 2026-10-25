@@ -199,7 +199,7 @@ def test_same_hash_reuses_stored_predictions_and_never_rescores(frames, tmp_path
 
 
 def test_final_models_are_registered_and_scored_after_every_validation_stage():
-    assert pipeline.FINAL_IDS == ("final_word_counts", "final_tfidf", "final_tfidf_features", "final_llm")
+    assert pipeline.FINAL_IDS == ("final2_word_counts", "final2_tfidf", "final2_tfidf_features", "final_llm")
     names = [name for name, _ in pipeline.STAGES]
     assert names.index("final") > max(names.index(n) for n in ("word_counts", "tfidf", "tfidf_features", "llm"))
     assert names.index("final") < names.index("comparison")

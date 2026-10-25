@@ -156,7 +156,7 @@ def test_report_has_no_internal_model_ids():
     if not report.is_file():
         pytest.skip("report not built yet (python -m sitegen build)")
     text = report.read_text(encoding="utf-8")
-    for name in ("final_tfidf_features", "lr_words_v2", "lr_extended"):
+    for name in ("final_tfidf_features", "final2_tfidf_features", "lr_words_v2", "lr_extended"):
         assert name not in text
 
 

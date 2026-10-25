@@ -1,0 +1,7 @@
+website,test_articles,recall_final2_word_counts,recall_final2_tfidf,recall_final2_tfidf_features,recall_final_llm
+conspiracydailyupdate.com,19,0.684,0.579,0.684,0.947
+escapeallthesethings.com,6,0.833,0.833,0.833,1.0
+needtoknow.news,19,0.79,0.842,0.737,0.947
+neonnettle.com,44,0.25,0.204,0.204,0.318
+oye.news,1,1.0,1.0,1.0,1.0
+thelibertybeacon.com,7,0.857,1.0,0.714,1.0
