@@ -13,7 +13,7 @@ hypothesis: Some of the "mistakes" are not mistakes of the model but of the labe
 
 **Turning ticks into a verdict.** We fixed a simple rule before looking at results. A conspiracy-site article that debunks, reports neutrally or has no claim does not look like conspiracy content: a *label problem*. So does a mainstream article that endorses a claim. Every other case is a *model error*, even a mainstream article that debunks a theory, because it is still mainstream content. One consequence: a conspiracy-site article with no conspiracy claim is a label problem **by definition**, so part of the label-problem share follows from the rule itself.
 
-**Why we do not trust the ticks yet.** The coding is a second model with its own mistakes, and no person has checked it. We prepared a sheet of 40 articles. Each teammate ticks their own stance and returns the sheet (see the last question below). We then measure agreement with Claude using *Cohen's kappa*: 1 is perfect agreement, 0 is no better than chance, since raters who often tick the same box agree sometimes by luck.
+**Why we do not trust the ticks yet.** The coding is a second model with its own mistakes, and no person has checked it. We prepared a sheet of 40 articles. Each teammate ticks their own stance and returns the sheet (see the last question below). We then compare their ticks with Claude's.
 
 **Why we show examples.** Numbers hide what a mistake looks like. A fixed random seed picks one article per case, with a clean passage (no menu text, no named people): logistic regression wrong and Claude right, the reverse, one mainstream article called conspiracy, one conspiracy-site article called mainstream.
 
@@ -41,10 +41,6 @@ The examples are picked with a seeded shuffle among articles that have a clean e
 <!-- cell: src/fml/errors.py#find_excerpt -->
 
 <!-- cell: src/fml/errors.py#pick_examples -->
-
-Once the team has returned the sheet, the agreement is computed by this function.
-
-<!-- cell: src/fml/errors.py#stance_agreement -->
 
 The stage puts it all together and writes the tables.
 
@@ -86,7 +82,7 @@ Q: Why do we call the automatic stance coding unverified?
 A: A second language model made the ticks and no person has compared them with their own reading yet. Until the team has done this, we do not know how often the automatic coding is wrong.
 
 Q: How do I return the filled sheet, and how is it scored?
-A: Send `results/tables/stance_check_sample.csv` with the `human_stance` column filled in, either as a pull request or by email to the project lead. The project lead compares it with Claude's stance and computes Cohen's kappa: 1 is perfect agreement, 0 is no better than chance.
+A: Send `results/tables/stance_check_sample.csv` with the `human_stance` column filled in, either as a pull request or by email to the project lead. The project lead compares it with Claude's stance.
 
 Q: Why is a conspiracy-site article with no conspiracy claim a label problem and not a model error?
 A: Because the rule says so: the text does not look like conspiracy content, so the label (the website) describes it badly. This is a definition we chose, not a finding.

@@ -111,16 +111,10 @@ def test_classification_table_rows_sum_to_errors():
     coded["verdict"] = [errors.classify_error(t, s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
     table = errors.error_classification_table(coded, sets)
     assert "unparsed" not in table.columns
-    parts = [errors.MODEL_WRONG, errors.LABEL_PROBLEM, "not_sampled"]
-    assert (table[parts].sum(axis=1) == table["errors_total"]).all()
-    assert table.loc[(table["set"] == "all") & (table["error_type"] == "all"), "not_sampled"].item() == 2
-
-
-def _sample(tmp_path, human):
-    p = tmp_path / "s.csv"
-    pd.DataFrame({"doc_id": list("abcd"), "claude_stance": ["endorses", "no_claim", "endorses", "reports_neutrally"],
-                  "human_stance": human}).to_csv(p, index=False)
-    return p
+    parts = ["Model wrong", "Label does not describe the text", "Not coded"]
+    assert (table[parts].sum(axis=1) == table["Errors"]).all()
+    assert table.loc[(table["Group"] == "All errors") & (table["Error type"] == "All errors"), "Not coded"].item() == 2
+    assert not any("_" in c for c in table.columns) and not any("_" in g for g in table["Group"])
 
 
 def test_justification_is_shortened_and_names_are_stripped():
@@ -136,6 +130,7 @@ def test_check_sheet_is_blind_and_claude_answers_are_separate(tmp_path):
     sample = pd.DataFrame({"doc_id": list("ab"), "website": ["x.com", "y.org"], "claude_stance": ["no_claim", "endorses"],
                            "claude_justification": ["j1", "j2"], "set": ["x", "y"]})
     assert errors.write_check_sample(sample, p) is True
+    assert errors.write_check_sample(sample.iloc[:1], p) is False        # an existing sheet is never redrawn
     out = pd.read_csv(p, dtype=str, keep_default_na=False)
     assert list(out.columns) == ["doc_id", "website", "human_stance"]
     assert (out["human_stance"] == "").all()
@@ -182,14 +177,6 @@ def test_excerpts_skip_boilerplate_and_named_people():
     assert errors.find_excerpt("The speaker Barack Obama spoke to the crowd about the long plan for the country today.") is None
     clean = errors.find_excerpt("The plan was delayed by weather in the region for most of the week.")
     assert clean and len(clean.split()) <= errors.EXCERPT_WORDS + 1
-
-
-def test_stance_agreement_is_kappa(tmp_path):
-    pd.DataFrame({"doc_id": ["a", "b", "c", "d"], "website": "w", "human_stance": ["no_claim", "endorses", "no_claim", ""]}
-                 ).to_csv(tmp_path / "h.csv", index=False)
-    pd.DataFrame({"doc_id": ["a", "b", "c", "d"], "claude_stance": ["no_claim", "endorses", "no_claim", "endorses"]}
-                 ).to_csv(tmp_path / "c.csv", index=False)
-    assert errors.stance_agreement(tmp_path / "h.csv", tmp_path / "c.csv") == 1.0
 
 
 # ---------------------------------------------------------------- excerpt discipline (AGENTS.md hard rule)

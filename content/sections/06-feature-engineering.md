@@ -55,7 +55,7 @@ A family counts as helping only with a gain of at least 0.01.
 
 <!-- output: results/tables/ablation.csv -->
 <!-- output: results/figures/ablation_f1.png | Validation F1 of the five models -->
-<!-- output: results/metrics.json#tfidf_features.chosen_lr -->
+<!-- output: results/metrics.json#tfidf_features.validation -->
 <!-- output: results/tables/epistemic_coverage.csv -->
 <!-- output: results/tables/feature_summary.csv -->
 

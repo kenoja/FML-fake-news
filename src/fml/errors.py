@@ -245,38 +245,37 @@ def classify_error(true_label: bool, stance: str) -> str:
     return LABEL_PROBLEM if stance == "endorses" else MODEL_WRONG
 
 
-def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
-    """Counts by set x error type: all errors, coded, and the coded ones per verdict.
+PLAIN_LABELS = {"lr_only_wrong": "Only the logistic regression is wrong", "llm_only_wrong": "Only the LLM is wrong",
+                "both_wrong": "Both are wrong", "all": "All errors",
+                "false positive": "Mainstream article called conspiracy",
+                "false negative": "Conspiracy-site article called mainstream",
+                "endorses": "Article endorses a conspiracy claim", "rejects_or_debunks": "Article debunks claims",
+                "reports_neutrally": "Article reports claims neutrally", "no_claim": "Article makes no claim about 9/11",
+                "not_sampled": "Not coded"}
 
-    `coded` holds only readable stances. Columns `model wrong` + `label does not describe the text` +
-    `not_sampled` (error without a usable stance) always add up to `errors_total`.
-    """
+
+def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
+    """Counts by group x error type, with plain labels: all errors, coded, and the coded ones per verdict."""
     rows = []
     for s in (*SETS, "all"):
         for et in ("false positive", "false negative", "all"):
             sel = lambda d: d[((d["set"] == s) | (s == "all")) & ((d["error_type"] == et) | (et == "all"))]  # noqa: E731
             c = sel(coded)
-            rows.append({"set": s, "error_type": et, "errors_total": len(sel(totals)), "coded": len(c),
-                         **{v: int((c["verdict"] == v).sum()) for v in (MODEL_WRONG, LABEL_PROBLEM)},
-                         "not_sampled": len(sel(totals)) - len(c),
-                         **{f"stance_{st}": int((c["claude_stance"] == st).sum()) for st in STANCES}})
+            rows.append({"Group": PLAIN_LABELS[s], "Error type": PLAIN_LABELS.get(et, "All errors"),
+                         "Errors": len(sel(totals)), "Coded": len(c),
+                         "Model wrong": int((c["verdict"] == MODEL_WRONG).sum()),
+                         "Label does not describe the text": int((c["verdict"] == LABEL_PROBLEM).sum()),
+                         PLAIN_LABELS["not_sampled"]: len(sel(totals)) - len(c),
+                         **{PLAIN_LABELS[st]: int((c["claude_stance"] == st).sum()) for st in STANCES}})
     return pd.DataFrame(rows)
 
 
 # ---------------------------------------------------------------- human check
 
-def has_human_input(path: Path) -> bool:
-    """True if a teammate has already typed something into the check file."""
-    if not path.is_file():
-        return False
-    df = pd.read_csv(path, dtype=str, keep_default_na=False)
-    return bool((df["human_stance"].str.strip() != "").any())
-
-
 def write_check_sample(sample: pd.DataFrame, path: Path) -> bool:
-    """Write the blind CSV for the team (doc_id, website, empty human_stance). False if a human started it."""
-    if has_human_input(path):
-        return False
+    """Write the blind CSV for the team (doc_id, website, empty human_stance). False if the file exists."""
+    if path.is_file():
+        return False                  # the team's tool is built on these doc_ids: never redraw them
     out = sample.copy()
     out["human_stance"] = ""          # left empty on purpose: the team fills it in
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -290,23 +289,12 @@ def write_claude_answers(sample: pd.DataFrame, path: Path) -> None:
     sample[["doc_id", "claude_stance", "claude_justification"]].to_csv(path, index=False)
 
 
-def stance_agreement(check_file: Path, claude_file: Path) -> float:
-    """Cohen's kappa between the team's returned stances and Claude's, on the rows the team filled in."""
-    from sklearn.metrics import cohen_kappa_score
-
-    human = pd.read_csv(check_file, dtype=str, keep_default_na=False)
-    human = human[human["human_stance"].str.strip() != ""]
-    both = human.merge(pd.read_csv(claude_file, dtype=str), on="doc_id")
-    return float(cohen_kappa_score(both["human_stance"].str.strip(), both["claude_stance"]))
-
-
 # ---------------------------------------------------------------- examples
 
 BOILERPLATE = re.compile(r"click|cached|subscribe|cookie|posted by|copyright|share this|read more|sign up|"
                          r"follow us|advertis|newsletter|all rights|menu|http|www\.|@|\d{4}", re.IGNORECASE)
 EXAMPLE_CASES = {"lr_only_wrong": "Only Claude was right", "llm_only_wrong": "Only the logistic regression was right",
-                 "false_positive": "Mainstream article called conspiracy",
-                 "false_negative": "Conspiracy-site article called mainstream"}
+                 "false_positive": PLAIN_LABELS["false positive"], "false_negative": PLAIN_LABELS["false negative"]}
 STANCE_WORDS = {"endorses": "endorses a claim", "rejects_or_debunks": "debunks claims",
                 "reports_neutrally": "reports neutrally", "no_claim": "makes no claim"}
 

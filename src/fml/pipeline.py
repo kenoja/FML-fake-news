@@ -25,6 +25,7 @@ import pandas as pd  # noqa: E402
 
 from . import errors  # noqa: E402
 from .clean import clean_documents, website_names  # noqa: E402
+from .data import first_words  # noqa: E402
 from .comparison import compact_table, mcnemar_pair, model_row  # noqa: E402
 from .evaluate import BOOTSTRAP_SEED, N_BOOTSTRAP, bootstrap_ci, classification_metrics, confusion  # noqa: E402
 from .models import (feature_matrix, fit_features, fit_logistic, split_frames, tfidf_vectorizer, top_words,
@@ -48,8 +49,11 @@ def _clean_documents_cached():
 
 
 def analysis_frame() -> pd.DataFrame:
-    """THE frame every model uses: on-topic, near-duplicates removed, text cleaned."""
-    return _clean_documents_cached()[0].copy()
+    """THE frame every model uses: on-topic, near-duplicates removed, text cut like the LLM's."""
+    frame = _clean_documents_cached()[0].copy()
+    max_words = project_config()["llm_classifier"]["max_input_words"]
+    frame["txt"] = frame["txt"].map(lambda text: first_words(text, max_words))      # same 3,000 words as the LLM
+    return frame
 
 
 def plot_cleaning(log: pd.DataFrame):
@@ -308,31 +312,24 @@ def variant(label, features):
     return {"label": label, "features": features}
 
 
-def plot_ablation(table: pd.DataFrame, chosen: str):
-    """Horizontal bars of validation F1, one per model; the chosen model is highlighted."""
+def plot_ablation(table: pd.DataFrame):
+    """Horizontal bars of validation F1, one per model; the final model (all three groups) is blue."""
     rows = table.iloc[::-1].reset_index(drop=True)          # first model on top
     fig, ax = plt.subplots(figsize=(8, 3.8))
-    colours = ["#3b5b8c" if m == chosen else "#9a9a9a" for m in rows["model_id"]]
+    colours = ["#3b5b8c" if m == LR_EXTENDED_ID else "#9a9a9a" for m in rows["model_id"]]
     ax.barh(rows.index, rows["f1"], color=colours, height=0.6)
     for i, f1 in enumerate(rows["f1"]):
         ax.text(f1, i, f" {f1:.3f}", va="center", fontsize=9)
     ax.set_yticks(rows.index, rows["label"])
     ax.set_xlim(max(0.0, float(rows["f1"].min()) - 0.05), 1.0)
     ax.set_xlabel("Validation F1 (conspiracy class)")
-    ax.set_title("Do the extra features help? (blue = chosen model)", fontsize=10)
+    ax.set_title("Do the extra features help? (blue = final model)", fontsize=10)
     fig.tight_layout()
     return fig
 
 
 def _metrics() -> dict:
     return json.loads((results_dir() / "metrics.json").read_text(encoding="utf-8"))
-
-
-def _ablation_selected() -> dict:
-    sel = _metrics()["tfidf_features"].get("selected")
-    if not sel:
-        raise RuntimeError("run the ablation stage first: the tuned settings come from validation")
-    return sel
 
 
 def _final_config(model_id: str, **settings) -> dict:
@@ -355,11 +352,11 @@ def _logistic_spec(model_id: str, vectorizer, metrics_key: str) -> ModelSpec:
 
 
 def _features_spec(model_id: str) -> ModelSpec:
-    """TF-IDF plus engineered features: the feature set, C and class weight chosen on validation."""
-    name = _metrics()["tfidf_features"]["chosen_lr"]["chosen"]
-    sel = _ablation_selected()[name]
-    cw = None if sel["class_weight"] == "none" else sel["class_weight"]
-    config = _final_config(model_id, feature_set=name, features=sel["features"], C=sel["C"], class_weight=cw)
+    """TF-IDF plus n-grams, certainty words and style (always all three); C chosen on validation."""
+    chosen = _metrics()["tfidf_features"]["validation"]
+    cw = None if chosen["class_weight"] == "none" else chosen["class_weight"]
+    features = ablation_variants()[LR_EXTENDED_ID]["features"]
+    config = _final_config(model_id, feature_set=LR_EXTENDED_ID, features=features, C=chosen["C"], class_weight=cw)
 
     def fit_predict_proba(train: pd.DataFrame, test: pd.DataFrame):
         blocks = fit_features(train, config["features"])      # vocabulary and scalers: training articles only
@@ -371,28 +368,24 @@ def _features_spec(model_id: str) -> ModelSpec:
 
 
 def ablation() -> dict:
-    """Compare the five feature sets on validation and write the table, figure and metrics."""
-    from .ablation import choose_best, run_ablation, verdict_sentence
+    """Score the five feature sets on validation and write the table, figure and metrics."""
+    from .ablation import run_ablation
     from .features.epistemic import lexicon_coverage
 
     frames = split_frames(analysis_frame(), ("train", "validation"))
     train, valid = frames["train"], frames["validation"]
-    variants = ablation_variants()
-    table = run_ablation(train, valid, variants, reference=LR_WORDS_ID)
-    chosen = choose_best(table, LR_WORDS_ID)
+    table = run_ablation(train, valid, ablation_variants(), reference=LR_WORDS_ID)
     write_table("ablation", table.round(4))
-    savefig(plot_ablation(table, chosen["chosen"]), "ablation_f1")
+    savefig(plot_ablation(table), "ablation_f1")
 
     coverage = lexicon_coverage(train).round(4)             # how much of the data the word list reaches
     write_table("epistemic_coverage", coverage)
 
-    selected = {row["model_id"]: {"features": variants[row["model_id"]]["features"], "C": row["C"],
-                                  "class_weight": row["class_weight"]} for row in table.to_dict("records")}
+    models = {row["model_id"]: row for row in table.to_dict("records")}
     values = {"data": "filtered documents, split_v1, validation rows only",
               "protocol": "per model: C and class weight from config lr (same grid as word counts and TF-IDF), best conspiracy-F1 on validation",
               "documents": {"train": int(len(train)), "validation": int(len(valid))},
-              "selected": selected, "models": {row["model_id"]: row for row in table.to_dict("records")},
-              "chosen_lr": chosen, "verdict_sentence": verdict_sentence(table, LR_WORDS_ID),
+              "final_model": LR_EXTENDED_ID, "validation": models[LR_EXTENDED_ID], "models": models,
               "coverage": coverage.to_dict("records")}
     write_metrics("tfidf_features", round_floats(values, 4))
     return values
@@ -503,7 +496,7 @@ def read_final_predictions() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def best_final_lr(metrics: dict) -> str:
     """Of the two TF-IDF models, the one with the higher validation F1 (a tie keeps plain TF-IDF)."""
-    plain, extra = metrics["tfidf"]["validation"]["f1"], metrics["tfidf_features"]["chosen_lr"]["f1"]
+    plain, extra = metrics["tfidf"]["validation"]["f1"], metrics["tfidf_features"]["validation"]["f1"]
     return FEATURES_FINAL if extra > plain else TFIDF_FINAL
 
 
@@ -629,12 +622,17 @@ def write_error_tables(coded: pd.DataFrame, sets: pd.DataFrame, examples: pd.Dat
 
 
 def check_sample(frame: pd.DataFrame, cfg: dict, seed: int) -> pd.DataFrame:
-    """Validation articles for the human check: balanced classes, few per website, Claude's stance (cached)."""
+    """Validation articles for the human check: the existing sheet's, else a balanced draw; Claude's stance (cached)."""
     split = load_split().set_index("doc_id")["split"]
     pool = frame.reset_index()
     pool = pool[pool["doc_id"].map(split) == "validation"]
     pool = pool[["doc_id", "website", "label", "txt"]].reset_index(drop=True)
-    sample = errors.balanced_website_sample(pool, cfg["human_sample_size"], cfg["max_per_website"], seed)
+    sheet = results_dir() / "tables" / "stance_check_sample.csv"
+    if sheet.is_file():                              # keep the 40 articles the team already has
+        ids = pd.read_csv(sheet, dtype=str)["doc_id"]
+        sample = pool[pool["doc_id"].isin(ids)].reset_index(drop=True)
+    else:
+        sample = errors.balanced_website_sample(pool, cfg["human_sample_size"], cfg["max_per_website"], seed)
     client = errors.stance_client(cfg) if errors.missing_stances(sample["doc_id"]) else None
     stance = errors.code_stances(sample, client=client)
     return sample.drop(columns="txt").merge(stance, on="doc_id")
