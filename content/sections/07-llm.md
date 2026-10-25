@@ -31,6 +31,14 @@ Reading the model's answer. Anything that does not fit the format becomes "unrea
 
 <!-- cell: src/fml/llm.py#parse_response -->
 
+Asking the model about one article and saving its answer.
+
+<!-- cell: src/fml/llm.py#ask_model -->
+
+Asking about all articles that have no saved answer yet, several at a time.
+
+<!-- cell: src/fml/llm.py#fetch_missing -->
+
 Classifying articles: saved answers first, the model only for answers that are missing.
 
 <!-- cell: src/fml/llm.py#classify -->

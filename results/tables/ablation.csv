@@ -4,3 +4,4 @@ lr_plus_ngrams,+ n-grams (1-3),100.0,balanced,0.92,0.002
 lr_plus_epistemic,+ certainty words,10.0,balanced,0.93,0.013
 lr_plus_style,+ style,100.0,balanced,0.909,-0.009
 lr_extended,+ all three,100.0,balanced,0.896,-0.022
+lr_nongram_both,+ certainty words and style (no n-grams),10.0,balanced,0.913,-0.005

@@ -143,7 +143,7 @@ def test_report_length_is_within_the_limit():
 
 ABLATION_WORDS = {  # words that name an ablation row in prose -> model_id in ablation.csv
     "n-gram": "lr_plus_ngrams", "certainty": "lr_plus_epistemic", "epistemic": "lr_plus_epistemic",
-    "style": "lr_plus_style", "all three groups": "lr_extended",
+    "style": "lr_plus_style", "all three groups": "lr_extended", "no n-grams": "lr_nongram_both", "without n-grams": "lr_nongram_both",
 }
 ABLATION_TEXTS = ["content/sections/06-feature-engineering.md", "reports/report.md", "docs/decisions.md"]
 

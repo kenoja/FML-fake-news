@@ -266,6 +266,15 @@ def log_test_access(log_path: Path, model_id: str, digest: str, n_docs: int) -> 
         f.write(json.dumps(entry) + "\n")
 
 
+def earlier_test_accesses(model_id: str, digest: str, log_path: Path) -> list[dict]:
+    """Earlier test scorings of this model; a different configuration is refused."""
+    previous = [e for e in read_access_log(log_path) if e["model_id"] == model_id]
+    if any(e["config_hash"] != digest for e in previous):
+        raise PermissionError(f"{model_id} was already scored on test with a different configuration; "
+                              "a new configuration needs a new model id (and is a new test access).")
+    return previous
+
+
 def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] | None = None,
                    frame: pd.DataFrame | None = None, log_path: Path | None = None,
                    frozen_path: Path | None = None) -> dict:
@@ -279,10 +288,7 @@ def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] |
     # the frozen configuration is checked BEFORE anything is scored
     frozen = read_frozen(frozen_path or results_dir() / "frozen_models.json").get(model_id)
     check_frozen_config(model_id, digest, frozen)
-    previous = [e for e in read_access_log(log_path) if e["model_id"] == model_id]
-    if any(e["config_hash"] != digest for e in previous):
-        raise PermissionError(f"{model_id} was already scored on test with a different configuration; "
-                              "a new configuration needs a new model id (and is a new test access).")
+    previous = earlier_test_accesses(model_id, digest, log_path)
     predictions_path = log_path.parent / "tables" / f"predictions_{model_id}.csv"
     if previous and predictions_path.is_file():         # same configuration, already scored: reuse, never rescore
         return _summary_from_predictions(model_id, digest, pd.read_csv(predictions_path))
@@ -308,7 +314,7 @@ LR_WORDS_ID, LR_EXTENDED_ID = "lr_words_v2", "lr_extended"
 
 
 def ablation_variants():
-    """The five models to compare: TF-IDF alone, plus each extra group, and plus all three."""
+    """The models to compare: TF-IDF alone, plus each extra group, plus all three, and certainty words plus style without n-grams."""
     settings = project_config()["features"]
     ngrams = {"ngram_range": list(settings["ngram_range"]), "min_df": settings["ngram_min_df"],
               "max_features": settings["ngram_max_features"]}
@@ -318,7 +324,8 @@ def ablation_variants():
             "lr_plus_ngrams": variant("+ n-grams (1-3)", with_ngrams),
             "lr_plus_epistemic": variant("+ certainty words", dict(plain, dense_groups=["epistemic"])),
             "lr_plus_style": variant("+ style", dict(plain, dense_groups=["style"])),
-            LR_EXTENDED_ID: variant("+ all three", dict(with_ngrams, dense_groups=["epistemic", "style"]))}
+            LR_EXTENDED_ID: variant("+ all three", dict(with_ngrams, dense_groups=["epistemic", "style"])),
+            "lr_nongram_both": variant("+ certainty words and style (no n-grams)", dict(plain, dense_groups=["epistemic", "style"]))}
 
 
 def variant(label, features):
@@ -382,7 +389,7 @@ def _features_spec(model_id: str) -> ModelSpec:
 
 
 def ablation() -> dict:
-    """Score the five feature sets on validation and write the table, figure and metrics."""
+    """Score the feature sets on validation and write the table, figure and metrics."""
     from .ablation import run_ablation
     from .features.epistemic import lexicon_coverage
 

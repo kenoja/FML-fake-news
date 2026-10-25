@@ -64,7 +64,7 @@ def test_ablation_is_reproducible():
 def test_analysis_3_always_uses_all_three_groups():
     """No selection rule: the model scored later is TF-IDF + n-grams + certainty words + style, whatever the table says."""
     variants = pipeline.ablation_variants()
-    assert list(variants) == ["lr_words_v2", "lr_plus_ngrams", "lr_plus_epistemic", "lr_plus_style", "lr_extended"]
+    assert list(variants) == ["lr_words_v2", "lr_plus_ngrams", "lr_plus_epistemic", "lr_plus_style", "lr_extended", "lr_nongram_both"]
     features = variants[pipeline.LR_EXTENDED_ID]["features"]
     assert features["ngram_range"] == [1, 3]
     assert features["dense_groups"] == ["epistemic", "style"]

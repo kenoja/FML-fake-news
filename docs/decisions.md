@@ -46,8 +46,8 @@ resolve a conflict (see AGENTS.md).
   removal (cosine 0.9 or higher; 2,608 to 2,554). Across splits the validation/test copy goes; for a
   validation/test pair the test copy goes; inside one split the lower doc_id stays. No minimum length (the
   shortest article has 102 words). Numbers: `results/metrics.json#cleaning`.
-- **[done] Four analyses.** Word counts, TF-IDF, TF-IDF plus features (five models, chosen on validation with
-  one rule: a group helps only if validation F1 rises by at least `ablation.HELPS_BY`), and the LLM (at most
+- **[done] Four analyses.** Word counts, TF-IDF, TF-IDF plus features (five models compared on validation; the
+  final model always uses all three groups), and the LLM (at most
   three prompt variants, validation only). Shared logistic-regression settings: C grid and balanced class
   weights from `config/project.yaml`. The "best logistic regression" for the third McNemar test is the
   final model with the higher validation F1.

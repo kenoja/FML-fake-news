@@ -283,6 +283,14 @@
         "class_weight": "balanced",
         "f1": 0.8959,
         "delta_f1": -0.0218
+      },
+      "lr_nongram_both": {
+        "model_id": "lr_nongram_both",
+        "label": "+ certainty words and style (no n-grams)",
+        "C": 10.0,
+        "class_weight": "balanced",
+        "f1": 0.913,
+        "delta_f1": -0.0047
       }
     },
     "coverage": [

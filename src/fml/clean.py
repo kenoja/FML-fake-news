@@ -237,6 +237,21 @@ def duplicate_info(pairs: pd.DataFrame, drops: set, where: pd.Series) -> dict:
     }
 
 
+def cleaning_numbers(raw: pd.DataFrame, steps: list, pairs: pd.DataFrame, drops: set, where: pd.Series,
+                     threshold: float) -> dict:
+    """The numbers for metrics.json `cleaning`: counts after every step, duplicates, short texts, clues."""
+    texts = steps[-1][1]
+    first, after_topic, last = (label_counts(f) for _, f in steps)
+    return {
+        "before": first["documents"], "after_topic": after_topic["documents"], "after_duplicates": last["documents"],
+        "counts": {"before": first, "after_topic": after_topic, "after_duplicates": last},
+        "near_duplicate_threshold": threshold,
+        **duplicate_info(pairs, drops, where),
+        "short_texts": short_text_info(raw, texts),
+        "clue_removal": clue_removal_info(raw, texts),
+    }
+
+
 def clean_documents(raw: pd.DataFrame | None = None, split: pd.DataFrame | None = None, metadata: list[dict] | None = None,
                     threshold: float = NEAR_DUPLICATE_THRESHOLD) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     """The cleaned documents every model uses, a step log and the numbers for metrics.json `cleaning`."""
@@ -258,13 +273,5 @@ def clean_documents(raw: pd.DataFrame | None = None, split: pd.DataFrame | None 
     texts = texts[~texts["doc_id"].isin(drops)].reset_index(drop=True)
     steps.append(("near-duplicates removed", texts))
 
-    first, after_topic, last = (label_counts(f) for _, f in steps)
-    info = {
-        "before": first["documents"], "after_topic": after_topic["documents"], "after_duplicates": last["documents"],
-        "counts": {"before": first, "after_topic": after_topic, "after_duplicates": last},
-        "near_duplicate_threshold": threshold,
-        **duplicate_info(pairs, drops, where),
-        "short_texts": short_text_info(raw, texts),
-        "clue_removal": clue_removal_info(raw, texts),
-    }
+    info = cleaning_numbers(raw, steps, pairs, drops, where, threshold)
     return texts, step_log(steps), info
