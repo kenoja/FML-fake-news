@@ -23,11 +23,14 @@ WAIT_SECONDS = 5.0
 MAX_WAIT_SECONDS = 60.0
 PARALLEL_CALLS = 4
 
+ANSWER_FORMAT = ('Answer with strict JSON only, no other text: '
+                 '{"label": "conspiracy" or "mainstream", "confidence": a number from 0 to 1, '
+                 '"reason": "at most 25 words"}')
+
+
 def prompt_variants() -> dict[str, str]:
     """The three prompts we try: bare question, with definitions, step by step."""
-    answer_format = ('Answer with strict JSON only, no other text: '
-                     '{"label": "conspiracy" or "mainstream", "confidence": a number from 0 to 1, '
-                     '"reason": "at most 25 words"}')
+    answer_format = ANSWER_FORMAT
     # prompt 1: just the question
     v1 = (
         "Read the article below. Would it have been published on a conspiracy-oriented website or on a "
@@ -219,6 +222,14 @@ def append_cache(path: Path, record: dict) -> None:
 
 # ---------------------------------------------------------------- classification
 
+def client_for_missing(missing: list, variant: str, key: str, cfg: dict) -> Client:
+    """A real API client, or a loud error when there is no key."""
+    if not os.environ.get(api_key_env_name(cfg)):
+        raise RuntimeError(f"No cached answer for doc_id {missing[0]} with prompt {variant} (hash {key}) "
+                           f"and {api_key_env_name(cfg)} is not set; {len(missing)} answers are missing")
+    return make_client(cfg)
+
+
 def classify(df: pd.DataFrame, variant: str = "v1", pass_id: int = 1, client: Client | None = None,
              cache_file: Path | None = None, cfg: dict | None = None) -> pd.DataFrame:
     """Label every row of `df` (columns doc_id, txt): from the cache first, from the API only on a miss."""
@@ -234,10 +245,7 @@ def classify(df: pd.DataFrame, variant: str = "v1", pass_id: int = 1, client: Cl
     missing = [doc_id for doc_id in articles if (doc_id, key) not in cache]
 
     if missing and client is None:
-        if not os.environ.get(api_key_env_name(cfg)):
-            raise RuntimeError(f"No cached answer for doc_id {missing[0]} with prompt {variant} (hash {key}) "
-                               f"and {api_key_env_name(cfg)} is not set; {len(missing)} answers are missing")
-        client = make_client(cfg)
+        client = client_for_missing(missing, variant, key, cfg)
 
     def ask(doc_id: str) -> dict:
         article, cut = articles[doc_id]

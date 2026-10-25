@@ -66,9 +66,12 @@ resolve a conflict (see AGENTS.md).
 - **[done] Privacy of the account name in the site.** `config/site.yaml` has empty `repo_url` and
   `giscus.repo`, so the built site shows no account name (no "Code on GitHub" link, comments show "not
   connected yet"). `tests/test_privacy.py` scans docs, `config/` and the built site.
-- **[partly met] Requirement 14 (beginner code).** The pipeline stages and `StyleFeatures` were split into short
-  helpers and tables stayed byte-identical, but the full rewrite of every code cell shown on the site in the
-  AGENTS.md style is not confirmed complete. It stays "partly met" until the queued code task (T1) is done.
+- **[done] Requirement 14 (beginner code).** Every function shown as a code cell now has a one-line
+  docstring (reasoning moved into short inline comments). Long ones were split into helpers
+  (`clean.step_log`, `short_text_info`, `duplicate_info`; `llm.client_for_missing`; `pipeline.check_frozen_config`,
+  `score_on_test`, `log_test_access`). Cleaning outputs and `mattr` were checked to be identical before/after;
+  `tests/test_cell_functions.py` covers the new helpers. Left as is: `prompt_variants` (30 lines, mostly prompt
+  text), `classify` (32) and `errors_stage` (26) are only slightly over ~25 lines.
 - **[declined] Protected-path conflict.** `scripts/collect_feedback.py` contains the owner's account name as
   a default `--repo` value. `scripts/` is protected, so the agent did not edit it, and git history cannot be
   rewritten by the agent. Conservative reading: do not claim the repository is free of the name.
@@ -113,3 +116,8 @@ resolve a conflict (see AGENTS.md).
   files could not be deleted (no permission to remove files); nothing reads them. Section prose and
   `docs/reproducibility.md` still quote earlier numbers and file names; the queued section rewrites must update them
   (`tests/test_report_numbers.py` fails until then).
+
+## Cycle 3, T7 (section 01)
+- Added `src/fml/methods_overview.py` (writes `results/tables/methods_overview.csv` at the end of `run_all`); `run_info.json` now also holds machine info and per-stage seconds. LR runtime = stage time (the first stage includes loading data); LLM runtime and cost = averages from the answer cache rows that recorded tokens, at list price from the config.
+- References: no new sources were added. The web check of candidate classics (Spärck Jones 1972; Swami et al. 2010; Douglas et al. 2019) was not possible in this run, so the introduction cites only Miani et al. (2022) and Fong et al. (2021), which are already in `content/references.md`. Needs a team decision: add confirmed classic references for TF-IDF, logistic regression and 9/11 conspiracy background.
+- `tests/test_gates.py` report-length gate (≤5000 words) and several number checks in sections 04–08/11 fail from other, queued tasks, not from section 01.

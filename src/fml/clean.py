@@ -193,6 +193,40 @@ def label_counts(df: pd.DataFrame) -> dict:
     return {"documents": int(len(df)), "conspiracy": int(df["label"].sum()), "mainstream": int((~df["label"]).sum())}
 
 
+def step_log(steps: list) -> pd.DataFrame:
+    """One row per cleaning step: how many documents went and how many remain."""
+    log, before = [], None
+    for name, frame in steps:
+        now = label_counts(frame)
+        gone = {k: (before[k] - now[k]) if before else 0 for k in now}
+        log.append({"step": name, "removed": gone["documents"], "remaining": now["documents"],
+                    "removed_conspiracy": gone["conspiracy"], "removed_mainstream": gone["mainstream"],
+                    "remaining_conspiracy": now["conspiracy"], "remaining_mainstream": now["mainstream"]})
+        before = now
+    return pd.DataFrame(log)
+
+
+def short_text_info(raw: pd.DataFrame, texts: pd.DataFrame) -> dict:
+    """How short the shortest kept articles are."""
+    words = raw.set_index("doc_id")["txt"].str.split().map(len)[texts["doc_id"]]
+    return {"threshold_words": SHORT_TEXT_WORDS, "shortest_words": int(words.min()),
+            "documents_under_threshold": int((words < SHORT_TEXT_WORDS).sum()),
+            "median_words": float(words.median())}
+
+
+def duplicate_info(pairs: pd.DataFrame, drops: set, where: pd.Series) -> dict:
+    """Counts about the near-duplicate pairs and the articles dropped."""
+    across = pairs["doc_id_a"].map(where) != pairs["doc_id_b"].map(where)
+    return {
+        "near_duplicate_pairs": int(len(pairs)),
+        "near_duplicate_pairs_across_splits": int(across.sum()),
+        "near_duplicate_pairs_same_website": int(pairs["same_website"].sum()),
+        "near_duplicates_dropped": len(drops),
+        "near_duplicates_dropped_by_split": {s: int(sum(where[d] == s for d in drops))
+                                             for s in ("train", "validation", "test")},
+    }
+
+
 def clean_documents(raw: pd.DataFrame | None = None, split: pd.DataFrame | None = None, metadata: list[dict] | None = None,
                     threshold: float = NEAR_DUPLICATE_THRESHOLD) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     """The cleaned documents every model uses, a step log and the numbers for metrics.json `cleaning`."""
@@ -202,38 +236,24 @@ def clean_documents(raw: pd.DataFrame | None = None, split: pd.DataFrame | None 
     texts = texts.reset_index(drop=True)
     steps = [("all documents", texts)]
 
-    on_topic = set(raw.loc[on_topic_mask(raw), "doc_id"])       # judged on the original title and text
+    # remove off-topic articles, judged on the original title and text
+    on_topic = set(raw.loc[on_topic_mask(raw), "doc_id"])
     texts = texts[texts["doc_id"].isin(on_topic)]
     steps.append(("off-topic articles removed", texts))
 
+    # remove near-duplicates among the on-topic articles
     pairs = pairs[pairs["doc_id_a"].isin(on_topic) & pairs["doc_id_b"].isin(on_topic)]
     where = split.set_index("doc_id")["split"]
     drops = near_duplicate_drops(pairs, where)
     texts = texts[~texts["doc_id"].isin(drops)].reset_index(drop=True)
     steps.append(("near-duplicates removed", texts))
 
-    log, before = [], None
-    for name, frame in steps:
-        now = label_counts(frame)
-        gone = {k: (before[k] - now[k]) if before else 0 for k in now}
-        log.append({"step": name, "removed": gone["documents"], "remaining": now["documents"],
-                    "removed_conspiracy": gone["conspiracy"], "removed_mainstream": gone["mainstream"],
-                    "remaining_conspiracy": now["conspiracy"], "remaining_mainstream": now["mainstream"]})
-        before = now
-
-    words = raw.set_index("doc_id")["txt"].str.split().map(len)[texts["doc_id"]]
     first, after_topic, last = (label_counts(f) for _, f in steps)
     info = {
         "before": first["documents"], "after_topic": after_topic["documents"], "after_duplicates": last["documents"],
         "counts": {"before": first, "after_topic": after_topic, "after_duplicates": last},
         "near_duplicate_threshold": threshold,
-        "near_duplicate_pairs": int(len(pairs)),
-        "near_duplicate_pairs_across_splits": int((pairs["doc_id_a"].map(where) != pairs["doc_id_b"].map(where)).sum()),
-        "near_duplicate_pairs_same_website": int(pairs["same_website"].sum()),
-        "near_duplicates_dropped": len(drops),
-        "near_duplicates_dropped_by_split": {s: int(sum(where[d] == s for d in drops)) for s in ("train", "validation", "test")},
-        "short_texts": {"threshold_words": SHORT_TEXT_WORDS, "shortest_words": int(words.min()),
-                        "documents_under_threshold": int((words < SHORT_TEXT_WORDS).sum()),
-                        "median_words": float(words.median())},
+        **duplicate_info(pairs, drops, where),
+        "short_texts": short_text_info(raw, texts),
     }
-    return texts, pd.DataFrame(log), info
+    return texts, step_log(steps), info

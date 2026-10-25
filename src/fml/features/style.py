@@ -57,20 +57,20 @@ def previous_positions(ids: np.ndarray) -> np.ndarray:
 
 def mattr(tokens: list[str], window: int) -> float:
     """Share of distinct words, averaged over every `window`-word span (so length does not matter)."""
-    words_lower = [t.lower() for t in tokens]
-    n = len(words_lower)
+    lower = [t.lower() for t in tokens]
+    n = len(lower)
     if n == 0:
         return 0.0
-    if n <= window:
-        return len(set(words_lower)) / n
-    ids = np.unique(np.asarray(words_lower), return_inverse=True)[1].ravel()
+    if n <= window:                       # a short text is one single window
+        return len(set(lower)) / n
+    ids = np.unique(np.asarray(lower), return_inverse=True)[1].ravel()    # a number for each distinct word
     prev = previous_positions(ids)
-    # a word counts once per window if its previous occurrence lies before the window starts
+    # a word counts as new in a window if its previous occurrence lies before the window starts
     pos = np.arange(n)
-    first = np.maximum(np.maximum(pos - window + 1, prev + 1), 0)
-    last = np.minimum(pos, n - window)
-    distinct_sum = int(np.clip(last - first + 1, 0, None).sum())
-    return distinct_sum / ((n - window + 1) * window)
+    first_window = np.maximum(np.maximum(pos - window + 1, prev + 1), 0)
+    last_window = np.minimum(pos, n - window)
+    windows_as_new = np.clip(last_window - first_window + 1, 0, None)
+    return int(windows_as_new.sum()) / ((n - window + 1) * window)
 
 
 def count_quotes(text: str) -> int:

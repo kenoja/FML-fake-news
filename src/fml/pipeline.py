@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
 import time
 from dataclasses import dataclass
@@ -30,6 +31,7 @@ from .comparison import compact_table, mcnemar_pair, model_row  # noqa: E402
 from .evaluate import BOOTSTRAP_SEED, N_BOOTSTRAP, bootstrap_ci, classification_metrics, confusion  # noqa: E402
 from .models import (feature_matrix, fit_features, fit_logistic, split_frames, tfidf_vectorizer, top_words,
                      tune_on_validation, word_counts_vectorizer)  # noqa: E402
+from .methods_overview import write_methods_overview  # noqa: E402
 from .paths import project_config  # noqa: E402
 from .results import CONSPIRACY_COLOUR, MAINSTREAM_COLOUR, results_dir, savefig, write_metrics, write_table  # noqa: E402
 from .data_report import plot_split_sizes  # noqa: E402
@@ -224,37 +226,18 @@ def freeze_model(model_id: str, builders: dict[str, Callable[[], ModelSpec]] | N
     return entry
 
 
-def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] | None = None,
-                   frame: pd.DataFrame | None = None, log_path: Path | None = None,
-                   frozen_path: Path | None = None) -> dict:
-    """Score one model on the locked TEST split and log the access in results/test_access_log.jsonl.
-
-    The only code path that reads the test rows. A model id may be scored with one configuration only:
-    a second, different config hash is refused BEFORE anything is scored (otherwise the test set could
-    be used to pick between settings). Re-running the identical configuration is allowed and does not
-    add a second log line.
-    """
-    builders = MODEL_BUILDERS if builders is None else builders
-    if model_id not in builders:
-        raise KeyError(f"unknown model_id {model_id!r}; known: {sorted(builders)}")
-    spec = builders[model_id]()
-    digest = config_hash(spec.config)
-    log_path = log_path or results_dir() / "test_access_log.jsonl"
-    frozen = read_frozen(frozen_path or results_dir() / "frozen_models.json").get(model_id)
+def check_frozen_config(model_id: str, digest: str, frozen: dict | None) -> None:
+    """Refuse to score a model whose configuration was not frozen on validation."""
     if frozen is None:
         raise PermissionError(f"{model_id} has no entry in frozen_models.json: freeze the configuration "
                               "chosen on validation (freeze_model) before the first test scoring.")
     if frozen["config_hash"] != digest:
         raise PermissionError(f"{model_id}: configuration hash {digest} differs from the frozen "
                               f"{frozen['config_hash']}; refusing to score on test.")
-    previous = [e for e in read_access_log(log_path) if e["model_id"] == model_id]
-    if any(e["config_hash"] != digest for e in previous):
-        raise PermissionError(f"{model_id} was already scored on test with a different configuration; "
-                              "a new configuration needs a new model id (and is a new test access).")
-    predictions_path = log_path.parent / "tables" / f"predictions_{model_id}.csv"
-    if previous and predictions_path.is_file():         # same configuration, already scored: reuse, never rescore
-        return _summary_from_predictions(model_id, digest, pd.read_csv(predictions_path))
 
+
+def score_on_test(model_id: str, spec: ModelSpec, frame: pd.DataFrame | None) -> pd.DataFrame:
+    """Fit on train, predict test: one row per test article (ids and answers only, never text)."""
     if frame is None:
         frame = analysis_frame()
     split = load_split()
@@ -265,19 +248,49 @@ def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] |
     else:
         pred, proba = spec.fit_predict(train, test), None
     table = pd.DataFrame({"model_id": model_id, "doc_id": test["doc_id"], "label": test["label"].to_numpy(),
-                          "pred": np.asarray(pred, dtype=bool)})       # ids and answers only, never text
+                          "pred": np.asarray(pred, dtype=bool)})
     if proba is not None:
         table["proba"] = np.round(proba, 4)
     if spec.details is not None:
         table = pd.concat([table, spec.details(test).reset_index(drop=True)], axis=1)
+    return table
+
+
+def log_test_access(log_path: Path, model_id: str, digest: str, n_docs: int) -> None:
+    """Append one line to the test access log."""
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    entry = {"model_id": model_id, "config_hash": digest,
+             "at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "n_docs": int(n_docs)}
+    with log_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
+
+
+def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] | None = None,
+                   frame: pd.DataFrame | None = None, log_path: Path | None = None,
+                   frozen_path: Path | None = None) -> dict:
+    """Score one model on the locked test split, once, and log the access."""
+    builders = MODEL_BUILDERS if builders is None else builders
+    if model_id not in builders:
+        raise KeyError(f"unknown model_id {model_id!r}; known: {sorted(builders)}")
+    spec = builders[model_id]()
+    digest = config_hash(spec.config)
+    log_path = log_path or results_dir() / "test_access_log.jsonl"
+    # the frozen configuration is checked BEFORE anything is scored
+    frozen = read_frozen(frozen_path or results_dir() / "frozen_models.json").get(model_id)
+    check_frozen_config(model_id, digest, frozen)
+    previous = [e for e in read_access_log(log_path) if e["model_id"] == model_id]
+    if any(e["config_hash"] != digest for e in previous):
+        raise PermissionError(f"{model_id} was already scored on test with a different configuration; "
+                              "a new configuration needs a new model id (and is a new test access).")
+    predictions_path = log_path.parent / "tables" / f"predictions_{model_id}.csv"
+    if previous and predictions_path.is_file():         # same configuration, already scored: reuse, never rescore
+        return _summary_from_predictions(model_id, digest, pd.read_csv(predictions_path))
+
+    table = score_on_test(model_id, spec, frame)
     predictions_path.parent.mkdir(parents=True, exist_ok=True)
     table.to_csv(predictions_path, index=False)
     if not previous:
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        with log_path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps({"model_id": model_id, "config_hash": digest,
-                                "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                                "n_docs": int(len(test))}) + "\n")
+        log_test_access(log_path, model_id, digest, len(table))
     return _summary_from_predictions(model_id, digest, table)
 
 
@@ -707,7 +720,7 @@ STAGES: list[tuple[str, Callable[[], object]]] = [("cleaning", cleaning_stage),
 PENDING_STAGES: list[str] = []
 
 
-def write_run_info(seconds: float) -> Path:
+def write_run_info(seconds: float, stage_seconds: dict[str, float] | None = None) -> Path:
     """Record how long `fml run-all` took and which software versions produced results/.
 
     Kept apart from metrics.json (whose top-level keys are a contract) so the report can
@@ -718,6 +731,8 @@ def write_run_info(seconds: float) -> Path:
     packages = ("numpy", "pandas", "scipy", "scikit-learn", "matplotlib", "anthropic", "pyyaml")
     info = {"run_all_seconds": round(seconds, 1),
             "python": platform.python_version(),
+            "machine": {"system": platform.system(), "processor": platform.machine(), "cpus": os.cpu_count()},
+            "stage_seconds": {name: round(value, 1) for name, value in (stage_seconds or {}).items()},
             "packages": {name: version(name) for name in packages}}
     path = results_dir() / "run_info.json"
     path.write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
@@ -730,8 +745,12 @@ def run_all() -> None:
 
     started = time.perf_counter()
     run_data_stage()
-    for _, stage in STAGES:
+    stage_seconds = {}
+    for name, stage in STAGES:
+        stage_started = time.perf_counter()
         stage()
-    write_run_info(time.perf_counter() - started)
+        stage_seconds[name] = time.perf_counter() - stage_started
+    write_run_info(time.perf_counter() - started, stage_seconds)
+    write_methods_overview()
     if PENDING_STAGES:
         raise NotImplementedError("fml run-all: stages not implemented yet: " + ", ".join(PENDING_STAGES))

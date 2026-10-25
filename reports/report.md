@@ -2,21 +2,40 @@
 
 ## Question and hypotheses
 
-On the 410 held-out test articles, the best method was the large language model Claude Haiku 5.5, which reached an F1 score of 0.795 for the conspiracy class (95% confidence interval 0.723 to 0.857), against 0.610 for the best logistic regression. This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, and how four methods compare on this task. The methods are logistic regression on word counts, logistic regression on TF-IDF weights, logistic regression on TF-IDF weights plus hand-made features, and one low-cost large language model (LLM) used without any training on our data. The hypotheses were chosen from the literature and fixed before the final test run; the exact date on which they were written down cannot be shown.
+### Executive summary
 
-H1. Weighting words by their distinctiveness (TF-IDF) improves on plain word counts.
+We asked whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website. Three logistic regressions (on word counts, on TF-IDF weights, and on TF-IDF plus three hand-made feature groups) and one low-cost language model, Claude Haiku 5.5, were compared on 410 held-out test articles. The language model reached the highest F1 score for the conspiracy class, 0.795 (95% confidence interval 0.723 to 0.857), against 0.567 for word counts, 0.598 for TF-IDF and 0.560 for TF-IDF with features. Weighting words helped slightly (H1), the hand-made features did not (H2), and the language model clearly differed from the best logistic regression (H3). All models found fewer than seven in ten conspiracy articles on the test websites, so none is reliable enough for automatic flagging.
 
-H2. Adding hand-made features improves the TF-IDF model. This is tested separately for three kinds of features: H2a, certainty words; H2b, style features; H2c, phrases of two or three words (n-grams).
+### Introduction
 
-H3. The LLM does better than the best logistic regression.
+The 9/11 attacks are a lasting subject of online conspiracy content, and conspiracy-oriented websites publish far more text than can be checked by hand (Miani, Hills & Bangerter, 2022). Automatic filters are therefore an obvious idea, and earlier work has shown that conspiracy language differs measurably from ordinary language (Fong et al., 2021). This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, using machine-learning methods for text classification. The articles come from the LOCO corpus, and the label describes the website, not the single article.
 
-All methods are judged by precision, recall and F1 score for the conspiracy class, because the classes are unbalanced: most articles come from mainstream websites, so the share of correct answers would reward a model that never finds a conspiracy article. A hypothesis counts as supported only if the confidence interval and the significance test agree with the direction of the difference. Results are reported in the results section, and the conclusion returns to each hypothesis.
+We compare four methods. Analyses 1 to 3 are logistic regression on different inputs: word counts, TF-IDF weights, and TF-IDF weights plus three hand-made feature groups (word sequences of up to three words, certainty and hedging words, and style measures). Analysis 4 is one low-cost large language model (LLM) used without any training on our data. The set is deliberately small: a single simple classifier with changing inputs shows which input matters, whereas many classifiers would blur it. Other classifiers, fine-tuning an LLM and emotion features were left out for reasons of scope and reliability.
+
+Table 1 gives the four methods at a glance.
+
+
+
+| method | input | reads | trained_on_our_data | settings | runtime | cost |
+|---|---|---|---|---|---|---|
+| 1. Word counts + logistic regression | word counts | first 3,000 words of each article | yes | C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation | 26 seconds | free (runs locally) |
+| 2. TF-IDF + logistic regression | TF-IDF weights | first 3,000 words of each article | yes | C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation | 2 seconds | free (runs locally) |
+| 3. TF-IDF + features + logistic regression | TF-IDF weights, n-grams, certainty words, style | first 3,000 words of each article | yes | C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation | 57 seconds | free (runs locally) |
+| 4. LLM (claude-haiku-5-5) | the article text itself, with a written question | first 3,000 words of each article | no | prompt v1 of 3, default sampling | about 1.0 seconds per article | about $0.26 per 1,000 articles |
+
+
+
+All three logistic regressions ran on a laptop-class machine (see the run information in the results folder; 4 CPUs, no graphics card) in about a minute each. Only the LLM needs an internet connection and a paid interface; its cost is shown in the table.
+
+We test three hypotheses. **H1:** TF-IDF weights give a higher conspiracy-class F1 than plain word counts, because distinctive words carry more information than common ones. **H2:** adding the three feature groups (word sequences, certainty words, style) to TF-IDF raises the F1, because they capture how conspiracy texts argue. **H3:** the LLM performs about as well as the best logistic regression, or differs from it; no direction is assumed. We also expect plain word counts to beat the trivial rule "always guess mainstream", because the two kinds of website tend to use different words; this is a sanity check, not a hypothesis.
+
+All methods are judged by precision, recall and F1 for the conspiracy class, because most articles are mainstream and the share of correct answers would reward a model that never finds a conspiracy article. A hypothesis counts as supported only if the confidence interval and the significance test agree with the direction of the difference.
 
 ## Data and cleaning
 
-The study uses the 9/11 subset of the LOCO corpus (Miani, Hills & Bangerter, 2022), a collection of web pages from websites rated as conspiracy-oriented or mainstream. We use the full articles of this subset, 3,146 documents from 39 conspiracy and 79 mainstream websites. Each document carries the label of its website. The label therefore describes the publisher and not the single text: a neutral news item on a conspiracy-oriented website is labelled conspiracy, and a mainstream article that discusses a conspiracy theory is labelled mainstream. The texts are not redistributed and are used for study only; they are kept in a private data store, and this report shows only counts and short excerpts. The work was done in Python with pandas and scikit-learn, and the language-model classifier is Claude Haiku 5.5, used through the Anthropic API.
+The study uses the 9/11 subset of the LOCO corpus (Miani, Hills & Bangerter, 2022), a collection of web pages from websites rated as conspiracy-oriented or mainstream. We use the full articles of this subset, 3,146 documents from 39 conspiracy and 79 mainstream websites. Each document carries the label of its website. The label therefore describes the publisher and not the single text: a neutral news item on a conspiracy-oriented website is labelled conspiracy, and a mainstream article that discusses a conspiracy theory is labelled mainstream. The texts are not redistributed; they are kept in a private data store, and this report shows only counts and short excerpts. The work was done in Python with pandas and scikit-learn, and the language-model classifier is Claude Haiku 5.5, used through the Anthropic API.
 
-Cleaning was applied before any model was fitted, and all four analyses use the same cleaned documents. First, documents that do not mention the attacks in their title or text were removed, because a model could otherwise learn the difference between topics instead of the difference between kinds of websites. Second, near-duplicates were removed: pairs of documents with a cosine similarity of their TF-IDF vectors of at least 0.9. Such copies are common between websites and would let a model meet a near copy of a test article during training. For a pair across two parts of the data, the copy in validation or test was dropped; inside one part, the copy with the lower identifier was kept. Third, web addresses, e-mail addresses, website names and lines repeated across many documents of one website were deleted from the texts. The table shows the number of documents before and after each of the first two steps.
+Cleaning matters because a classifier takes the easiest signal that separates the classes, whether or not it is the intended one. This shortcut learning, a form of target leakage, arises when website names, repeated boilerplate, topic differences or copies of the same article reveal the label without any property of the text itself. All cleaning was therefore applied before any model was fitted, and all four analyses use the same cleaned documents. First, documents that do not mention the attacks in their title or text were removed (3,146 to 2,608), because a model could otherwise learn the difference between topics instead of the difference between kinds of websites. Second, near-duplicates were removed (2,608 to 2,554): pairs of documents with a cosine similarity of their TF-IDF vectors of at least 0.9. Such copies are common between websites and would let a model meet a near copy of a test article during training. For a pair across the training set and another set, the copy in the other set was dropped; for a pair of validation and test documents, the validation copy was kept, so that the test set is changed as little as possible. Inside one set, the copy with the lower identifier was kept. Third, web addresses, e-mail addresses, website names and lines repeated across many documents of one website were deleted from the texts. This reduces but does not remove website-specific style, which remains a limitation. The table shows the number of documents before and after each of the first two steps.
 
 
 
@@ -34,7 +53,7 @@ After cleaning, 2,554 documents remain: 755 from conspiracy-oriented and 1,799 f
 
 ## Splitting by website
 
-The documents were divided into a training set, a validation set and a test set with target shares of 70%, 15% and 15%. The division was made by website: all documents of one website were assigned to the same set, so that no website appears in more than one set. This prevents a model from being rewarded for recognising the layout, vocabulary or topics of a website it has already seen, and it mimics the practical situation of classifying articles from unknown websites. The division was stratified by label: conspiracy and mainstream websites were assigned separately, from the largest to the smallest website, to the set that was furthest short of its target share. A fixed random seed resolved ties. The assignment was made once, before any model was fitted, and stored in a file that was never changed; the cleaning steps only remove documents from it. The split file was made before cleaning, on all 3,146 documents; cleaning then removed documents from it without moving any to another set. Cleaning runs after the split and before any model is fitted. Of a near-duplicate pair across two sets, the copy in the later set (training, validation, test) is dropped. The table shows the numbers of websites and documents that remain in each set after cleaning.
+The documents were divided into a training set, a validation set and a test set with target shares of 70%, 15% and 15%. The division was made by website: all documents of one website were assigned to the same set, so that no website appears in more than one set. This prevents a model from being rewarded for recognising the layout, vocabulary or topics of a website it has already seen, and it mimics the practical situation of classifying articles from unknown websites. Website names are removed from the texts for a different reason: the grouped split stops a model from memorising a website, whereas removing the names stops it from using the name as a shortcut to the label. The division was stratified by label: conspiracy and mainstream websites were assigned separately, from the largest to the smallest website, to the set that was furthest short of its target share. A fixed random seed resolved ties. The assignment was made once and stored in a file that was never changed. The table shows the numbers of websites and documents in each set of the final data.
 
 
 
@@ -47,11 +66,11 @@ The documents were divided into a training set, a validation set and a test set 
 | test | conspiracy | 6 | 96 | 0.038 |
 | test | mainstream | 12 | 314 | 0.123 |
 
-*Websites and documents per set and class (after cleaning)*
+*Websites and documents per set and class*
 
 
 
-Because websites cannot be divided, the shares only approximate the targets. After cleaning, the training, validation and test sets contain 25, 6 and 6 conspiracy websites, and the number of websites in more than one set is zero. The 7 conspiracy websites in validation and test in metrics.json (per_split) are counted before cleaning, the 6 here after it. Validation and test sets still contain only a few conspiracy websites, so scores depend to some extent on which websites ended up there. All model settings were chosen on the validation set, and the test set was used only for the final comparison.
+Because websites cannot be divided, the shares only approximate the targets. The training, validation and test sets contain 25, 6 and 6 conspiracy websites (37 in total) and 54, 13 and 12 mainstream websites (79 in total); no website is in more than one set. Validation and test sets contain only a few conspiracy websites, so scores depend to some extent on which websites ended up there. All model settings were chosen on the validation set, and the test set was used only for the final comparison.
 
 ## Word counts
 
@@ -129,10 +148,11 @@ All four final models were scored once on the same 410 test articles (96 from co
 
 | Model | Precision | Recall | F1 |
 |---|---|---|---|
-| Word counts | 0.602 (0.494 to 0.709) | 0.521 (0.426 to 0.620) | 0.559 (0.471 to 0.642) |
-| TF-IDF | 0.696 (0.588 to 0.800) | 0.500 (0.404 to 0.603) | 0.582 (0.493 to 0.663) |
-| TF-IDF + features | 0.735 (0.631 to 0.836) | 0.521 (0.424 to 0.622) | 0.610 (0.517 to 0.693) |
+| Word counts | 0.607 (0.500 to 0.714) | 0.531 (0.434 to 0.631) | 0.567 (0.478 to 0.650) |
+| TF-IDF | 0.721 (0.614 to 0.824) | 0.510 (0.413 to 0.615) | 0.598 (0.508 to 0.682) |
+| TF-IDF + features | 0.653 (0.542 to 0.767) | 0.490 (0.394 to 0.590) | 0.560 (0.469 to 0.643) |
 | LLM | 0.985 (0.949 to 1.000) | 0.667 (0.570 to 0.759) | 0.795 (0.723 to 0.857) |
+| Always guess mainstream | 0.000 (0.000 to 0.000) | 0.000 (0.000 to 0.000) | 0.000 (0.000 to 0.000) |
 
 *Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals*
 
@@ -172,20 +192,20 @@ The labels describe websites, not articles. To separate model errors from label 
 
 
 
-| set | error_type | errors_total | coded | model wrong | label does not describe the text | not_sampled | stance_endorses | stance_rejects_or_debunks | stance_reports_neutrally | stance_no_claim |
+| Group | Error type | Errors | Coded | Model wrong | Label does not describe the text | Not coded | Article endorses a conspiracy claim | Article debunks claims | Article reports claims neutrally | Article makes no claim about 9/11 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| lr_only_wrong | false positive | 18 | 17 | 16 | 1 | 1 | 1 | 2 | 3 | 11 |
-| lr_only_wrong | false negative | 16 | 16 | 1 | 15 | 0 | 1 | 0 | 0 | 15 |
-| lr_only_wrong | all | 34 | 33 | 17 | 16 | 1 | 2 | 2 | 3 | 26 |
-| llm_only_wrong | false positive | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 1 |
-| llm_only_wrong | false negative | 2 | 2 | 0 | 2 | 0 | 0 | 1 | 1 | 0 |
-| llm_only_wrong | all | 3 | 3 | 1 | 2 | 0 | 0 | 1 | 1 | 1 |
-| both_wrong | false positive | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| both_wrong | false negative | 30 | 29 | 0 | 29 | 1 | 0 | 0 | 1 | 28 |
-| both_wrong | all | 30 | 29 | 0 | 29 | 1 | 0 | 0 | 1 | 28 |
-| all | false positive | 19 | 18 | 17 | 1 | 1 | 1 | 2 | 3 | 12 |
-| all | false negative | 48 | 47 | 1 | 46 | 1 | 1 | 1 | 2 | 43 |
-| all | all | 67 | 65 | 18 | 47 | 2 | 2 | 3 | 5 | 55 |
+| Only the logistic regression is wrong | Mainstream article called conspiracy | 19 | 19 | 18 | 1 | 0 | 1 | 3 | 4 | 11 |
+| Only the logistic regression is wrong | Conspiracy-site article called mainstream | 18 | 18 | 1 | 17 | 0 | 1 | 0 | 0 | 17 |
+| Only the logistic regression is wrong | All errors | 37 | 37 | 19 | 18 | 0 | 2 | 3 | 4 | 28 |
+| Only the LLM is wrong | Mainstream article called conspiracy | 1 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 1 |
+| Only the LLM is wrong | Conspiracy-site article called mainstream | 3 | 3 | 0 | 3 | 0 | 0 | 0 | 1 | 2 |
+| Only the LLM is wrong | All errors | 4 | 4 | 1 | 3 | 0 | 0 | 0 | 1 | 3 |
+| Both are wrong | Mainstream article called conspiracy | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Both are wrong | Conspiracy-site article called mainstream | 29 | 28 | 0 | 28 | 1 | 0 | 1 | 1 | 26 |
+| Both are wrong | All errors | 29 | 28 | 0 | 28 | 1 | 0 | 1 | 1 | 26 |
+| All errors | Mainstream article called conspiracy | 20 | 20 | 19 | 1 | 0 | 1 | 3 | 4 | 12 |
+| All errors | Conspiracy-site article called mainstream | 50 | 49 | 1 | 48 | 1 | 1 | 1 | 2 | 45 |
+| All errors | All errors | 70 | 69 | 20 | 49 | 1 | 2 | 4 | 6 | 57 |
 
 
 
@@ -197,9 +217,9 @@ Four examples show what these cases look like.
 
 | Case | Website type | Logistic regression said | Claude said | What the article does | Excerpt |
 |---|---|---|---|---|---|
-| Only Claude was right | mainstream | conspiracy | mainstream | reports neutrally | "This story that we are hearing from the families of those who were killed on ... |
+| Only Claude was right | mainstream | conspiracy | mainstream | makes no claim | New York time, paced to display as they were broadcast at the corresponding time on ... |
 | Only the logistic regression was right | conspiracy | conspiracy | mainstream | reports neutrally | The vacuum left after the invasion is widely believed to have spawned terror group ISIS. ... |
-| Mainstream article called conspiracy | mainstream | conspiracy | mainstream | makes no claim | The FBI document indicated that, before the 9-11 attack, agents were ordered to close down ... |
+| Mainstream article called conspiracy | mainstream | conspiracy | mainstream | debunks claims | government investigations, whose reports are all available online, have concluded that there is no evidence ... |
 | Conspiracy-site article called mainstream | conspiracy | mainstream | mainstream | makes no claim | An organization with links to terrorism, that's backed by radical ... |
 
 
