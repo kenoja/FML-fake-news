@@ -1,0 +1,237 @@
+{
+  "cycle": 2,
+  "collected": "2026-10-25",
+  "members": [
+    "Member A",
+    "Member B"
+  ],
+  "sections": {
+    "00-how-to-use": {
+      "items": [
+        {
+          "kind": "Other",
+          "by": "Member A",
+          "text": "- general: better explanations for the code\n- clear justification for design choices\n- adding a touch of human writing in terms of story telling and flow for the text. the sections should flow smoothly into each other",
+          "replies": [
+            {
+              "by": "Member A",
+              "text": "- adding runtime, the server and implications on which the trainig of the models was performed on"
+            },
+            {
+              "by": "Member A",
+              "text": "- the code explanations should follow the structure that not only one comment explains the whole code, but just a short phrase what each code snippet does"
+            }
+          ]
+        },
+        {
+          "kind": "Other",
+          "by": "Member A",
+          "text": "- the by hand tests were not made this run yet, will be done on the next one\n- find references for design choices. try to stick to classics for ML as this is a very classic ML assingment",
+          "replies": []
+        }
+      ],
+      "signed_off_by": [
+        "Member B"
+      ]
+    },
+    "01-question-and-hypotheses": {
+      "items": [
+        {
+          "kind": "Other",
+          "by": "Member B",
+          "text": "The first sentence in the report text is very unclear. This first sentence needs to be changed to a brief introduction namely, \"9/11 is one of the oldest and most persistent topics in online conspiracy content (\"inside job\", \"controlled demolition\", \"false flag\"). Platforms and fact-checkers increasingly rely on automatic filters to flag such content\". Next, in th sentence, \"This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, and how four methods compare on this task\", simply saying four methods is not specific enough, it needs to be changed to machiene learning methods for text recognition.",
+          "replies": [
+            {
+              "by": "Member A",
+              "text": "Adding references for the suggested sentences needed."
+            }
+          ]
+        },
+        {
+          "kind": "Other",
+          "by": "Member B",
+          "text": "I am a little confused about the following sentence \"The hypotheses were chosen from the literature and fixed before the final test run; the exact date on which they were written down cannot be shown.\" - i think we should remove the latter part of the sentence.",
+          "replies": [
+            {
+              "by": "Member A",
+              "text": "Agreed."
+            }
+          ]
+        },
+        {
+          "kind": "Other",
+          "by": "Member B",
+          "text": "I think the four methods that we are using should be explained a little bit better, we need to state what we expect out of them. Also we need to justify better why we explicitly chose these 4 methods. After this we go into the hypothesis. \n\n- What we expected for the Word Counts: We expect plain word counts to tell the two kinds of website apart better than always guessing mainstream, because the two kinds tend to use different words.\n\n- What we expected for the TF-IDF: Giving rare, telling words more weight than everyday words improves on plain word counts.\n\n- What we expected for the TF-IDF plus extra features: Adding features about certainty and writing style improves the TF-IDF model.\n\n- What we expected for the LLM classifier: We expect a cheap language model with no training to do roughly as well as the trained models, because it has read a great deal of text and can judge how an article is written.\n\nIn a later explanation the following was written : \"We used logistic regression for every trained model because it is simple and its weights can be read as word lists. We did not try other classifiers, because the question is about features, not which method is best. We did not fine-tune a language model, which needs more data and money than we have. We left out emotion features, because fear and anger are normal in reports on an attack and so tell us little.\" I think this could be used nicely in the explanation of the 4 methods.",
+          "replies": []
+        },
+        {
+          "kind": "Other",
+          "by": "Member A",
+          "text": "Clear differentiation between executive summary and introduction are needed. no results in the introduction.",
+          "replies": []
+        }
+      ],
+      "signed_off_by": []
+    },
+    "02-data-and-cleaning": {
+      "items": [
+        {
+          "kind": "Other",
+          "by": "Member A",
+          "text": "- adding justification for cleaning choices. \n- risks for missed labels and website style are missing: model could be using shortcut learning and therefore have target leakage problems\n- importance of this step should be clarified!!",
+          "replies": []
+        }
+      ],
+      "signed_off_by": [
+        "Member B"
+      ]
+    },
+    "03-split-by-website": {
+      "items": [
+        {
+          "kind": "Other",
+          "by": "Member A",
+          "text": "- explanation why removing website labels and so on are relevant to be removed anyways even when splitting by article is still needed is missing",
+          "replies": []
+        }
+      ],
+      "signed_off_by": [
+        "Member B"
+      ]
+    },
+    "04-word-counts": {
+      "items": [
+        {
+          "kind": "Other",
+          "by": "Member B",
+          "text": "If we are mentioning in the beginning section that we are using logistic regression for all 4 models then we do not need to mention it here. \n\nWe should probably refer back to our expectation of this model that we are making in the beginning section. \n\nThe last sentence, of the first paragraph, in this section says \"The test set was not used.\" - this needs to be reviewed",
+          "replies": [
+            {
+              "by": "Member A",
+              "text": "- I disagree on the log regression, as this is the first part where the technical part in form of code is shown. if this is not wanted here then the code for the log regression has to go somewhere else in the report"
+            }
+          ]
+        },
+        {
+          "kind": "Other",
+          "by": "Member A",
+          "text": "- difference between scores not clearly explained and which is the relevant factor for the choice of C\n- choose clearer variable name for \"C\"\n- word list should be two separate tables, not under each other\n\n- explanation on which choices were not made only for ML specific (mainly log regression) not for LLM etc",
+          "replies": [
+            {
+              "by": "Member A",
+              "text": "score differences refers to \"precision\" \"recall\" and \"F1\". what has which importance and how it can be read"
+            }
+          ]
+        }
+      ],
+      "signed_off_by": []
+    },
+    "05-tf-idf": {
+      "items": [
+        {
+          "kind": "Other",
+          "by": "Member B",
+          "text": "I like this section, the only thing I would add is a few sentences that reflect on the expectation made in the beginning section.",
+          "replies": []
+        }
+      ],
+      "signed_off_by": []
+    },
+    "06-feature-engineering": {
+      "items": [
+        {
+          "kind": "Other",
+          "by": "Member A",
+          "text": "- ablation is not clear\n- mattr is also not clearly explained why and how it is done. standardizing the vectors to standardize lenght was also not stated",
+          "replies": []
+        },
+        {
+          "kind": "Other",
+          "by": "Member A",
+          "text": "- analysis why all TF IDF plus three are worse than just TF IDF",
+          "replies": []
+        }
+      ],
+      "signed_off_by": [
+        "Member B"
+      ]
+    },
+    "07-llm": {
+      "items": [
+        {
+          "kind": "Other",
+          "by": "Member A",
+          "text": "- simplification: only keep v1. remove all other prompt suggestions. ciritically assess why this is the best way to score the LLM vs the model",
+          "replies": [
+            {
+              "by": "Member A",
+              "text": "nvm, lets keep all three"
+            }
+          ]
+        }
+      ],
+      "signed_off_by": []
+    },
+    "08-results": {
+      "items": [
+        {
+          "kind": "Other",
+          "by": "Member B",
+          "text": "I like it the only thing I would change is write out every hypothesis, this means that H2a, H2b, H2c should have a little more context.",
+          "replies": []
+        },
+        {
+          "kind": "Other",
+          "by": "Member A",
+          "text": "- combine the results and limitations with where and especially why they fail into one analysis\n- make sure it is clear why the confusion matrixes look so much better on validation set than trainings set",
+          "replies": [
+            {
+              "by": "Member A",
+              "text": "- justify the choice for mcneemar"
+            }
+          ]
+        }
+      ],
+      "signed_off_by": []
+    },
+    "09-where-they-fail": {
+      "items": [
+        {
+          "kind": "Other",
+          "by": "Member B",
+          "text": "Okay this section makes sense besides the ending. The last paragraph says this: \"The automatic stance coding is not verified: no person has checked it yet, and the team will check 40 articles by hand. The label-problem share (47 of 65 readable codings) is therefore an estimate from one unchecked source.\" - I think we should revise this",
+          "replies": [
+            {
+              "by": "Member A",
+              "text": "we have to manually check the set to identify this. otherwise the section does not make sense. not done yet, therefore the wording"
+            }
+          ]
+        }
+      ],
+      "signed_off_by": []
+    },
+    "10-limitations": {
+      "items": [],
+      "signed_off_by": [
+        "Member B"
+      ]
+    },
+    "11-conclusion": {
+      "items": [],
+      "signed_off_by": [
+        "Member B"
+      ]
+    },
+    "12-how-we-used-ai": {
+      "items": [
+        {
+          "kind": "Other",
+          "by": "Member A",
+          "text": "- explain the claude code setup with the agents, the website and multiple iterations -  not which choices were made by claude",
+          "replies": []
+        }
+      ],
+      "signed_off_by": []
+    }
+  }
+}
