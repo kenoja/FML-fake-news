@@ -1,4 +1,4 @@
-website,test_articles,recall_final2_word_counts,recall_final2_tfidf,recall_final2_tfidf_features,recall_final_llm
+Website,Test articles,Recall: Word counts,Recall: TF-IDF,Recall: TF-IDF + features,Recall: LLM
 conspiracydailyupdate.com,19,0.684,0.579,0.684,0.947
 escapeallthesethings.com,6,0.833,0.833,0.833,1.0
 needtoknow.news,19,0.79,0.842,0.737,0.947

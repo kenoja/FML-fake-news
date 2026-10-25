@@ -11,7 +11,7 @@ import pytest
 
 from tests.test_report_numbers import REPO, _version_numbers, source_numbers, unmatched
 
-SECTIONS = ["02-data-and-cleaning", "03-split-by-website", "10-limitations", "11-conclusion"]
+SECTIONS = ["02-data-and-cleaning", "03-split-by-website", "09-limitations", "10-conclusion"]
 
 
 def _prose(slug: str) -> str:

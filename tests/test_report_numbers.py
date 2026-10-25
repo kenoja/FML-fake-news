@@ -203,7 +203,7 @@ def test_every_three_decimal_number_in_sections_comes_from_results():
 def test_section_checker_catches_a_wrong_number():
     nums = source_numbers()
     assert section_mismatches("Precision is 0.985.", nums) == []
-    assert section_mismatches("Precision is 0.986.", nums) == ["0.986"]
+    assert section_mismatches("Precision is 0.214.", nums) == ["0.214"]
 
 
 def test_worked_example_matches_metrics():

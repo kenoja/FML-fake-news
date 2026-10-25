@@ -76,7 +76,7 @@ The stage puts it all together and writes the tables.
 
 ## Report
 
-All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (2,000 resamples of documents). The baseline row always answers "mainstream"; its accuracy is 0.766, which shows why accuracy is not used: it rewards a rule that finds no conspiracy article.
+All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993; 2,000 resamples of documents). The baseline row always answers "mainstream"; its accuracy is 0.766, which shows why accuracy is not used: it rewards a rule that finds no conspiracy article.
 
 <!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals -->
 
@@ -84,27 +84,25 @@ All four final models were scored once on the same 410 test articles (96 from co
 
 The LLM has the highest F1 (0.795, interval 0.723 to 0.857), followed by TF-IDF (0.598), word counts (0.567) and TF-IDF with features (0.560). The three logistic regressions have overlapping intervals and find about one half of the conspiracy articles (recall 0.490 to 0.531). The LLM is almost never wrong when it says "conspiracy" (precision 0.985, one false alarm among 314 mainstream articles) but still misses a third of the conspiracy articles (recall 0.667).
 
-Three exact two-sided McNemar tests compare pairs of models on the same articles. Word counts against TF-IDF: 7 articles are right only for word counts and 19 only for TF-IDF (p = 0.029). TF-IDF against TF-IDF with features: 22 against 14 (p = 0.243). The best logistic regression on validation (TF-IDF) against the LLM: 4 against 37 (p < 0.0001).
+Three exact two-sided McNemar tests (McNemar, 1947) compare pairs of models on the same articles.
 
-**H1: TF-IDF weighting beats plain word counts.** Confirmed, narrowly. TF-IDF has the higher F1 (0.598 against 0.567), mainly through fewer false alarms (precision 0.721 against 0.607), and the McNemar test is significant (p = 0.029), although the confidence intervals overlap.
+**H1: TF-IDF weighting beats plain word counts.** Confirmed, narrowly. TF-IDF has the higher F1 (0.598 against 0.567), mainly through fewer false alarms (precision 0.721 against 0.607). Of the articles on which they differ, 7 are right only for word counts and 19 only for TF-IDF (p = 0.029), although the confidence intervals overlap.
 
-**H2: Adding the three feature groups improves the TF-IDF model.** Not confirmed. On validation the model with the extra features scored an F1 of 0.896 against 0.918 for TF-IDF alone, and on test it is lower again (0.560 against 0.598); the difference is within chance (p = 0.243).
+**H2: Adding the three feature groups improves the TF-IDF model.** Not confirmed. On validation the model with the extra features scored an F1 of 0.896 against 0.918 for TF-IDF alone, and on test it is lower again (0.560 against 0.598); 22 articles are right only for TF-IDF and 14 only with the features, within chance (p = 0.243).
 
-**H3: The LLM differs from the best logistic regression.** Confirmed: the LLM is better. F1 is 0.795 against 0.598, the intervals do not overlap, and the test is clearly significant (p < 0.0001). The gain comes from precision (0.985 against 0.721) and from recall (0.667 against 0.510).
+**H3: The LLM differs from the best logistic regression.** Confirmed: the LLM is better. F1 is 0.795 against 0.598, the intervals do not overlap, and 4 articles are right only for the best logistic regression (TF-IDF) against 37 only for the LLM (p < 0.0001). The gain comes from precision (0.985 against 0.721) and from recall (0.667 against 0.510).
 
-"Not confirmed" means that the data do not show an effect, not that there is none. The intervals resample documents, but websites are the real unit of dependence, so they are optimistic.
+"Not confirmed" means that the data do not show an effect, not that there is none.
 
 **Why the scores are lower on test than on validation.** Validation F1 was 0.865 for word counts, 0.918 for TF-IDF, 0.896 for TF-IDF with features and 0.987 for the LLM. The table gives recall per conspiracy website on the test set.
 
 <!-- output: results/tables/test_website_recall.csv | Recall of each model on the conspiracy articles of each test website -->
 
-The test set holds six conspiracy websites, and one of them, neonnettle.com, supplies 44 of the 96 conspiracy articles. All four models find at most about a third of its articles (recall 0.204 to 0.318), while on the other sites the logistic regressions find 0.579 to 1.000 of them. One large, hard site therefore lowers every test score, and since no website appears in more than one split, the test websites are new to every model.
+The test set holds six conspiracy websites, and one of them, neonnettle.com, supplies 44 of the 96 conspiracy articles. All four models find at most about a third of its articles (recall 0.204 to 0.318), while on the other sites the logistic regressions find 0.579 to 1.000 of them. One large, hard site therefore lowers every test score.
 
 **Where the models fail, and why.** The labels describe websites, not articles. We examined the test articles on which the best logistic regression or the LLM disagrees with the label: missed only by the logistic regression, only by the LLM, or by both. A second model (Claude Sonnet 5.5) coded the stance of each towards conspiracy claims about 9/11, without being told the website. A rule fixed in advance counts a conspiracy-site article that does not endorse a claim, or a mainstream article that endorses one, as a label problem; all other cases are model errors.
 
-<!-- output: results/tables/error_classification.csv -->
-
-Of the 69 articles with a readable coding, 49 are label problems and 20 are model errors. Almost all label problems are conspiracy-site articles that make no claim about 9/11 at all, such as ordinary news, so a model that reads only the text has little to find. Mainstream articles called conspiracy are mostly model errors. The 29 articles missed by both models are all conspiracy-site articles. Four examples show these cases.
+Of the 69 articles with a readable coding, 49 are label problems and 20 are model errors. Almost all label problems are conspiracy-site articles that make no claim about 9/11, such as ordinary news. Mainstream articles called conspiracy are mostly model errors. The 29 articles missed by both models are all conspiracy-site articles. Four examples show these cases.
 
 <!-- output: results/tables/error_examples_plain.csv -->
 

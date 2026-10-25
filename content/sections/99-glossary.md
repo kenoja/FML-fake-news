@@ -214,6 +214,16 @@ Also: Temperature, default sampling
 
 The randomness a language model uses when picking its next word. We keep the model's default settings, because it rejects a temperature setting. Like a die the model rolls, with a default weighting.
 
+### Shortcut learning
+Also: Shortcut, Target leakage
+
+A model scoring well by using a clue that is not what we care about, such as a website's name or layout. Like a student who passes a test by recognising the handwriting of the questions' author, not by knowing the subject. It is a form of leakage of the label into the input.
+
+### Per-website recall
+Also: Recall per website
+
+Recall worked out separately for each website: of the conspiracy articles one website published, the share a model found. Like checking a teacher's marks class by class, to see which class drags the average down.
+
 ### Stance coding
 Also: Stance, stance code
 

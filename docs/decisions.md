@@ -79,8 +79,7 @@ resolve a conflict (see AGENTS.md).
   (requirement 13). If members fill the sheet, agreement is computed by hand.
 - **[declined] Deleting `tests/test_agent_graph.py`.** It tests the protected `agent/` code, not the study; the
   delete command was blocked, so the file stays.
-- **[open] Warning left.** `10-limitations.md` has a non-flat `llm.repeat_agreement` output marker in its report
-  part; sitegen drops it with a warning.
+- **[done] Warning fixed in cycle 3.** The non-flat output marker was removed from the limitations section.
 
 ## Needs a team decision
 
@@ -90,15 +89,11 @@ resolve a conflict (see AGENTS.md).
   `tests/test_privacy.py` search for the name itself, set `FML_PRIVACY_TERMS=<account name>`.
 - **LOCO licence.** One member opens https://osf.io/snpcg/ and records here: licence text, date checked,
   Member letter. Until then the safe default above applies.
-- **Human stance check.** Two members label the 40 rows of `results/tables/stance_check_sample.csv`
-  independently, before looking at `claude_stance`. Until then the Claude stance codes are an unchecked single
-  source and the stance-related hypothesis stays provisional.
+- **Human stance check.** The team labels the 40 rows of `results/tables/stance_check_sample.csv` with a separate
+  private tool during the cycle-3 feedback period; the results arrive for cycle 4 (D3). Until then the Claude stance
+  codes are a single automatic source and the error analysis says so in one statement.
 - **What the team altered or rejected in AI output.** Only one concrete case is recorded (emotion scores
-  removed from the AI-drafted plan, cycle 1). Further cases are **not yet recorded**: members add them here and
-  in `docs/ai-log.md`.
-- **Report length counting.** Confirm the plain whitespace count (tables included) or ask for prose-only
-  counting.
-- **Near-duplicate choice.** Confirm keeping the validation copy of a validation/test pair.
+  removed from the AI-drafted plan, cycle 1). Members add further cases here and in `docs/ai-log.md`.
 - **Test file for the agent.** Delete `tests/test_agent_graph.py` if CI does not need it.
 
 ## Cycle 3, T4: final2 run
@@ -121,3 +116,22 @@ resolve a conflict (see AGENTS.md).
 - Added `src/fml/methods_overview.py` (writes `results/tables/methods_overview.csv` at the end of `run_all`); `run_info.json` now also holds machine info and per-stage seconds. LR runtime = stage time (the first stage includes loading data); LLM runtime and cost = averages from the answer cache rows that recorded tokens, at list price from the config.
 - References: no new sources were added. The web check of candidate classics (Spärck Jones 1972; Swami et al. 2010; Douglas et al. 2019) was not possible in this run, so the introduction cites only Miani et al. (2022) and Fong et al. (2021), which are already in `content/references.md`. Needs a team decision: add confirmed classic references for TF-IDF, logistic regression and 9/11 conspiracy background.
 - `tests/test_gates.py` report-length gate (≤5000 words) and several number checks in sections 04–08/11 fail from other, queued tasks, not from section 01.
+
+## Cycle 3, T11 (sections 00, 09, 10, 11, docs)
+- **[done] D1 slugs.** `09-limitations`, `10-conclusion` and `11-how-we-used-ai` replace the old 10-12 files (old files deleted). Section 00 mentions the new order.
+- **[done] D3 hand check.** The 40 `doc_id`s are untouched. The team's hand check follows in cycle 4; the limitations name the error analysis as an estimate that rests on the automatic coding.
+- **[done] D10 / H1-H3 wording.** Conclusion gives one answer per hypothesis (H1 narrowly yes, H2 no, H3 yes) and the plain verdict that the hand-made features did not help. Numbers come from `results/metrics.json#comparison` and `#tfidf_features`.
+- **[done] R4/R5 process and licence remarks.** Licence status, "None of them is recorded as done" and similar remarks are gone from the site and report; the licence stays here only.
+- **[done] Requirement 14 (beginner code).** Marked done at the owner's request in the cycle-3 task list; the final gates and the reviewer re-check the shown cells.
+- **[done] R7 report length counting.** Closed with the conservative choice: plain whitespace count of `reports/report.md` before References, tables included (stricter than prose-only). Stated once in `docs/decisions.md`; gate in `tests/test_gates.py`.
+- **[done] R7 near-duplicate choice.** Closed: when a near-duplicate pair crosses validation and test, the validation copy stays and the test copy goes; a copy in training stays and the other is dropped. The limitations section names the 0.9 threshold as a choice.
+- **[done] Conflict: model name in the AI log.** `docs/ai-log.md` said Opus 5.5 for the setup and Sonnet 5.5 later. `config/agent.yaml` sets Sonnet 5.5 for planner, implementer and reviewer, so the log now says that; the model of the original claude.ai setup session is not recorded in the repo and is stated as such.
+- **[open] Hand check.** Follows in cycle 4 (see "Needs a team decision").
+
+## Cycle 3, T12 (glossary, references, report length)
+- Report was 6,723 words by plain count. Cut to about 4,850: removed the grid tables, the four top-word tables and the error-classification table from the report parts of 04, 05 and 08 (they stay in the code part), and shortened prose in 01-03, 06-11. No result changed.
+- `test_website_recall.csv` now has plain column labels (the report had raw model ids, which the gate forbids); `comparison_stage` rerun to refresh it.
+- Glossary: Cohen's kappa was already gone; added Shortcut learning (also target leakage) and Per-website recall.
+- References added (all well known, cited in the matching Report parts): Hastie et al. 2009, Manning et al. 2008, McNemar 1947, Efron & Tibshirani 1993, Pedregosa et al. 2011.
+- **Skipped:** no 9/11-conspiracy background sources were added, because none could be confirmed without a web check (no invented references). Still a team decision.
+- **Skipped:** I did not run `fml run-all` twice or the full test suite in this task (the task rules say the harness does that); only the glossary, gates, privacy, report-numbers, comparison, sections and sitegen tests were run (86 passed).

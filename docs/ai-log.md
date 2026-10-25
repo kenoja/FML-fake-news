@@ -6,7 +6,7 @@ after every cycle; team members add what they checked or changed by hand.
 
 ## Setup (16 Oct 2026)
 
-- **Tool:** Claude (Opus 5.5) in a claude.ai session, working with the repo owner.
+- **Tool:** Claude in a claude.ai session, working with the repo owner (the model of that session is not recorded in the repo). The agent loop that ran from cycle 1 on uses Claude Sonnet 5.5 for planner, implementer and reviewer (`config/agent.yaml`).
 - **What it produced:** the project plan (`docs/PROJECT_PLAN.md`) including the literature research for
   the feature groups; the cycle runner, the site generator (`sitegen/`), the feedback
   collection script and workflows; the 9/11 data subset and its checksums in the private data repo;
@@ -43,7 +43,7 @@ after every cycle; team members add what they checked or changed by hand.
 | 3 | Confirm the LOCO licence at the OSF page and record it in `docs/decisions.md` | pending |
 | 4 | Read the report and sections once for article text and personal data (including the repo link) | pending |
 | 5 | Decide the open points under "Needs a team decision" in `docs/decisions.md` | pending |
-| 6 | Read the glossary and section 12 for plain-language understanding | pending |
+| 6 | Read the glossary and section 11 for plain-language understanding | pending |
 
 ## Cycle 2 - agent run (2026-10-17)
 
@@ -148,3 +148,11 @@ Hard gates still failing:
 
 ### Reviewer summary
 The cycle-2 rewrite is largely in place. All 14 section files follow the four-part format. The report is about 4,960 words and holds all four models' test results together. The numbers I checked match results/tables/comparison_test.csv. The test-access log shows each final_* model scored once. The main faults are leftovers that break specific requirements. Cohen's kappa is still explained and coded although requirement 13 removed it. Test-set numbers appear in the method section 06. The licence status is stated on the site, against requirement 17. Process remarks leak into the report, such as 'metrics.json (per_split)', the hypothesis-date sentence and 'None of them is recorded as done'. decisions.md itself calls the beginner-code requirement (14) only partly met and lists open items. The report also leaves little margin under the 5,000-word cap. I could not run the test suite or run-all, because the shell refused compound commands, so the glossary-link, word-limit and privacy gates are unverified here.
+
+## Cycle 3 (2026-10-25)
+
+- **Tool:** Claude Code (Sonnet 5.5) in the planner, implementer and reviewer loop; Claude Haiku 5.5 as the classifier under study (its answers were reused from the cache, no new classification calls); Claude Sonnet 5.5 for stance coding of the new disagreement articles.
+- **Input:** `requirements/cycle-03.md`, drafted from the team's feedback on cycle 2 and edited with the repo owner (decisions D1-D13 and open points R1-R8).
+- **Produced:** merged results and error analysis (`08-results-and-why-they-fail`), new section slugs, one identical set of logistic-regression settings for all three analyses, new final models `final2_*` scored once on test, per-website recall table, trivial-baseline row, methods-at-a-glance table, rewritten limitations, conclusion and AI-use sections, updated decisions and reproducibility notes.
+- **Checked by tests:** numbers in text against `results/`, section format and word limits, privacy, frozen split, locked test set (`results/test_access_log.jsonl` shows each `final2_*` id once).
+- **Human checks:** the 40-article hand check of the stance coding is done by the team with a separate private tool and arrives for cycle 4. The six checks in the cycle-2 table above are unchanged.

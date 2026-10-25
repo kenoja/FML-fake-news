@@ -601,7 +601,9 @@ def comparison_stage() -> dict:
     doc_ids = llm_all[llm_all["pass"] == 1]["doc_id"]
     websites = doc_ids.map(analysis_frame().set_index("doc_id")["website"]).to_numpy()
     per_website = conspiracy_website_recall(y, preds, websites)
-    write_table("test_website_recall", per_website.round(4))
+    names = {"website": "Website", "test_articles": "Test articles"}
+    names.update({f"recall_{m}": f"Recall: {MODEL_NAMES[m]}" for m in preds})      # plain column labels
+    write_table("test_website_recall", per_website.round(4).rename(columns=names))
     metrics = _metrics()
     best_lr = best_final_lr(metrics)
     values = {"models": list(preds), "lr_best": best_lr, "test_documents": int(len(y)), "test_conspiracy": int(y.sum()),
