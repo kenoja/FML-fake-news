@@ -30,7 +30,8 @@ All requirements in earlier files (`requirements/cycle-01.md` ... `cycle-02.md`)
   allowed), followed by the introduction (no results). Both go in the `## Report` part of
   `01-question-and-hypotheses`, under `### Executive summary` and `### Introduction`.
 - **D6. Hypotheses (items 5, 15).** Number them H1, H2, ... with no sub-letters (no H2a–c); each written out in
-  full with its expectation, so it can be read without the others.
+  full with its expectation, so it can be read without the others. With D10, H2 covers the three feature
+  groups together.
 - **D7. Training environment (item 1, reply).** State where and how fast the models ran (machine and runtime
   from `results/run_info.json`) and what that means: everything runs on an ordinary laptop-class machine in
   minutes; only the LLM needs an internet connection and a paid API.
@@ -41,6 +42,33 @@ All requirements in earlier files (`requirements/cycle-01.md` ... `cycle-02.md`)
 - **D9. Item 16 wording.** The comment says "validation vs training set"; the comparison shown is validation vs
   **test**. Explain why scores are higher on validation than on test (different and fewer websites, one large
   site in test).
+
+### Additions from the team review of the method (25 Oct 2026)
+
+- **D10. A fair comparison, then one clean rerun of the logistic regressions.**
+  - *The feature model is the planned one.* Analysis 3 is TF-IDF plus **all three** feature groups
+    (n-grams 1–3, certainty words, style). Drop the +0.01 selection threshold. The table of TF-IDF alone, plus
+    each group and plus all three (validation only) stays, as the explanation of the result, not as a model
+    choice. H2 is one hypothesis: "adding the three feature groups improves the TF-IDF model".
+  - *Same settings for all three logistic regressions*: class weight "balanced" for all (no class-weight
+    grid), and the same C grid for all: `[0.01, 0.1, 1, 10, 100]` in `config/project.yaml`, fixed before
+    the run and chosen by validation F1 only. Only the input differs between analyses 1–3.
+  - *Same text for all four methods*: every method reads the first 3,000 words of each article (the limit the
+    LLM already uses). The LLM's answers do not change, so the LLM needs no new API calls and is not scored
+    on test again.
+  - Then score the three logistic regressions on test once each, under new model ids (e.g.
+    `final2_word_counts`, `final2_tfidf`, `final2_tfidf_features`). The one honest sentence in
+    `09-limitations` covers this. Report only these final results.
+- **D11. Explain the drop from validation to test.** One table in `08-results-and-why-they-fail`: for each
+  conspiracy website in the test set, the number of its test articles and how many each of the four models
+  caught (recall per website), plus one sentence per finding. No new model and no new statistics. Use it to
+  answer item 16 / D9 (why validation scores are higher than test scores).
+- **D12. A trivial baseline row.** Add "always guess mainstream" to the results table (precision, recall and F1
+  of 0, plus its accuracy in one sentence), to show why F1 and not accuracy is used.
+- **D13. The four methods at a glance.** One small table in `01-question-and-hypotheses` (Explained simply and
+  Report): for each method, what it reads, whether it is trained on our data, its settings, its runtime and
+  its cost (from `results/run_info.json` and the LLM cost in `results/metrics.json`). This answers items 1 and
+  5.
 
 ## Open points from the cycle-2 review (still to fix)
 
