@@ -5,18 +5,16 @@ hypothesis: Removing articles that are not about 9/11 and articles that appear t
 ---
 ## Explained simply
 
-**Where the articles come from.** We use LOCO, a collection of web pages from conspiracy-oriented and mainstream websites. LOCO is a **corpus**, which simply means a large collection of texts. It was compiled by Miani, Hills & Bangerter (2022), who rated each website as conspiracy-oriented or mainstream. We use the part about the 9/11 attacks and only the full articles, 3,146 of them. The texts stay private; this page shows only counts, tables and short quotes.
-
+**Where the articles come from.** We use LOCO, a collection of web pages from conspiracy-oriented and mainstream websites. LOCO is a **corpus**, which simply means a large collection of texts. It was compiled by Miani, Hills & Bangerter (2022), who rated each website as conspiracy-oriented or mainstream. We use the part about the 9/11 attacks and only the full articles, 3,146 of them.
 **What the label means, and its risk.** Every article inherits the rating of its website, so the label describes the website, not the text. A "wrong" model answer is sometimes a sensible reading of the text.
 
-**Why cleaning matters.** A model learns whatever separates the two groups most easily, not what we hope it learns. This is **shortcut learning**: a pupil who passes by recognising the teacher's handwriting on the answer key has learned nothing about the subject. If a website's name or a copied article lets the model solve the task, the score looks good and means little. A related risk is **target leakage**: information that gives away the answer sneaks into the inputs. So we clean once, before any model runs, and all four analyses use the same articles.
+**Why cleaning matters.** A model learns whatever separates the two groups most easily, not what we hope it learns. This is **shortcut learning**: a pupil who passes by recognising the teacher's handwriting on the answer key has learned nothing about the subject. If a website's name or a copied article lets the model solve the task, the score looks good and means little. So we clean once, before any model runs, and all four analyses use the same articles.
 
 **Step 1: remove articles that are not about 9/11.** Some pages barely mention the attacks. A model that sees a cooking blog from one website and a news report from another learns cooking versus news, not the two kinds of websites. We keep only articles that mention the attacks, using a fixed list of search words.
 
 **Step 2: remove near-duplicates.** Websites copy each other, so the same story can appear twice. Imagine an exam where some questions also appeared on the practice sheet: a good score would prove little. We call two articles near-duplicates when their word patterns are very alike (a **cosine similarity** of at least 0.9, where 1 means identical). We drop one copy of each pair. If the copies sit in different parts of the split, the copy used for training stays; if both sit in one part, the one with the lower id stays. The label plays no role.
 
-**Step 3: remove clues that give the website away.** We delete web addresses, e-mail addresses, website names and lines a website repeats in many articles, such as menus and "share this" banners. This step changes texts but never removes an article. Otherwise a model could learn "contains the site name" instead of anything about the writing.
-
+**Step 3: remove clues that give the website away.** We delete web addresses, e-mail addresses, website names and lines a website repeats in many articles, such as menus and "share this" banners. This step changes texts but never removes an article.
 **Team question 5: could very short texts be impossible to classify?** The shortest article has about 100 words, and the middle one is several times longer. These are real articles, so we set no minimum length.
 
 **What to look out for.** Cleaning removes the obvious site clues, not all of them. A site's typical style can still act as a shortcut.

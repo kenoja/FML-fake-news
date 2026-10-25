@@ -30,7 +30,7 @@ resolve a conflict (see AGENTS.md).
 - **[declined] Hypotheses "written before the results".** The dating cannot be shown (git history was not
   accessible to the agent), so no text claims it. The hypotheses are described as chosen from the literature
   and fixed before the final test run. There is no H5 on purpose (the emotion idea was dropped).
-- **[declined] Licence check by the agent.** The OSF page https://osf.io/snpcg/ could not be opened in any
+- **[declined] Licence check by the agent.** The dataset's licence page could not be opened in any
   cycle (web access denied, nothing fetched, nothing guessed). Safe default: texts private, excerpts at most
   50 words and 6 per section. See [open] below.
 
@@ -83,18 +83,26 @@ resolve a conflict (see AGENTS.md).
 
 ## Needs a team decision
 
-- **Owner account name (protected path).** The owner must replace the name in `scripts/collect_feedback.py` or
-  move the repository to a neutral organisation, then set `repo_url` and `giscus.repo` in `config/site.yaml`.
-  Until then pass `--repo` or set `GITHUB_REPOSITORY`. Git history cannot be rewritten by the agent. To make
-  `tests/test_privacy.py` search for the name itself, set `FML_PRIVACY_TERMS=<account name>`.
-- **LOCO licence.** One member opens https://osf.io/snpcg/ and records here: licence text, date checked,
-  Member letter. Until then the safe default above applies.
-- **Human stance check.** The team labels the 40 rows of `results/tables/stance_check_sample.csv` with a separate
+Each item has a status and an owner.
+
+- **[open] Owner account name (protected path). Owner: repository owner.** `scripts/collect_feedback.py` (protected,
+  not edited by agents) still has the owner's account name as the default of `--repo`. The owner must replace that
+  default or move the repository to a neutral organisation, then set `repo_url` and `giscus.repo` in
+  `config/site.yaml`. Until then pass `--repo` or set `GITHUB_REPOSITORY`. Git history cannot be rewritten by the
+  agent. To make `tests/test_privacy.py` search for the name itself, set `FML_PRIVACY_TERMS=<account name>`.
+- **[open] Dataset licence. Owner: one team member.** Open the dataset's licence page (linked from the corpus
+  description) and record here: licence text, date checked, Member letter. Until then the safe default applies:
+  texts private, excerpts at most 50 words and 6 per section.
+- **[open] Background references on 9/11 conspiracy content (D8, declined in T3). Owner: one team member.** Verify
+  one or two sources and add them to `content/references.md`; none was added from memory.
+- **[closed] R8 (limitations wording).** Met: `09-limitations` says in one sentence that the test set was used during
+  development and that every final model was chosen on validation and scored on test once.
+- **[open] Human stance check. Owner: the team (cycle 4).** The team labels the 40 rows of `results/tables/stance_check_sample.csv` with a separate
   private tool during the cycle-3 feedback period; the results arrive for cycle 4 (D3). Until then the Claude stance
   codes are a single automatic source and the error analysis says so in one statement.
-- **What the team altered or rejected in AI output.** Only one concrete case is recorded (emotion scores
+- **[open] What the team altered or rejected in AI output. Owner: all members.** Only one concrete case is recorded (emotion scores
   removed from the AI-drafted plan, cycle 1). Members add further cases here and in `docs/ai-log.md`.
-- **Test file for the agent.** Delete `tests/test_agent_graph.py` if CI does not need it.
+- **[closed] Test file for the agent.** `tests/test_agent_graph.py` stays (it tests the protected `agent/` code).
 
 ## Cycle 3, T4: final2 run
 - **Final2 logistic regressions scored once on test** under `final2_word_counts`, `final2_tfidf`, `final2_tfidf_features`
