@@ -61,7 +61,7 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 
 - **[open] Dataset licence.** Owner: repository owner. The OSF page could not be read automatically. Record the
   licence text and date here. Until then the safe default applies (texts private, short excerpts only).
-- **[open] Hand check.** Owner: the team. Answers from A and C are in; B, D and E are missing.
+- **[open] Hand check.** Owner: the team. Answers from A, C and D are in; B and E are missing.
 
 ## Declined, with the reason
 
