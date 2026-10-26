@@ -23,7 +23,7 @@ hypothesis: Our results are real but narrow, because the labels describe website
 
 **One topic, one collection.** Everything here concerns 9/11 articles from one collection. We cannot say whether the results carry over to other topics.
 
-**The test set.** The test set was used during development: four earlier models and four models of an earlier configuration (the `final_*` ids in the test log) were scored on it before the rerun. Every final model of the rerun (`final2_*`) was chosen on validation and scored on test once.
+**The test set.** While the method was being built, earlier versions of the models were scored on the test set. That is like peeking at old exam papers: it can make later choices a little too lucky. To limit this, every final model was chosen on the validation set alone and took the test once.
 
 ## The code
 
@@ -35,7 +35,7 @@ This section describes limits of the study, so it has no analysis of its own. Th
 
 ## Report
 
-Several limitations qualify the results. First, the label describes the website that published a document, not its content. Conspiracy-oriented websites publish many neutral articles, and mainstream websites sometimes discuss conspiracy theories, so a prediction that disagrees with the label is not necessarily an error. The scores measure how well each method recovers the type of website, not whether a text contains conspiracy claims.
+First, the label describes the website that published a document, not its content. Conspiracy-oriented websites publish many neutral articles, and mainstream websites sometimes discuss conspiracy theories, so a prediction that disagrees with the label is not necessarily an error. The scores measure how well each method recovers the type of website, not whether a text contains conspiracy claims.
 
 Second, the number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. Documents from one website resemble each other, so the confidence intervals are probably too narrow.
 
@@ -43,7 +43,7 @@ Third, the LLM was trained on large amounts of web text and may know the article
 
 Fourth, some choices are thresholds that could be set differently, such as the cosine similarity of 0.9 for copies, which removed 54 articles. The certainty and doubt features ignore negation and rest on four short word lists (47 entries in total). Website style can serve as a shortcut.
 
-Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer to other topics or websites. The test set was used during development: four earlier models and four models of an earlier configuration (the `final_*` ids in the test log) were scored on it before the rerun. Every final model of the rerun (`final2_*`) was chosen on validation and scored on test once.
+Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer to other topics or websites. The test set was also used during development, when earlier versions of the models were scored on it; every final model reported here was chosen on validation alone and scored on the test set once.
 
 ## Check yourself
 

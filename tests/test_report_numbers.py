@@ -207,14 +207,14 @@ def test_section_checker_catches_a_wrong_number():
     assert section_mismatches("Precision is 0.214.", nums) == ["0.214"]
 
 
-def test_environment_sentence_matches_run_info():
-    """The introduction states machine size and run time; they must match the last run."""
+def test_runtime_sentence_matches_run_info():
+    """The introduction states the run time in whole minutes; it must fit the last run on any machine."""
     info = json.loads((REPO / "results" / "run_info.json").read_text(encoding="utf-8"))
     text = (REPO / "content" / "sections" / "01-question-and-hypotheses.md").read_text(encoding="utf-8")
-    assert f"{info['machine']['cpus']}-CPU {info['machine']['system']} machine" in text
-    stated = int(re.search(r"took about (\d+) seconds", text).group(1))
-    # run time differs a little on every run, so allow 25% either way
-    assert abs(stated - info["run_all_seconds"]) <= 0.25 * info["run_all_seconds"]
+    words = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8}
+    stated = words[re.search(r"in about (\w+) minutes?", text).group(1)] * 60
+    # machines differ, so "about two minutes" may be off by half either way, never more
+    assert abs(stated - info["run_all_seconds"]) <= 0.5 * stated
 
 
 def test_worked_example_matches_metrics():

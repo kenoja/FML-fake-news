@@ -15,11 +15,12 @@ hypothesis: An AI assistant can write most of the code quickly, but people still
 The loop repeats until the reviewer is satisfied or a round limit is reached. This website is generated from the project files, so the code you see is the code that ran.
 
 **Several rounds.** After each cycle the team read the website and wrote feedback under each section; the feedback became the next cycle's requirements.
+
 **What the AI produced.** The assistant (Claude) wrote the plan, the code, the tests, the tables and figures, and drafted the text of this site and the report. Separately, Claude Haiku 5.5 is one of the four ways we sort articles: it is being tested, not a helper. Claude Sonnet 5.5 read the disputed articles for the error analysis.
 
 **What the team did.** People set the question, the four ways of sorting, the feature groups and the rule that final models are scored on test once, and wrote the feedback. They removed emotion scores from the first plan, because emotional language is not the same as conspiracy language. They compared the article counts with those published for the corpus.
 
-**How output was checked.** The agent ran small test programs that fail when a rule is broken, for example if the split changes or a number in the report is missing from the result files. Other checks need a person, such as whether the automatic stance coding is right: the team's hand check of 40 articles is planned for the next cycle.
+**How output was checked.** The agent ran small test programs that fail when a rule is broken, for example if the split changes or a number in the report is missing from the result files. Other checks need a person, such as whether the automatic stance coding is right; the team's hand check of 40 articles does that.
 
 **What we learned.** A test can confirm that a number matches a file, but not that the number answers the right question; that judgement stays with people. Saving the language model's answers makes every figure repeatable without new cost.
 
@@ -33,11 +34,13 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 ## Report
 
-**Setup.** The analysis was produced with Claude Code, an AI coding assistant, in three Claude Sonnet 5.5 roles: a planner splits the team's requirements into tasks, an implementer writes code and text and runs the tests, and a reviewer in a fresh session scores the result against a checklist.
+**Tools and set-up.** The code, tests, tables, figures and drafts of this report and of the course website were produced with Claude Code, an AI coding assistant, running as a loop of three roles of Claude Sonnet 5.5: a planner that turned the team's written requirements into small tasks, an implementer that carried out one task at a time and ran the tests, and a reviewer that, in a fresh session, scored the result against a fixed checklist. A separate Claude session helped the project owner to set up this loop and the website. Two further models appear in the study itself and are not tools: Claude Haiku 5.5 is the fourth classifier, and Claude Sonnet 5.5 coded the stance of the articles in the error analysis.
 
-**Cycles.** Work ran in three cycles. After each cycle the team read the website and wrote feedback, which became the next cycle's requirements. A log in the repository records what the AI produced and what was checked.
+**How the team steered the work.** The work ran in three cycles. After each cycle team members read the website, which shows the code that actually ran next to its output, and commented on each section; the comments became the requirements of the next cycle. Decisions that changed the study came from the team: the use of full articles, the four methods, leaving out emotion features, removing off-topic articles and near-duplicates before any model, and, after the second cycle, giving all three logistic regressions identical settings and the same text as the language model.
 
-**Checks.** The agent checked every number in the report against the result files with automated tests (`test_report_numbers`); further tests cover length limits, the split, training-only fitting and the locked test set. Members' own checks are recorded in the log only where they entered them; so far none are recorded. The team's hand check of 40 articles for the automatic stance coding is planned for the next cycle. Claude Haiku 5.5 is one of the four classifiers under study, not a helper.
+**How the output was checked.** Automated tests fail when a rule is broken, for example when a model is fitted on more than the training articles, when the frozen split changes, when the test set is used outside the final scoring, or when a number in this report is missing from the result files. The whole analysis was run twice with identical results. Judgements that tests cannot make, such as whether the automatic stance coding is right, are checked by people through the hand check described in the error analysis.
+
+**What we learned.** The AI was fast and thorough at code and tables, but it followed its instructions literally: it reported an unplanned feature selection and an untested explanation until the team asked for a fair, planned comparison and for evidence. A test shows that a number matches a file, not that it answers the right question, so the reasoning stays the team's responsibility.
 
 ## Check yourself
 

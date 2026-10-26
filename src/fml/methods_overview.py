@@ -32,6 +32,15 @@ def llm_cost_per_1000(usage: dict, cfg: dict) -> float:
     return per_article * 1000
 
 
+def rough_time(seconds: float) -> str:
+    """Runtime in words, so the table does not change from one run to the next."""
+    if seconds < 15:
+        return "a few seconds"
+    if seconds < 120:
+        return "about a minute"
+    return f"about {round(seconds / 60)} minutes"
+
+
 def methods_table(info: dict, metrics: dict, usage: dict, cfg: dict, lr_cfg: dict) -> pd.DataFrame:
     """One row per method, filled from run_info.json, metrics.json and the answer cache."""
     seconds = info["stage_seconds"]
@@ -41,11 +50,11 @@ def methods_table(info: dict, metrics: dict, usage: dict, cfg: dict, lr_cfg: dic
     lr_cost = "free (runs locally)"
     rows = [
         ("1. Word counts + logistic regression", "word counts", "yes", lr_settings,
-         f"{seconds['word_counts']:.0f} seconds", lr_cost),
+         rough_time(seconds['word_counts']), lr_cost),
         ("2. TF-IDF + logistic regression", "TF-IDF weights", "yes", lr_settings,
-         f"{seconds['tfidf']:.0f} seconds", lr_cost),
+         rough_time(seconds['tfidf']), lr_cost),
         ("3. TF-IDF + features + logistic regression", "TF-IDF weights, n-grams, certainty words, style",
-         "yes", lr_settings, f"{seconds['tfidf_features']:.0f} seconds", lr_cost),
+         "yes", lr_settings, rough_time(seconds['tfidf_features']), lr_cost),
         (f"4. LLM ({metrics['llm']['model']})", "the article text itself, with a written question", "no",
          f"prompt {metrics['llm']['chosen_prompt']} of {len(metrics['llm']['variants'])}, default sampling",
          f"about {usage['seconds']:.1f} seconds per article",

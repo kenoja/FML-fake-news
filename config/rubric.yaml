@@ -3,8 +3,9 @@
 # Sources: the assignment brief (report 3,000-5,000 words; document AI use), the course feedback in
 # requirements/cycle-01.md, and the owner's feedback in requirements/cycle-02.md.
 # Audience: five teammates with NO technical background, in a 2.5-ECTS fundamentals course.
-# Items the requirements explicitly hand to the team (the 40-article human check, confirming the
-# licence) count as done once they are prepared and recorded in docs/decisions.md.
+# Work that waits for the team is not scored: the results of the 40-article hand check, the members' own
+# check rows in docs/ai-log.md and the owner's licence confirmation. They count as done once prepared and
+# stated plainly as following.
 
 criteria:
   - id: question

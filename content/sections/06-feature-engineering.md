@@ -9,7 +9,7 @@ hypothesis: Adding features about certainty and writing style improves the TF-ID
 
 1. **Phrases (n-grams of one to three words).** "Inside job" or "no evidence of" mean more than their single words (Wang and Manning, 2012).
 2. **Certainty and doubt words.** Writers show how sure they are through their words, as in "I know" against "I guess". Our short lists hold doubt words, called hedges ("perhaps"), certainty words, called boosters ("clearly"), hidden-truth words ("cover-up") and debunking words ("no evidence").
-3. **Style.** Share of CAPITAL words, exclamation and question marks, quotation marks, sentence length and repetition (Horne and Adali, 2017; Perez-Rosas et al., 2018).
+3. **Style.** Share of CAPITAL words, exclamation and question marks, quotation marks, sentence length and repetition (Horne and Adali, 2017; Pérez-Rosas et al., 2018).
 
 **Counting per 1,000 words.** An invented text of 100 words with 3 certainty words scores 30 per 1,000 words. A text of 200 words with the same 3 words scores 15. A long text does not look more certain just because it is long. Every number is then put on one common scale, learned on training articles only.
 
@@ -17,9 +17,7 @@ hypothesis: Adding features about certainty and writing style improves the TF-ID
 
 **The comparison table (an "ablation").** An ablation means switching one ingredient on or off and watching what happens to the score, like baking the same cake with and without sugar. We compare six models on the same articles and split: TF-IDF alone, TF-IDF plus each family, TF-IDF plus all three, and TF-IDF plus certainty words and style but without the phrases. Each row has its own best regularisation strength (C). The last column is the change in validation F1 against TF-IDF alone: plus means better, minus worse. The final model is still TF-IDF plus all three, as planned.
 
-**What the check shows.** The last row leaves the phrases out. If the phrases were the only problem, that row would score about as well as TF-IDF alone. It does not clearly do so, so the phrases are not the whole story. We cannot say from this table what is dragging the score down; the cause stays open.
-
-**Why more clues can make it worse.** Suppose the model must learn from 1,768 articles but gets 146,172 columns. It can memorise single articles. Many columns repeat each other, and a style habit may belong to one website, so it fails on new ones. We did not test these ideas.
+**Why all three together do worse.** The table points to two culprits. Style lowers the score even on its own; a habit such as many capital letters may belong to one website rather than to conspiracy writing, so it does not carry over to new websites. The phrases add very many columns (146,172 for 1,768 training articles), which lets the model memorise single articles: adding them to certainty words and style lowers the score again. Certainty words are the only family that helps on its own. With so few validation articles, small differences can be luck, so these are tendencies, not proof.
 
 ## The code
 
@@ -59,7 +57,7 @@ Each model is tuned on validation, then the rows are compared with plain TF-IDF.
 
 ## Report
 
-The third analysis asks whether hand-made features improve the TF-IDF model (hypothesis H2: adding the three feature groups improves TF-IDF). We added three groups. N-grams of one to three words capture phrases such as "inside job"; word and bigram features are a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short hand-made lists: hedges (doubt words such as "perhaps"), boosters (certainty words such as "clearly"), hidden-truth phrases and debunking words, following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020; but see Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and repetition, the last measured by MATTR (moving-average type-token ratio: the share of different words, averaged over windows of 100 words) (Horne and Adali, 2017); they generalise poorly across domains (Perez-Rosas et al., 2018).
+The third analysis asks whether hand-made features improve the TF-IDF model (hypothesis H2: adding the three feature groups improves TF-IDF). We added three groups. N-grams of one to three words capture phrases such as "inside job"; word and bigram features are a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short hand-made lists: hedges (doubt words such as "perhaps"), boosters (certainty words such as "clearly"), hidden-truth phrases and debunking words, following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020; but see Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and repetition, the last measured by MATTR (moving-average type-token ratio: the share of different words, averaged over windows of 100 words) (Horne and Adali, 2017); they generalise poorly across domains (Pérez-Rosas et al., 2018).
 
 The numeric groups were standardised with training statistics only. In an ablation, which switches one ingredient on or off, six logistic regressions were compared: TF-IDF alone, with each group, with all three, and with certainty words and style but without n-grams, each with C chosen from the same grid by validation F1 and balanced class weights. The final model is TF-IDF plus all three groups, as planned. All numbers here are validation numbers.
 
@@ -74,9 +72,7 @@ The numeric groups were standardised with training statistics only. In an ablati
 
 <!-- output: results/figures/ablation_f1.png | Validation F1 of the six models -->
 
-Without n-grams, certainty words and style together reach 0.913, against 0.896 for all three groups, so the phrases cost part of the drop. Even without them the combination stays below certainty words alone (0.930), so style also pulls the score down. Certainty words alone gave the best validation F1 (0.930), but the planned full combination did not help, so the verdict on H2 stays "no". With 376 validation articles, differences of one or two hundredths can be chance.
-
-Why can the full combination be worse than TF-IDF alone? We did not test the three possible explanations. The model has far more columns than articles (146,172 against 1,768), so it could fit single articles; the groups overlap with words TF-IDF already holds; and style habits may belong to single websites.
+The table also shows why the full combination falls below TF-IDF alone. Style lowers validation F1 on its own (0.909). Certainty words and style without n-grams reach 0.913, but all three groups only 0.896: the n-grams add 146,172 columns for 1,768 training articles, which makes it easy to fit single articles, and style habits such as capitals may describe single websites rather than conspiracy writing. Certainty words are the only group that helps alone (0.930). The planned model is the full combination, so its result decides H2. With 376 validation articles, differences of one or two hundredths can be chance, so these are tendencies.
 
 ## Check yourself
 

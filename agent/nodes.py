@@ -3,6 +3,7 @@ everything that code can answer (tests, gates, site build, routing) is plain cod
 from __future__ import annotations
 
 import json
+import time
 import re
 from pathlib import Path
 
@@ -118,14 +119,26 @@ def implement(state: AgentState) -> dict:
 
 
 def run_pipeline(state: AgentState) -> dict:
-    """Tests and the full pipeline. Pure code: if code can answer, code answers."""
-    # Both together must fit inside limits.task_timeout_minutes (see LONG_NODES in agent.py).
+    """Tests, then the full pipeline twice (the second run must change nothing). Pure code."""
+    # All three together must fit inside limits.task_timeout_minutes (see LONG_NODES in agent.py).
     budget = _limits()["task_timeout_minutes"] * 60
-    t_code, t_out = tools.run_cmd(["python", "-m", "pytest", "-q", "-x"], timeout_s=int(budget * 0.4))
-    p_code, p_out = tools.run_cmd(["python", "-m", "fml.cli", "run-all"], timeout_s=int(budget * 0.6))
-    log = f"$ pytest -q -x (exit {t_code})\n{t_out[-3000:]}\n\n$ fml run-all (exit {p_code})\n{p_out[-3000:]}"
-    return {"pipeline_log": log, "gate_failures": tools.run_gates(t_code == 0, p_code == 0),
-            **_event("run_pipeline", f"pytest exit {t_code}, run-all exit {p_code}")}
+    t_code, t_out = tools.run_cmd(["python", "-m", "pytest", "-q", "-x"], timeout_s=int(budget * 0.3))
+    start = time.monotonic()
+    p_code, p_out = tools.run_cmd(["python", "-m", "fml.cli", "run-all"], timeout_s=int(budget * 0.3))
+    run_s = time.monotonic() - start
+    first = tools.results_fingerprint()
+    r_code, _ = tools.run_cmd(["python", "-m", "fml.cli", "run-all"], timeout_s=int(budget * 0.3)) if p_code == 0 else (1, "")
+    diff = tools.changed_files(first, tools.results_fingerprint()) if r_code == 0 else ["(second run failed)"]
+    summary = next((line for line in reversed(t_out.strip().splitlines()) if " passed" in line or " failed" in line), "")
+    evidence = (f"pytest: exit {t_code} ({summary.strip('= ')})\n"
+                f"fml run-all: exit {p_code}, {run_s:.0f} seconds\n"
+                f"second fml run-all: {'identical results (' + str(len(first)) + ' files compared)' if not diff else 'DIFFERENT: ' + ', '.join(diff[:10])}")
+    log = f"{evidence}\n\n$ pytest -q -x\n{t_out[-3000:]}\n\n$ fml run-all\n{p_out[-3000:]}"
+    fails = tools.run_gates(t_code == 0, p_code == 0)
+    if diff:
+        fails.append("two consecutive `fml run-all` runs gave different results: " + ", ".join(diff[:10]))
+    return {"pipeline_log": log, "gate_failures": fails,
+            **_event("run_pipeline", f"pytest exit {t_code}, run-all exit {p_code}, rerun identical: {not diff}")}
 
 
 def verify(state: AgentState) -> dict:
@@ -176,6 +189,7 @@ def review(state: AgentState) -> dict:
         cycle=state["cycle"], requirements_path=state["requirements_path"],
         rubric=json.dumps(rubric["criteria"], indent=1, ensure_ascii=False),
         gate_failures="\n".join(state.get("gate_failures") or []) or "none",
+        evidence=(state.get("pipeline_log") or "not run").split("\n\n", 1)[0],
     )
     res = tools.run_claude(task_prompt, model=_models()["reviewer"], tools=tools.READ_ONLY_TOOLS,
                            json_schema=REVIEW_SCHEMA, max_turns=lim["max_turns_per_task"],

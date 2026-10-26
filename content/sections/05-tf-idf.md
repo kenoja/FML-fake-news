@@ -42,7 +42,7 @@ The analysis function is shared, so both analyses run in exactly the same way.
 
 ## Report
 
-The second analysis keeps everything from the word-count analysis (articles, split, vocabulary, balanced logistic regression, with its weights and the choice of C by validation F1 as explained in section 4) and replaces raw counts by TF-IDF weights (Manning, Raghavan and Schütze, 2008). Term frequencies were damped with a logarithm, article vectors were scaled to unit length, and the inverse document frequencies were computed on the training articles only. C was again chosen from {0.01, 0.1, 1, 10, 100} by the validation F1 score of the conspiracy class. All numbers here are validation numbers.
+The second analysis keeps everything from the word-count analysis (articles, split, vocabulary, balanced logistic regression, with its weights and the choice of C by validation F1 as explained in section 4) and replaces raw counts by TF-IDF weights (Salton and Buckley, 1988; Manning, Raghavan and Schütze, 2008). Term frequencies were damped with a logarithm, article vectors were scaled to unit length, and the inverse document frequencies were computed on the training articles only. C was again chosen from {0.01, 0.1, 1, 10, 100} by the validation F1 score of the conspiracy class. All numbers here are validation numbers.
 
 The value C = 10 scored best, with a precision of 0.930, a recall of 0.906 and an F1 score of 0.918. The model called 8 mainstream articles conspiracy. Larger C helped here: because TF-IDF vectors have a fixed length, the model can use larger weights without being dominated by long articles. The chosen value lies inside the grid, and C = 100 scored almost the same (F1 0.909).
 

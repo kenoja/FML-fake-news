@@ -20,14 +20,21 @@ def model_row(name: str, y, pred) -> dict:
     return row
 
 
+def score_cell(value: float, low: float, high: float) -> str:
+    """A score with its 95% interval, e.g. '0.598 (0.508 to 0.682)'."""
+    if low == high:                     # no spread (the baseline), so an interval says nothing
+        return f"{value:.3f}"
+    return f"{value:.3f} ({low:.3f} to {high:.3f})"
+
+
 def compact_table(table, names: dict):
-    """Four plain rows for the report: each score with its 95% interval in one cell, three decimals."""
+    """Plain rows for the report: each score with its 95% interval in one cell, three decimals."""
     rows = []
     for _, r in table.iterrows():
         row = {"Model": names[r["model"]]}
         for score in SCORES:
-            row[score.capitalize() if score != "f1" else "F1"] = (
-                f"{r[score]:.3f} ({r[score + '_ci_low']:.3f} to {r[score + '_ci_high']:.3f})")
+            column = "F1" if score == "f1" else score.capitalize()
+            row[column] = score_cell(r[score], r[score + "_ci_low"], r[score + "_ci_high"])
         rows.append(row)
     return pd.DataFrame(rows)
 

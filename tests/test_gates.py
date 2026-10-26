@@ -181,3 +181,17 @@ def test_a_broken_site_cell_is_a_gate_failure(tmp_path, monkeypatch):
     sec.mkdir(parents=True)
     (sec / "01-a.md").write_text("## The code\n<!-- cell: src/fml/missing.py#nothing -->\n")
     assert any("could not be built" in f for f in tools.gate_site_builds())
+
+
+def test_reproducibility_fingerprint_ignores_timing_but_sees_changed_numbers(tmp_path, monkeypatch):
+    # Why: "every number is reproducible" is checked by running the pipeline twice; the run's own
+    # timing record may differ, a changed result file may not.
+    monkeypatch.setattr(tools, "REPO", tmp_path)
+    (tmp_path / "results" / "tables").mkdir(parents=True)
+    (tmp_path / "results" / "tables" / "a.csv").write_text("f1\n0.5\n")
+    (tmp_path / "results" / "run_info.json").write_text('{"run_all_seconds": 10}')
+    first = tools.results_fingerprint()
+    (tmp_path / "results" / "run_info.json").write_text('{"run_all_seconds": 11}')
+    assert tools.changed_files(first, tools.results_fingerprint()) == []
+    (tmp_path / "results" / "tables" / "a.csv").write_text("f1\n0.6\n")
+    assert tools.changed_files(first, tools.results_fingerprint()) == ["tables/a.csv"]

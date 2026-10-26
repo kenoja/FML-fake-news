@@ -131,7 +131,7 @@ The correct answer we know for each article: conspiracy-oriented or mainstream w
 Labels that do not fit the article they are attached to. A mainstream site may publish a conspiracy-style piece, and the label still says mainstream. Like a shelf labelled "cookbooks" holding one novel.
 
 ### Leakage
-Also: Data leakage, leak
+Also: Data leakage, target leakage, leak
 
 When information from the test articles sneaks into training, so the scores look better than they are. Like a student who has seen the exam questions in advance.
 
@@ -177,6 +177,11 @@ When a model memorises quirks of its training articles and then does worse on ne
 
 A number between 0 and 1 that says how surprising our result would be if there were really no difference. A small p-value (under 0.05) means chance alone is an unlikely explanation. Like how odd ten heads in a row would seem.
 
+### Per-website recall
+Also: Recall per website
+
+Recall worked out separately for each website: of the conspiracy articles one website published, the share a model found. Like checking a teacher's marks class by class, to see which class drags the average down.
+
 ### Precision
 
 Of the articles the model called conspiracy, the share that really come from conspiracy websites. Like a metal detector: of all beeps, how many were really metal.
@@ -218,11 +223,6 @@ The randomness a language model uses when picking its next word. We keep the mod
 Also: Shortcut, Target leakage
 
 A model scoring well by using a clue that is not what we care about, such as a website's name or layout. Like a student who passes a test by recognising the handwriting of the questions' author, not by knowing the subject. It is a form of leakage of the label into the input.
-
-### Per-website recall
-Also: Recall per website
-
-Recall worked out separately for each website: of the conspiracy articles one website published, the share a model found. Like checking a teacher's marks class by class, to see which class drags the average down.
 
 ### Stance coding
 Also: Stance, stance code

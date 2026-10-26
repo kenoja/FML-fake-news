@@ -56,10 +56,11 @@ def feature_matrix(blocks: list, df: pd.DataFrame) -> csr_matrix:
     return hstack(parts, format="csr")
 
 
-def fit_logistic(X_train, y_train, C: float, class_weight) -> LogisticRegression:
-    """Fit one logistic regression; C is the regularisation strength (a small C keeps weights small)."""
+def fit_logistic(X_train, y_train, strength: float, class_weight) -> LogisticRegression:
+    """Fit one logistic regression with the given regularisation strength."""
     seed = project_config()["split"]["seed"]
-    model = LogisticRegression(C=C, class_weight=class_weight, solver="liblinear", max_iter=2000, random_state=seed)
+    # scikit-learn calls the strength C: a small C keeps the weights small and cautious
+    model = LogisticRegression(C=strength, class_weight=class_weight, solver="liblinear", max_iter=2000, random_state=seed)
     return model.fit(X_train, y_train)
 
 
@@ -67,10 +68,10 @@ def tune_on_validation(X_train, y_train, X_valid, y_valid, c_grid=None) -> tuple
     """Fit one model per regularisation strength (C) on train, score each on validation, keep the best F1."""
     lr = project_config()["lr"]
     rows = []
-    for C in (lr["c_grid"] if c_grid is None else c_grid):
-        model = fit_logistic(X_train, y_train, C, lr["class_weight"])
+    for strength in (lr["c_grid"] if c_grid is None else c_grid):
+        model = fit_logistic(X_train, y_train, strength, lr["class_weight"])
         scores = classification_metrics(y_valid, model.predict(X_valid))
-        rows.append({"C": C, "precision": scores["precision"], "recall": scores["recall"], "f1": scores["f1"]})
+        rows.append({"C": strength, "precision": scores["precision"], "recall": scores["recall"], "f1": scores["f1"]})
     grid = pd.DataFrame(rows)
     best = int(grid["f1"].to_numpy().argmax())          # ties go to the smaller C
     grid["chosen"] = grid.index == best

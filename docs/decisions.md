@@ -85,25 +85,22 @@ resolve a conflict (see AGENTS.md).
 
 Only items that need people. Each has an owner (Member A-E) in `docs/human-todo.md`.
 
-- **[open] Owner account name (protected path). Owner: repository owner (Member A).** `scripts/collect_feedback.py` (protected,
-  not edited by agents) still has the owner's account name as the default of `--repo`. The owner must replace that
-  default or move the repository to a neutral organisation, then set `repo_url` and `giscus.repo` in
-  `config/site.yaml`. Until then pass `--repo` or set `GITHUB_REPOSITORY`. Git history cannot be rewritten by the
-  agent. To make `tests/test_privacy.py` search for the name itself, set `FML_PRIVACY_TERMS=<account name>`.
-- **[open] Website names in the blind check sheet. Owner: Member D.** T9: `error_examples.csv` no longer has a `website`
-  column (`error_examples_plain.csv` only ever had the label type). `stance_check_sample.csv` still lists domains
-  (frozen doc_ids, never redrawn) and `doc_id` starts with C for conspiracy, so a domain sits implicitly beside a
-  conspiracy label. It is not used in the site or report. Decide before publishing whether to drop that column
-  once the hand check is done.
-- **[open] Dataset licence. Owner: Member B.** Open the dataset's licence page and record here: licence text, date
-  checked, Member letter. Until then the safe default applies: texts private, excerpts at most 50 words and 6 per section.
-- **[open] Background references on 9/11 conspiracy content and classic method sources (declined, no web check possible). Owner: Member C.**
-  Verify one or two sources and add them to `content/references.md`; none was added from memory.
-- **[open] Human stance check. Owner: Member D (with the team, cycle 4).** Label the 40 rows of
-  `results/tables/stance_check_sample.csv` with a separate private tool. Until then the Claude stance codes are a single
-  automatic source and the error analysis says so.
-- **[open] What the team altered or rejected in AI output. Owner: Member E.** Only one concrete case is recorded
-  (emotion scores removed, cycle 1). Collect further cases from all members in `docs/ai-log.md`.
+- **[open] Dataset licence. Owner: repository owner (Member A).** The OSF page of the dataset could not be read
+  automatically (maintenance, then blocked for automated access). Open it in a browser and record here: licence text,
+  date checked. Until then the safe default applies: texts private, excerpts at most 50 words and 6 per section.
+- **[open] Human stance check. Owner: the team.** Each member codes 16 of the 40 articles in
+  `results/tables/stance_check_sample.csv` with the offline hand-check file (every article by two members, website
+  hidden) and sends the downloaded CSV; the results are added in cycle 4. Until then the error analysis states that
+  the stance codes are automatic and that the hand check follows.
+- **[done, 2026-10-26] Owner account name.** `scripts/collect_feedback.py` now takes the repository only from
+  `GITHUB_REPOSITORY` (set by GitHub Actions); the site settings get it the same way. No account name is stored in files.
+- **[done, 2026-10-26] Background and classic method references.** Verified online and added: Dietterich (1998), Salton
+  & Buckley (1988), Kaufman et al. (2012), Geirhos et al. (2020), Shu et al. (2017), Swami et al. (2010), Wood &
+  Douglas (2013). The LOCO paper's own blind check (85% / 92%) was verified against the paper.
+- **[done, 2026-10-26] Website names in the check sheet.** Kept: the domains are public websites, not personal data,
+  and the hand-check tool hides them from the coders; the site and report show "Website 1-6" only.
+- **[done, 2026-10-26] What the team changed in the AI's output.** Recorded in `11-how-we-used-ai` (report part):
+  full articles, the four methods, no emotion features, cleaning before any model, and the fair-comparison rerun.
 
 Closed with a conservative decision (no human needed): report length is a plain whitespace count of `reports/report.md`
 before References, tables included; near-duplicates follow the rule above; website names next to labels are shown as
@@ -139,7 +136,7 @@ before References, tables included; near-duplicates follow the rule above; websi
 - **[done] R7 report length counting.** Closed with the conservative choice: plain whitespace count of `reports/report.md` before References, tables included (stricter than prose-only). Stated once in `docs/decisions.md`; gate in `tests/test_gates.py`.
 - **[done] R7 near-duplicate choice (the only statement of the rule; matches `clean.near_duplicate_drops`).** Closed. Across splits the priority is train, then validation, then test: the copy in the lower-priority split goes (so a validation/test pair loses the test copy; a pair with a training copy loses the other). Inside one split the lower doc_id stays. The limitations section names the 0.9 threshold as a choice.
 - **[done] Conflict: model name in the AI log.** `docs/ai-log.md` said Opus 5.5 for the setup and Sonnet 5.5 later. `config/agent.yaml` sets Sonnet 5.5 for planner, implementer and reviewer, so the log now says that; the model of the original claude.ai setup session is not recorded in the repo and is stated as such.
-- **[open] Hand check.** Follows in cycle 4 (see "Needs a team decision").
+- **[open] Hand check.** Follows in cycle 4 (see "Needs a team decision"); not scored until then.
 
 ## Cycle 3, T12 (glossary, references, report length)
 - Report was 6,723 words by plain count. Cut to about 4,850: removed the grid tables, the four top-word tables and the error-classification table from the report parts of 04, 05 and 08 (they stay in the code part), and shortened prose in 01-03, 06-11. No result changed.
@@ -176,3 +173,19 @@ before References, tables included; near-duplicates follow the rule above; websi
 ## Cycle 3, T5 (02 report, references)
 - 02 Report: added two sentences on how LOCO was built and rated (keyword retrieval, website-level subcorpus, authors' blind check 85% / 92%), all from `docs/PROJECT_PLAN.md` section 2; licence left out. Library versions copied from `results/run_info.json`. Trimmed the cleaning paragraph.
 - References (D8) **declined**: no 9/11 background source and no extra source for regularised logistic regression could be confirmed from existing files, and no web check is possible here (no invented citations). Hastie et al. (2009) already covers regularised logistic regression. `content/references.md` has no "[open]" markers.
+
+## Cycle 3, owner polish (2026-10-26)
+
+- **Verdict rule.** A hypothesis is supported when the difference points the predicted way and McNemar's test gives
+  p < 0.05 (Dietterich, 1998). Overlapping single-model intervals no longer make a verdict "weakly supported"; H1
+  (p = 0.029) is reported as supported, with the remark that it would not pass a stricter threshold for three tests.
+- **Runtime cell.** `methods_overview.csv` gives runtimes in words ("a few seconds", "about a minute"), so two
+  runs of `fml run-all` give identical files. The harness now runs `fml run-all` twice and fails a gate if any
+  result file differs (except `run_info.json`).
+- **Baseline row.** A score without spread is shown without an interval.
+- **MATTR.** Rewritten as a plain sliding window; same values (tests unchanged and passing).
+- **Report length.** Measured on the assembled report before References: 4,079 words of prose (tables and figure
+  lines excluded, the gate's rule) and 4,901 words by a plain whitespace count with tables. Both are inside
+  3,000-5,000; R8 (about 4,500) is met by the prose count.
+- **Examples in the report.** The six-row examples table stays on the site (section 08, The code); the report quotes
+  two of its rows in prose to save length.

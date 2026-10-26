@@ -25,11 +25,11 @@ An example with three invented websites of ten articles each:
 
 **Keeping the shares equal.** Conspiracy articles are fewer than mainstream ones. We divide the conspiracy websites and the mainstream websites separately, so each part has about the same mix. A fixed random number keeps the result repeatable. The parts are only close to 70/15/15.
 
-**Why we also remove the website names.** The two steps do different jobs. The split stops the model from memorising a site. Removing names stops it from using a name in the text as an easy clue. Think of new exam questions, plus a covered pupil name for a fair marker.
+**Why we still remove website names.** The split keeps each website in one part, but articles often name their own or friendly sites ("read more on ..."). A model could learn "mentions this site, so conspiracy" from the training articles and use that clue on test articles that mention the same site. Removing names makes the model rely on the writing itself.
 
 **Frozen.** We made the split once, before any result existed, and saved it in a file. We never change it, because re-dividing after seeing scores would be cheating. Cleaning removes articles from the parts but never moves one to another part.
 
-**What to look out for.** Only a few conspiracy websites are in the validation and test sets, so one unusual website can move a score noticeably.
+**Watch out.** Validation and test hold only a few conspiracy websites, so one unusual website can move a score.
 
 ## The code
 

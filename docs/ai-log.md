@@ -13,7 +13,7 @@ Claude in a claude.ai session, working with the repo owner (the model of that se
 Product facts used in the design (pricing, authentication, cloud limits) against the official documentation; the data subset against the LOCO paper (3,146 = 939 + 2,207, exact match); the full archive rebuilt from its parts and compared by checksum; the runner's pause-and-resume behaviour with a test.
 
 ### Learned
-About 17% of LOCO's 9/11 documents never mention 9/11, in both classes. This only showed up once we looked at the data instead of trusting the seed label. The team (not the AI) decided: full articles, one cheap LLM asked the source question, the feature groups (no emotion features), removing off-topic articles, public code with private data, pull requests per cycle.
+About 17% of LOCO's 9/11 documents never mention 9/11, in both classes; this was found by looking at the data, not at the seed label. The team decided: full articles, one cheap LLM asked the source question, the feature groups (no emotion features), removing off-topic articles, public code with private data, pull requests per cycle.
 
 ## Cycle 1 (17 Oct 2026)
 
@@ -24,7 +24,7 @@ Claude Code (Sonnet 5.5) wrote the first version of `src/fml/`, the tests, `resu
 Tests compare quoted numbers with `results/`. Open at the end: the corpus licence, the 40 stance codes without human labels, and the review of the LLM temperature and output-limit choices (`docs/decisions.md`).
 
 ### Learned
-Passing number tests did not mean the analysis was well built; cycle 2 rewrote the pipeline.
+Tests that check numbers against files do not show whether the analysis is well designed; the design was reworked in cycle 2.
 
 ## Cycle 2 (17 Oct 2026)
 
@@ -39,7 +39,7 @@ Automated tests (numbers match `results/`, section format and word limits, priva
 - Emotion scores in the AI's first plan were removed by the team, because emotional language is not the same as conspiracy language.
 
 ### Learned
-Tests catch inconsistencies, not wrong reasoning. A glossary only helps if every technical word has an entry.
+Automated checks find inconsistencies, not wrong reasoning. A glossary helps only if every technical word has an entry, so the site links them automatically.
 
 ## Cycle 3 (2026-10-25)
 
@@ -58,7 +58,12 @@ Concrete checks, all automated or recorded in `docs/decisions.md` (none of them 
 The checks that need people are listed in `docs/human-todo.md` (placeholders; nothing there is done yet).
 
 ### Altered or rejected by members
-None recorded yet; members add their cases via `docs/human-todo.md` items 7, 8 and 10.
+- Member A (repo owner) and Member B commented on 11 of the 13 sections of the cycle-2 site; their 18 comments became
+  `requirements/cycle-03.md` (for example: merge results and error analysis, write the hypotheses out in full, keep
+  all three prompts, explain the code snippet by snippet).
+- After reviewing the method, Member A added decisions D10-D13: the feature model is the planned full combination
+  (the AI had kept only the best group by a threshold), all three logistic regressions share one setting, all
+  methods read the same text, and a per-website table must explain the drop from validation to test.
 
 ### Learned
 - A number can match `results/metrics.json` and still stand beside a claim the table does not support; the platform-filter sentence was only caught by asking for a source.
@@ -167,3 +172,23 @@ Hard gates still failing:
 
 ### Reviewer summary
 The cycle-3 content is largely in place. The sections are merged, H1–H3 are numbered and answered, the shared-settings rerun and per-website recall table exist, and the numbers I spot-checked match results/*.json (comparison_test.csv, run_info.json, test log). I could not run Bash, so I did not run the tests or the pipeline. The main gaps are reproducibility (no two-run check and no test run for cycle 3, and a stale timing in docs/reproducibility.md), a report of about 4,900 words against the aim of 4,500, missing classic and 9/11 references (D8), the four-methods table absent from the 01 'Explained simply' (D13), a non-beginner `mattr`, an error analysis that rests on one automatic coder, and process-flavoured wording in limitations and the AI log.
+
+## Cycle 3 - owner review and polish (2026-10-26)
+
+### Produced
+A separate Claude session, working with the repo owner, edited the cycle-3 output directly: the verdict rule (a
+hypothesis counts as supported when McNemar's test gives p < 0.05), the introduction with verified background
+sources, the explanation of why all three feature groups together score lower (from the comparison table), a
+readable rewrite of the repetition measure (same values), shorter report text, and the harness change that runs
+`fml run-all` twice and gives the reviewer the test and pipeline results.
+
+### Checked
+Seven new references were looked up online before they were added; the LOCO paper's own label check (85% / 92%)
+was checked against the paper. `fml run-all` was run twice in the pinned environment with identical results, and
+the full test suite passed with no test skipped (`docs/reproducibility.md`). The number tests caught three edits
+that did not match `results/`; those sentences were rewritten.
+
+### Learned
+The agent's reviewer could not run commands, so it scored reproducibility low for lack of evidence; the harness now
+passes it the results of runs made in code. The agent had also deleted the tests of its own harness; those tests
+are now protected.

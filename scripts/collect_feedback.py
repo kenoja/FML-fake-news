@@ -138,7 +138,8 @@ def requirements_markdown(fb: dict) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cycle", type=int, required=True)
-    ap.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY", "kenoja/FML-fake-news"))
+    ap.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY"), required=not os.environ.get("GITHUB_REPOSITORY"),
+                    help="owner/name; set automatically inside GitHub Actions")
     ap.add_argument("--category", default="Feedback")
     args = ap.parse_args()
     owner, name = args.repo.split("/")
