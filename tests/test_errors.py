@@ -176,7 +176,7 @@ def test_excerpts_skip_boilerplate_and_named_people():
     assert errors.find_excerpt("The page says click on headlines to see full articles here and read more.") is None
     assert errors.find_excerpt("The speaker Barack Obama spoke to the crowd about the long plan for the country today.") is None
     clean = errors.find_excerpt("The plan was delayed by weather in the region for most of the week. " * 5)
-    assert clean and 30 <= len(clean.split()) <= errors.EXCERPT_WORDS + 1
+    assert clean and 20 <= len(clean.split()) <= errors.EXCERPT_WORDS + 1
 
 
 # ---------------------------------------------------------------- excerpt discipline (AGENTS.md hard rule)

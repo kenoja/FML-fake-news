@@ -36,7 +36,7 @@ NAME_ALLOWLIST = {
 }
 _CAP_TOKEN = re.compile(r"[A-Z][\w'’-]*")
 CHECK_COLUMNS = ["doc_id", "website", "human_stance"]     # no Claude stance: the team reads blind
-EXCERPT_WORDS = 40
+EXCERPT_WORDS = 29
 
 STANCE_PROMPT = (
     "You code how a web article treats CONSPIRACY CLAIMS about the 9/11 attacks (for example: the attacks "
@@ -312,7 +312,7 @@ def plain_examples(examples: pd.DataFrame) -> pd.DataFrame:
 def find_excerpt(text: str, words: int = EXCERPT_WORDS, scan: int = 400) -> str | None:
     """First sentence-start window of words that is no boilerplate and names nobody."""
     tokens = str(text).split()[:scan]
-    for size in (words, 35, 30):                      # try shorter windows if no long one is clean
+    for size in (words, 25, 20):                      # try shorter windows if no long one is clean
         for start in range(0, max(len(tokens) - size, 0) + 1):
             if start and not re.search(r"[.!?]$", tokens[start - 1]):
                 continue                              # start only at the beginning of a sentence

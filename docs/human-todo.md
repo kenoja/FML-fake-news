@@ -12,3 +12,5 @@ The stance hand check (item 2) is done with a separate private tool and arrives 
 | 5 | Verify one or two 9/11 background and method references and add them to `content/references.md` (see "Needs a team decision") | Member C | pending |
 | 6 | Read the glossary and section 11 for plain-language understanding | Member E | pending |
 | 7 | Collect cases where the team altered or rejected AI output and add them to `docs/ai-log.md` | Member E | pending |
+| 8 | Add your own checks of AI output for the Cycle 3 block of `docs/ai-log.md` (what you read, compared or changed, with date). Placeholder: nothing recorded yet | Members A-E | pending |
+| 9 | Owner task: in `scripts/collect_feedback.py` replace the default account name in the `--repo` default (line ~141) with a neutral value or require the env var, and set `repo_url` in the site config. The report and site must not carry a personal account name | Repo owner | pending |

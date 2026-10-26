@@ -47,7 +47,15 @@ Tests catch inconsistencies, not wrong reasoning. A glossary only helps if every
 Claude Code (Sonnet 5.5) merged results and error analysis into one section, renamed sections, used one identical set of logistic-regression settings for all three analyses, and scored new final models `final2_*` once on test. It added a per-website recall table, a trivial-baseline row and a methods-at-a-glance table, and rewrote limitations, conclusion and this log. Haiku 5.5 answers were reused from the cache; Sonnet 5.5 coded the new disagreement articles.
 
 ### Checked
-Tests: numbers in text against `results/`, section format and word limits, privacy, frozen split, locked test set (`results/test_access_log.jsonl` shows each `final2_*` id once). The checks that need people are in `docs/human-todo.md`.
+Concrete checks, all automated or recorded in `docs/decisions.md` (none of them is a human action):
+- `tests/test_report_numbers.py` compares every number in the report with `results/metrics.json` and the CSV tables, and every three-decimal number in the sections with `results/`; a second test shows the checker fails when a number is changed.
+- The same file compares the numbers quoted in prose with the ablation table.
+- `tests/test_gates.py` counts the words of the report (3,000-5,000 before References) and of the plain-language parts (450 words).
+- `results/test_access_log.jsonl` was compared with the model ids: each `final2_*` id appears once (`tests/test_test_lock.py`).
+- Sentences were rewritten where a claim went beyond the tables (for example the introduction keeps only what Miani et al. 2022 and Fong et al. 2021 support).
+- Rejected suggestion: the claim that platforms and fact-checkers rely on automatic filters was dropped, because no published source could be confirmed.
+- Rejected suggestion: candidate classic references and 9/11 background sources were not added from memory; they stay open for a member to verify.
+The checks that need people are listed in `docs/human-todo.md` (placeholders; nothing there is done yet).
 
 ### Learned
 A requirements file built from the team's feedback gives cleaner cycles than loose reviewer lists. A fact without a source in `results/` (such as a feature count) must be read from the files, not written from memory.

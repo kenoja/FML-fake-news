@@ -5,19 +5,19 @@ hypothesis: Our results are real but narrow, because the labels describe website
 ---
 ## Explained simply
 
-**The label describes the website, not the article.** An article is "conspiracy" because its website is. A calm news item on a conspiracy website still gets the label, and a mainstream article that rejects a theory is "mainstream". So a model that disagrees with the label is not always wrong. We measure how well a method recovers the kind of website, not whether a text is conspiratorial.
+**The label describes the website, not the article.** An article is "conspiracy" because its website is. A calm news item on a conspiracy website still gets the label, and a mainstream article that rejects a theory is "mainstream". So a model that disagrees with the label is not always wrong. We measure how well a method recovers the kind of website.
 
 **Few websites, and one large one.** We have only 39 conspiracy and 79 mainstream websites. The validation and test sets hold only six conspiracy websites each, and in the test set one site supplies almost half of the conspiracy articles. So we give a range (a confidence interval) with every score.
 
 **The language model may know too much.** The LLM was trained on a huge amount of web text. It may have seen these articles or may know a website's reputation from its name or tone. Our own models cannot use such knowledge. Its very high validation score was also reached on websites that happened to be easier, so it should not be taken at face value.
 
-**The cleaning rules are choices.** We treat two articles as copies when their word weights are more than 90 percent alike. A stricter or looser line would remove a few more or fewer articles. When a copy sat in training, we dropped the other one, and for a pair across validation and test we kept the validation copy, so that no test article repeats an article from the other sets.
+**The cleaning rules are choices.** We treat two articles as copies when their word weights are more than 90 percent alike. A stricter or looser line would remove a few more or fewer articles. Of a pair across validation and test we kept the validation copy, so no test article repeats one from the other sets.
 
 **The error analysis rests on a second AI.** Whether a disputed article is a "label problem" or a "model error" depends on a fixed rule and on the stance that a second language model read from the text. The second reader is itself a Claude model, so the share is a rough estimate. A different rule, or a different reader, would give a different share.
 
 **Hand-made word lists are crude.** They count words and ignore context: "no evidence of a cover-up" counts like "it was a cover-up".
 
-**Style can give a website away.** Even after we delete names, web addresses and repeated menu lines, a typical habit such as writing "posted by" can remain, and a model can use it as a shortcut. The split by website helps, but it cannot remove style signals that similar sites share.
+**Style can give a website away.** Even after we delete names, web addresses and repeated menu lines, a typical habit such as writing "posted by" can remain, and a model can use it as a shortcut. Splitting by website cannot remove style signals that similar sites share.
 
 **Long articles are cut.** All four methods read only the first 3,000 words of an article. On the validation set, 30 articles were longer and lost their ends.
 
