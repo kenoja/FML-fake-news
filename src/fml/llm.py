@@ -252,21 +252,27 @@ def fetch_missing(articles: dict, missing: list, call: dict) -> dict:
     return {record["doc_id"]: record for record in records}
 
 
+def cached_answers(df: pd.DataFrame, key: str, path: Path, max_words: int) -> tuple[dict, dict, list]:
+    """Cut each article to the word limit; return the articles, the cache and the doc_ids not cached yet."""
+    articles = {doc_id: truncate_words(txt, max_words)                      # (text, was it cut?)
+                for doc_id, txt in zip(df["doc_id"], df["txt"])}
+    cache = read_cache(path)
+    missing = [doc_id for doc_id in articles if (doc_id, key) not in cache]
+    return articles, cache, missing
+
+
 def classify(df: pd.DataFrame, variant: str = "v1", pass_id: int = 1, client: Client | None = None,
              cache_file: Path | None = None, cfg: dict | None = None) -> pd.DataFrame:
     """Label every row of `df` (columns doc_id, txt): from the cache first, from the API only on a miss."""
     cfg = cfg or llm_config()
     check_variants([variant])
-    prompt = PROMPTS[variant]
-    key = prompt_hash(prompt, cfg["model"], cfg["max_input_words"], pass_id, cfg["max_output_tokens"])
+    key = cache_key(variant, pass_id, cfg)
     path = cache_file or cache_path(cfg)
-    cache = read_cache(path)
-    articles = {doc_id: truncate_words(txt, cfg["max_input_words"])          # (text, was it cut?)
-                for doc_id, txt in zip(df["doc_id"], df["txt"])}
-    missing = [doc_id for doc_id in articles if (doc_id, key) not in cache]
+    articles, cache, missing = cached_answers(df, key, path, cfg["max_input_words"])
     if missing and client is None:
         client = client_for_missing(missing, variant, key, cfg)
-    call = {"client": client, "prompt": prompt, "key": key, "variant": variant, "pass_id": pass_id, "path": path}
+    call = {"client": client, "prompt": PROMPTS[variant], "key": key, "variant": variant,
+            "pass_id": pass_id, "path": path}
     new = fetch_missing(articles, missing, call)
     records = [new.get(doc_id) or cache[(doc_id, key)] for doc_id in articles]
     return pd.DataFrame([{"doc_id": r["doc_id"], "label": r["label"], "truncated": bool(r["truncated"])}

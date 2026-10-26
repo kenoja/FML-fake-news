@@ -27,7 +27,7 @@ import pandas as pd  # noqa: E402
 from . import errors  # noqa: E402
 from .clean import clean_documents, website_names  # noqa: E402
 from .data import first_words  # noqa: E402
-from .comparison import compact_table, mcnemar_pair, model_row  # noqa: E402
+from .comparison import compact_table, mcnemar_pair, model_row, validation_website_table  # noqa: E402
 from .evaluate import BOOTSTRAP_SEED, N_BOOTSTRAP, bootstrap_ci, classification_metrics, confusion  # noqa: E402
 from .models import (feature_matrix, fit_features, fit_logistic, split_frames, tfidf_vectorizer, top_words,
                      tune_on_validation, word_counts_vectorizer)  # noqa: E402
@@ -462,6 +462,8 @@ def llm_stage() -> dict:
     first, second = runs[chosen], llm_scores(valid, chosen, pass_id=2)
     repeat_agreement = float((first["labels"] == second["labels"]).mean())     # share of equal answers
     savefig(plot_confusion(first["confusion"], f"LLM, prompt {chosen} (validation)"), "llm_validation_confusion")
+    sites = validation_website_table(valid["website"], valid["label"], first["labels"] == "conspiracy")
+    write_table("validation_website_recall", sites)         # shows whether validation was an easier set of websites
     keys = ("precision", "recall", "f1", "confusion")
     values = {"model": cfg["model"], "question": "source: conspiracy-oriented or mainstream website",
               "max_input_words": cfg["max_input_words"], "max_output_tokens": cfg["max_output_tokens"],
@@ -736,6 +738,7 @@ def write_error_tables(coded: pd.DataFrame, sets: pd.DataFrame, examples: pd.Dat
     write_table("error_classification", errors.error_classification_table(coded, sets))
     written = errors.write_check_sample(sample, tables / "stance_check_sample.csv")
     errors.write_claude_answers(sample, tables / "stance_claude_answers.csv")
+    write_table("stance_check_layout", errors.check_sheet_layout())
     write_table("error_examples", examples[["cell", "doc_id", "website", "true_label", "lr_prediction",
                                             "llm_prediction", "stance", "excerpt"]])
     write_table("error_examples_plain", errors.plain_examples(examples))

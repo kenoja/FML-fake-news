@@ -272,6 +272,15 @@ def write_check_sample(sample: pd.DataFrame, path: Path) -> bool:
     return True
 
 
+def check_sheet_layout() -> pd.DataFrame:
+    """Plain description of the blind check sheet, one row per column (no article text, no model answer)."""
+    stances = ", ".join(s.replace("_", " ") for s in STANCES)
+    return pd.DataFrame({"Column": CHECK_COLUMNS,
+                         "What it holds": ["Identifier of one validation article", "The website that published it",
+                                           f"Left empty: the reader ticks one of {stances}"],
+                         "Filled by": ["Prepared", "Prepared", "Each member, without seeing the model's answer"]})
+
+
 def write_claude_answers(sample: pd.DataFrame, path: Path) -> None:
     """Claude's stance for the same documents, kept in a separate file so the team does not see it."""
     path.parent.mkdir(parents=True, exist_ok=True)

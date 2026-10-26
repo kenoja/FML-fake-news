@@ -1,0 +1,4 @@
+Column,What it holds,Filled by
+doc_id,Identifier of one validation article,Prepared
+website,The website that published it,Prepared
+human_stance,"Left empty: the reader ticks one of endorses, rejects or debunks, reports neutrally, no claim","Each member, without seeing the model's answer"

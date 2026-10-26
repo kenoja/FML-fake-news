@@ -39,3 +39,14 @@ def mcnemar_pair(y, pred_a, pred_b, name_a: str, name_b: str) -> dict:
             "a_only_correct": test["a_only_correct"], "b_only_correct": test["b_only_correct"],
             "both_correct": test["both_correct"], "both_wrong": test["both_wrong"],
             "p_value": test["p_value"], "p_text": "< 0.0001" if test["p_value"] < 0.0001 else f"{test['p_value']:.3f}"}
+
+
+def validation_website_table(websites, y, said_conspiracy) -> pd.DataFrame:
+    """Per conspiracy website in validation: articles and the share the LLM calls conspiracy (plain names, no domains)."""
+    frame = pd.DataFrame({"website": np.asarray(websites), "label": np.asarray(y, dtype=bool),
+                          "hit": np.asarray(said_conspiracy, dtype=bool)})
+    frame = frame[frame["label"]]                            # conspiracy articles only
+    sizes = frame.groupby("website")["hit"].agg(["size", "mean"]).sort_values("size", ascending=False)
+    names = {site: f"Validation website {i}" for i, site in enumerate(sizes.index, start=1)}
+    return pd.DataFrame({"Website": sizes.index.map(names), "Conspiracy articles": sizes["size"].to_numpy(),
+                         "Recall: LLM": sizes["mean"].round(4).to_numpy()})

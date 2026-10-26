@@ -1,7 +1,6 @@
 """Feature summary table and figure: what the numeric features look like per class (training rows only)."""
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 
 from . import NUMERIC_GROUPS
@@ -18,15 +17,13 @@ def feature_matrix(texts) -> pd.DataFrame:
 
 
 def feature_summary(train: pd.DataFrame) -> pd.DataFrame:
-    """Per feature: mean per class and the standardised difference (Cohen's d), from training rows."""
+    """Per feature: mean per class and the number of training articles in each class."""
     feats = feature_matrix(train["txt"].tolist())
     y = train["label"].to_numpy(dtype=bool)
     rows = []
     for col in feats.columns:
         a, b = feats.loc[y, col].to_numpy(), feats.loc[~y, col].to_numpy()
-        pooled = np.sqrt(((len(a) - 1) * a.var(ddof=1) + (len(b) - 1) * b.var(ddof=1)) / (len(a) + len(b) - 2))
         rows.append({"feature": col, "mean_conspiracy": a.mean(), "mean_mainstream": b.mean(),
-                     "std_difference": (a.mean() - b.mean()) / pooled if pooled > 0 else 0.0,
                      "n_conspiracy": len(a), "n_mainstream": len(b)})
     return pd.DataFrame(rows)
 

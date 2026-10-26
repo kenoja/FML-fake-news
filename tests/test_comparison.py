@@ -87,3 +87,20 @@ def test_stage_output_has_four_models_plus_baseline_and_three_tests():
     assert (m["a_only_correct"], m["b_only_correct"]) == (int((a_ok & ~b_ok).sum()), int((~a_ok & b_ok).sum()))
     n = m["a_only_correct"] + m["b_only_correct"]
     assert m["p_value"] == pytest.approx(hand_mcnemar_p(min(m["a_only_correct"], m["b_only_correct"]), n), abs=1e-4)
+
+
+def test_validation_website_table_lists_conspiracy_sites_only_with_llm_recall():
+    """Why: a claim that validation websites were easier needs per-website numbers, and mainstream sites must not appear."""
+    from fml.comparison import validation_website_table
+    sites = ["a", "a", "a", "b", "c", "c"]
+    y = [1, 1, 1, 1, 0, 0]
+    table = validation_website_table(sites, y, [1, 1, 0, 0, 1, 0])
+    assert list(table["Conspiracy articles"]) == [3, 1]       # biggest site first, mainstream site c left out
+    assert list(table["Recall: LLM"]) == [0.6667, 0.0]
+    assert table["Website"].str.startswith("Validation website").all()      # real domains stay out
+
+
+def test_check_sheet_layout_matches_the_blind_sheet_columns():
+    from fml.errors import CHECK_COLUMNS, check_sheet_layout
+    layout = check_sheet_layout()
+    assert list(layout["Column"]) == CHECK_COLUMNS and "claude" not in " ".join(layout["Column"]).lower()
