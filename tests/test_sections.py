@@ -13,10 +13,10 @@ from sitegen import build as sitegen
 REPO = Path(__file__).resolve().parents[1]
 SECTIONS = REPO / "content" / "sections"
 SLUGS = ["00-how-to-use", "01-question-and-hypotheses", "02-data-and-cleaning", "03-split-by-website",
-         "04-word-counts", "05-tf-idf", "06-feature-engineering", "07-llm", "08-results",
-         "09-where-they-fail", "10-limitations", "11-conclusion", "12-how-we-used-ai", "99-glossary"]
+         "04-word-counts", "05-tf-idf", "06-feature-engineering", "07-llm", "08-results-and-why-they-fail",
+         "09-limitations", "10-conclusion", "11-how-we-used-ai", "99-glossary"]
 REWRITTEN = ["00-how-to-use", "01-question-and-hypotheses", "02-data-and-cleaning", "03-split-by-website",
-             "04-word-counts", "05-tf-idf", "07-llm", "10-limitations", "11-conclusion"]   # four-part format
+             "04-word-counts", "05-tf-idf", "07-llm", "09-limitations", "10-conclusion"]   # four-part format
 NO_CODE = {"00-how-to-use", "99-glossary"}
 HEADINGS = ["## Explained simply", "## The code", "## Report", "## Check yourself"]
 KEYS = ["title", "part", "hypothesis"]

@@ -346,7 +346,9 @@ def gate_no_article_text(window: int = 30, stride: int = 10) -> list[str]:
 
 
 PROTECTED = ["agent", "sitegen", "scripts", ".github", "config/rubric.yaml", "config/agent.yaml",
-             "config/site.yaml", "requirements"]
+             "config/site.yaml", "requirements",
+             # the tests of the harness itself: the agent must not weaken the checks it is graded by
+             "tests/test_agent_graph.py", "tests/test_gates.py", "tests/test_sitegen.py", "tests/test_collect_feedback.py"]
 
 
 def gate_protected_paths() -> list[str]:
@@ -367,6 +369,22 @@ def gate_site_builds() -> list[str]:
     with tempfile.TemporaryDirectory() as tmp:
         res = sitegen.build(cycle=0, out=Path(tmp) / "site", content=REPO / "content", report_out=None)
     return [f"site cell could not be built: {w}" for w in res.warnings]
+
+
+def results_fingerprint() -> dict[str, str]:
+    """sha256 of every file under results/, except the run's own timing record and caches.
+
+    Two consecutive `fml run-all` runs must give the same fingerprint: that is what
+    "every number is reproducible" means in practice.
+    """
+    root = REPO / "results"
+    skip = {"run_info.json"}
+    return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in sorted(root.rglob("*")) if p.is_file() and p.name not in skip and "cache" not in p.parts}
+
+
+def changed_files(a: dict[str, str], b: dict[str, str]) -> list[str]:
+    return sorted(k for k in a.keys() | b.keys() if a.get(k) != b.get(k))
 
 
 def run_gates(tests_passed: bool, pipeline_ok: bool) -> list[str]:

@@ -19,7 +19,7 @@ import yaml
 REPO = Path(__file__).resolve().parents[1]
 REPORT = REPO / "reports" / "report.md"
 SECTIONS = ["Question and hypotheses", "Data and cleaning", "Splitting by website", "Word counts", "TF-IDF",
-            "TF-IDF plus extra features", "The LLM classifier", "Results", "Where they fail", "Limitations",
+            "TF-IDF plus extra features", "The LLM classifier", "Results and why they fail", "Limitations",
             "Conclusion", "How we used AI"]
 DIGITS = 3   # one rounding rule: every precision, recall, F1 and p-value is written with three decimals
 
@@ -109,6 +109,7 @@ def test_every_number_in_report_comes_from_results():
     body = re.sub(r"https?://\S+", " ", body)
     body = re.sub(r"\b[CM]\d{3,5}[a-z]{0,2}\b|\b[0-9a-f]{16}\b", " ", body)  # article ids and prompt hashes
     body = re.sub(r"\b[Ss]ections? \d+(\.\d+)?|^#+ \d+(\.\d+)?", " ", body, flags=re.M)  # cross-references
+    body = re.sub(r"took about \d+ seconds", " ", body)  # run time is checked against run_info.json in its own test
     body = re.sub(r"0-149 words|150-249 words|>= 250 words|shorter than 250 words", " ", body)  # length thresholds, not results
     bad = unmatched(body, source_numbers())
     assert not bad, f"numbers in the report that are not in results/ or config: {bad}"
@@ -143,7 +144,7 @@ def test_report_length_is_within_the_limit():
 
 ABLATION_WORDS = {  # words that name an ablation row in prose -> model_id in ablation.csv
     "n-gram": "lr_plus_ngrams", "certainty": "lr_plus_epistemic", "epistemic": "lr_plus_epistemic",
-    "style": "lr_plus_style", "all three groups": "lr_extended",
+    "style": "lr_plus_style", "all three groups": "lr_extended", "no n-grams": "lr_nongram_both", "without n-grams": "lr_nongram_both",
 }
 ABLATION_TEXTS = ["content/sections/06-feature-engineering.md", "reports/report.md", "docs/decisions.md"]
 
@@ -177,7 +178,7 @@ def test_ablation_numbers_in_prose_match_the_table(rel):
 
 def test_ablation_checker_catches_a_changed_number():
     rows = _ablation_rows()
-    assert ablation_mismatches("Style features gave 0.894, a change of -0.020 in validation F1.", rows) == []
+    assert ablation_mismatches("Style features gave 0.909, a change of -0.009 in validation F1.", rows) == []
     assert ablation_mismatches("Style features gave 0.913, a change of -0.001 in validation F1.", rows) == ["0.913", "0.001"]
 
 
@@ -203,14 +204,24 @@ def test_every_three_decimal_number_in_sections_comes_from_results():
 def test_section_checker_catches_a_wrong_number():
     nums = source_numbers()
     assert section_mismatches("Precision is 0.985.", nums) == []
-    assert section_mismatches("Precision is 0.986.", nums) == ["0.986"]
+    assert section_mismatches("Precision is 0.214.", nums) == ["0.214"]
+
+
+def test_runtime_sentence_matches_run_info():
+    """The introduction states the run time in whole minutes; it must fit the last run on any machine."""
+    info = json.loads((REPO / "results" / "run_info.json").read_text(encoding="utf-8"))
+    text = (REPO / "content" / "sections" / "01-question-and-hypotheses.md").read_text(encoding="utf-8")
+    words = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8}
+    stated = words[re.search(r"in about (\w+) minutes?", text).group(1)] * 60
+    # machines differ, so "about two minutes" may be off by half either way, never more
+    assert abs(stated - info["run_all_seconds"]) <= 0.5 * stated
 
 
 def test_worked_example_matches_metrics():
     """Section 08 explains scores with the LLM's test counts; they must be the real counts."""
     metrics = json.loads((REPO / "results" / "metrics.json").read_text(encoding="utf-8"))
     llm = next(r for r in metrics["comparison"]["table"] if r["model"] == "final_llm")
-    text = (REPO / "content" / "sections" / "08-results.md").read_text(encoding="utf-8").split("## The code")[0]
+    text = (REPO / "content" / "sections" / "08-results-and-why-they-fail.md").read_text(encoding="utf-8").split("## The code")[0]
     for count in (llm["tp"], llm["tp"] + llm["fn"], llm["fp"], llm["fp"] + llm["tn"]):
         assert re.search(rf"\b{count}\b", text), f"worked example lacks the count {count}"
     for score in ("precision", "recall", "f1"):

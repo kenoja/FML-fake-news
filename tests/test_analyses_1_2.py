@@ -12,7 +12,7 @@ def test_tuning_uses_validation_scores_and_the_configured_grid():
     X_valid = rng.normal(size=(40, 5))
     y_valid = X_valid[:, 0] > 0
     model, grid = tune_on_validation(X_train, y_train, X_valid, y_valid)
-    assert list(grid["C"]) == [0.1, 1, 10]
+    assert list(grid["C"]) == [0.01, 0.1, 1, 10, 100]
     assert grid["chosen"].sum() == 1
     assert model.C == grid.loc[grid["chosen"], "C"].iloc[0]
     assert grid.loc[grid["chosen"], "f1"].iloc[0] == grid["f1"].max()

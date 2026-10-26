@@ -143,7 +143,6 @@ def test_feature_summary_uses_only_the_rows_it_is_given():
     assert (s["n_conspiracy"] == 2).all() and (s["n_mainstream"] == 2).all()
     row = s.set_index("feature").loc["style_exclaim_per_n"]
     assert row["mean_conspiracy"] > row["mean_mainstream"] == 0
-    assert row["std_difference"] > 0
 
 
 @pytest.mark.needs_data

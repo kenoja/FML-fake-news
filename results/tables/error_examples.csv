@@ -1,5 +1,7 @@
-cell,doc_id,website,true_label,lr_prediction,llm_prediction,stance,excerpt
-lr_only_wrong,M0e6b0,foxnews.com,mainstream,conspiracy,mainstream,reports_neutrally,"""This story that we are hearing from the families of those who were killed on ..."
-llm_only_wrong,C0623c,neonnettle.com,conspiracy,conspiracy,mainstream,reports_neutrally,The vacuum left after the invasion is widely believed to have spawned terror group ISIS. ...
-false_positive,M11c1c,politico.eu,mainstream,conspiracy,mainstream,no_claim,"The FBI document indicated that, before the 9-11 attack, agents were ordered to close down ..."
-false_negative,C04a8a,neonnettle.com,conspiracy,mainstream,mainstream,no_claim,"An organization with links to terrorism, that's backed by radical ..."
+cell,doc_id,true_label,lr_prediction,llm_prediction,stance,excerpt
+lr_only_wrong,M1c66a,mainstream,conspiracy,mainstream,reports_neutrally,It is also well known that the Saudi government has long funded mosques and other institutions around the world that ...
+llm_only_wrong,C05f24,conspiracy,conspiracy,mainstream,no_claim,"""A rapist needs to be removed, not negotiated with,” he continued. “These are raping our system, they’re destroying it right ..."
+both_wrong,C0121b,conspiracy,mainstream,mainstream,reports_neutrally,"Some 3,000 died in the 9/11 attacks, after four hijacked passenger planes were crashed into the World Trade Center in New York, the Pentagon and ..."
+label_problem,C03231,conspiracy,mainstream,mainstream,no_claim,"A military judge has set the trial date for five men accused of masterminding the 9/11 attacks that murdered almost 3,000 Americans on September 11, ..."
+false_positive,M0d70e,mainstream,conspiracy,mainstream,no_claim,"Not only is there a smoking gun in the 28 pages, but Saudi Arabia’s fingerprints can be seen all over ..."
+false_negative,C070d2,conspiracy,mainstream,mainstream,no_claim,"The gunman, who fired a semi-automatic weapon inside the synagogue, froze, dropped his gun and sprinted to his car when ..."

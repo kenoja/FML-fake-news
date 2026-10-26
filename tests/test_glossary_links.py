@@ -10,7 +10,7 @@ from sitegen import build as sitegen
 
 REPO = Path(__file__).resolve().parents[1]
 SECTIONS = REPO / "content" / "sections"
-TEACHING = ["04-word-counts", "05-tf-idf", "06-feature-engineering", "07-llm", "08-results", "12-how-we-used-ai"]
+TEACHING = ["04-word-counts", "05-tf-idf", "06-feature-engineering", "07-llm", "08-results-and-why-they-fail","11-how-we-used-ai"]
 JARGON = ["standardised", "threshold", "epistemic"]   # must not appear in 'Explained simply'
 MUST_HAVE_ENTRY = ["threshold", "epistemic marker", "standardise", "logarithm", "sample", "n-gram", "weight",
                    "regularisation", "overfitting", "bootstrap", "confusion matrix", "zero-shot", "token"]

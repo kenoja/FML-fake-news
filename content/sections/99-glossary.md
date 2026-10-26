@@ -27,7 +27,7 @@ Redrawing articles at random with replacement, many times, and recomputing the s
 ### C (regularisation strength)
 Also: C, C value
 
-The number that sets how strong the regularisation penalty is, with an odd twist: small C means a strong penalty and large C a weak one. Like a strictness dial where low C asks for short, simple answers. We tried 0.1, 1 and 10 and kept the best on validation.
+The number that sets how strong the regularisation penalty is, with an odd twist: small C means a strong penalty and large C a weak one. Like a strictness dial where low C asks for short, simple answers. We tried 0.01, 0.1, 1, 10 and 100 and kept the best on validation.
 
 ### Cache
 Also: Saved answers
@@ -43,11 +43,6 @@ A setting that makes mistakes on the rarer class count more during training. "Ba
 Also: Classifiers
 
 A program that puts each item into one of a few groups. Ours decides whether an article comes from a conspiracy-oriented or a mainstream website. Like a mail sorter who looks at each letter and drops it in one of two boxes.
-
-### Cohen's kappa
-Also: Kappa
-
-A score for how much two raters agree, after removing the agreement expected by luck. 1 is perfect agreement, 0 is no better than chance. Like two teachers grading the same essays: if both give most essays a B, they agree often even without thinking, and kappa discounts that.
 
 ### Confidence interval
 Also: 95% confidence interval, interval, Confidence intervals, Intervals
@@ -136,7 +131,7 @@ The correct answer we know for each article: conspiracy-oriented or mainstream w
 Labels that do not fit the article they are attached to. A mainstream site may publish a conspiracy-style piece, and the label still says mainstream. Like a shelf labelled "cookbooks" holding one novel.
 
 ### Leakage
-Also: Data leakage, leak
+Also: Data leakage, target leakage, leak
 
 When information from the test articles sneaks into training, so the scores look better than they are. Like a student who has seen the exam questions in advance.
 
@@ -154,6 +149,11 @@ A way to squash big numbers so that growth slows down: 1, 10 and 100 become 0, 1
 Also: Logistic regressions, Regressions
 
 A simple model that gives each feature a weight, adds up the weighted values for an article and turns the total into a probability. Like a judge adding points for and against, then stating how likely the case is.
+
+### MATTR
+Also: moving-average type-token ratio, type-token ratio
+
+A measure of how much a text repeats itself: the share of different words in a window of 100 words, averaged over every such window along the text. Like asking, in every page of a book, how many words are new. Averaging over windows keeps long texts from looking repetitive just because they are long.
 
 ### McNemar test
 
@@ -176,6 +176,11 @@ When a model memorises quirks of its training articles and then does worse on ne
 ### P-value
 
 A number between 0 and 1 that says how surprising our result would be if there were really no difference. A small p-value (under 0.05) means chance alone is an unlikely explanation. Like how odd ten heads in a row would seem.
+
+### Per-website recall
+Also: Recall per website
+
+Recall worked out separately for each website: of the conspiracy articles one website published, the share a model found. Like checking a teacher's marks class by class, to see which class drags the average down.
 
 ### Precision
 
@@ -213,6 +218,11 @@ A smaller group picked from a bigger one. Our test articles are a sample of all 
 Also: Temperature, default sampling
 
 The randomness a language model uses when picking its next word. We keep the model's default settings, because it rejects a temperature setting. Like a die the model rolls, with a default weighting.
+
+### Shortcut learning
+Also: Shortcut, Target leakage
+
+A model scoring well by using a clue that is not what we care about, such as a website's name or layout. Like a student who passes a test by recognising the handwriting of the questions' author, not by knowing the subject. It is a form of leakage of the label into the input.
 
 ### Stance coding
 Also: Stance, stance code

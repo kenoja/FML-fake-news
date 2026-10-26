@@ -9,7 +9,9 @@ hypothesis: A reader with no technical knowledge can follow every step, test the
 
 **The study in one sentence.** We take news and blog articles about the 9/11 attacks and ask whether a computer can tell if an article was published on a conspiracy-oriented website or on a mainstream website. We try four ways of doing this and compare them.
 
-**Every section has the same four parts.**
+**How the sections are ordered.** The question and the four methods come first (01). Then the data and how we cleaned it (02), and the split of the articles into three groups by website (03). Sections 04 to 07 each build one of the four analyses and show only validation results. Section 08 puts all four side by side on the test articles and asks where and why they fail. Section 09 lists the limits, 10 gives the conclusion, 11 explains how we used AI, and the glossary at the end explains every technical word.
+
+**Every section except this one and the glossary has the same four parts.**
 
 1. **Explained simply.** The idea of the step and the reasons for every choice we made, with an everyday example. This part stands on its own. If you read only this part of every section, you will understand the whole study.
 2. **The code.** The real program that ran, shown in small pieces with a short sentence before each one, followed by the tables and pictures it produced. You can skip it. It is there so that anyone can check what was done.

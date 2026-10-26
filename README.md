@@ -29,15 +29,16 @@ python -m pytest -q                        # tests; those marked needs_data skip
 ```
 
 `fml evaluate-final <model_id>` is the only way to score a model on the locked test split (it is logged).
+The final models are `final2_word_counts`, `final2_tfidf`, `final2_tfidf_features` and `final_llm`.
 All random choices use the seed in `config/project.yaml`.
 
 ## Versions
 
 `requirements-lock.txt` is the exact pin (`pyproject.toml` only gives the ranges that may work). The
-committed results were made with Python 3.11.17, numpy 2.4.6, pandas 3.0.6, scipy 1.17.1,
-scikit-learn 1.9.1, matplotlib 3.11.2, anthropic 1.15.0 and pyyaml 6.0.1 (`results/run_info.json`).
+committed results were made with Python 3.11.17, numpy 2.4.6, pandas 3.1.0, scipy 1.17.1,
+scikit-learn 1.9.1, matplotlib 3.11.2, anthropic 1.17.0 and pyyaml 6.0.1 (`results/run_info.json`).
 
 ## Check that it reproduces
 
 Run `fml run-all` twice and compare `sha256sum results/metrics.json results/tables/*`. Only
-`results/run_info.json` (timing) may differ. The lists from two runs are in `docs/reproducibility.md`.
+`results/run_info.json` (timing) may differ. Checksums and runtime are in `docs/reproducibility.md`.

@@ -8,7 +8,7 @@ import pandas as pd
 
 import fml.models as models
 import fml.pipeline as pipeline
-from fml.ablation import THRESHOLD, choose_best, run_ablation, verdict, verdict_sentence
+from fml.ablation import run_ablation
 
 C_GRID = (0.1, 1.0, 10.0)
 
@@ -43,39 +43,31 @@ def run(df: pd.DataFrame) -> pd.DataFrame:
 def test_planted_informative_feature_helps():
     row = run(planted()).set_index("model_id").loc["plus_signal"]
     assert row["delta_f1"] > 0.15
-    assert row["verdict"] == "above threshold"
 
 
-def test_uninformative_feature_is_not_claimed_to_help():
+def test_uninformative_feature_shows_no_gain():
     row = run(planted(informative=False)).set_index("model_id").loc["plus_signal"]
-    assert row["verdict"] != "above threshold"
+    assert abs(row["delta_f1"]) < 0.01
 
 
 def test_table_has_validation_f1_only():
     """Test-set numbers must never appear in the comparison table."""
     table = run(planted())
-    assert list(table.columns) == ["model_id", "label", "C", "class_weight", "f1", "delta_f1", "verdict"]
-    assert table.loc[table["model_id"] == "words", "verdict"].iloc[0] == "reference"
+    assert list(table.columns) == ["model_id", "label", "C", "class_weight", "f1", "delta_f1"]
+    assert table.loc[table["model_id"] == "words", "delta_f1"].iloc[0] == 0
 
 
 def test_ablation_is_reproducible():
     pd.testing.assert_frame_equal(run(planted()), run(planted()))
 
 
-def test_verdict_needs_a_clear_margin():
-    assert verdict(THRESHOLD) == "above threshold"
-    assert verdict(-THRESHOLD) == "hurts"
-    assert verdict(THRESHOLD / 2) == "no clear gain"
-
-
-def test_choose_best_keeps_plain_tfidf_unless_a_group_clearly_helps():
-    assert choose_best(run(planted(informative=False)), "words")["chosen"] == "words"
-    assert choose_best(run(planted()), "words")["chosen"] == "plus_signal"
-
-
-def test_verdict_sentence_says_no_when_nothing_helps():
-    assert "do not help" in verdict_sentence(run(planted(informative=False)), "words")
-    assert "+signal" in verdict_sentence(run(planted()), "words")
+def test_analysis_3_always_uses_all_three_groups():
+    """No selection rule: the model scored later is TF-IDF + n-grams + certainty words + style, whatever the table says."""
+    variants = pipeline.ablation_variants()
+    assert list(variants) == ["lr_words_v2", "lr_plus_ngrams", "lr_plus_epistemic", "lr_plus_style", "lr_extended", "lr_nongram_both"]
+    features = variants[pipeline.LR_EXTENDED_ID]["features"]
+    assert features["ngram_range"] == [1, 3]
+    assert features["dense_groups"] == ["epistemic", "style"]
 
 
 def test_test_log_has_one_entry_per_model(tmp_path, monkeypatch):

@@ -46,31 +46,25 @@ def mean_sentence_length(text: str, n_words: int) -> float:
     return n_words / len(sentences) if sentences else 0.0
 
 
-def previous_positions(ids: np.ndarray) -> np.ndarray:
-    """For each word, the position of its previous occurrence (-1 if it is new)."""
-    order = np.argsort(ids, kind="stable")
-    prev = np.full(len(ids), -1)
-    same = ids[order][1:] == ids[order][:-1]
-    prev[order[1:][same]] = order[:-1][same]
-    return prev
-
-
 def mattr(tokens: list[str], window: int) -> float:
-    """Share of distinct words, averaged over every `window`-word span (so length does not matter)."""
+    """Share of different words, averaged over every window of `window` words (so length does not matter)."""
     words_lower = [t.lower() for t in tokens]
     n = len(words_lower)
     if n == 0:
         return 0.0
-    if n <= window:
+    if n <= window:                              # a short text is one single window
         return len(set(words_lower)) / n
-    ids = np.unique(np.asarray(words_lower), return_inverse=True)[1].ravel()
-    prev = previous_positions(ids)
-    # a word counts once per window if its previous occurrence lies before the window starts
-    pos = np.arange(n)
-    first = np.maximum(np.maximum(pos - window + 1, prev + 1), 0)
-    last = np.minimum(pos, n - window)
-    distinct_sum = int(np.clip(last - first + 1, 0, None).sum())
-    return distinct_sum / ((n - window + 1) * window)
+    counts = Counter(words_lower[:window])       # how often each word occurs in the current window
+    total = len(counts)                          # different words in the first window
+    for start in range(1, n - window + 1):       # slide the window one word to the right
+        leaving = words_lower[start - 1]
+        counts[leaving] -= 1
+        if counts[leaving] == 0:
+            del counts[leaving]                  # that word is no longer in the window
+        counts[words_lower[start + window - 1]] += 1
+        total += len(counts)
+    windows = n - window + 1
+    return total / (windows * window)
 
 
 def count_quotes(text: str) -> int:
@@ -83,12 +77,11 @@ def style_row(text: str, window: int) -> list[float]:
     """The six style numbers for one article."""
     tokens = words(text)
     n_words = len(tokens)
-    return [allcaps_share(tokens),
-            per_n_words(text.count("!"), n_words),
-            per_n_words(text.count("?"), n_words),
-            per_n_words(count_quotes(text), n_words),
-            mean_sentence_length(text, n_words),
-            mattr(tokens, window)]
+    exclamations = per_n_words(text.count("!"), n_words)
+    questions = per_n_words(text.count("?"), n_words)
+    quotes = per_n_words(count_quotes(text), n_words)
+    return [allcaps_share(tokens), exclamations, questions, quotes,
+            mean_sentence_length(text, n_words), mattr(tokens, window)]
 
 
 def style_matrix(texts, window: int) -> np.ndarray:

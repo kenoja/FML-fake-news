@@ -1,109 +1,134 @@
 # How we used AI
 
 The assignment asks us to document which AI tools we used, what for, and how we checked or adapted
-their output. This log is the raw material for that part of the report. An entry is added
-after every cycle; team members add what they checked or changed by hand.
+their output. This log is the raw material for that part of the report. One short block per cycle;
+the checks that people still have to do are in `docs/human-todo.md`.
 
 ## Setup (16 Oct 2026)
 
-- **Tool:** Claude (Opus 5.5) in a claude.ai session, working with the repo owner.
-- **What it produced:** the project plan (`docs/PROJECT_PLAN.md`) including the literature research for
-  the feature groups; the cycle runner, the site generator (`sitegen/`), the feedback
-  collection script and workflows; the 9/11 data subset and its checksums in the private data repo;
-  the first requirements file and this repo's rules (`AGENTS.md`).
-- **What was checked:** every product fact used in the design (pricing, authentication, cloud limits)
-  against the official documentation; the data subset against the counts in the LOCO paper (3,146 = 939
-  + 2,207, matching exactly); the full archive rebuilt from its parts and compared by checksum; the
-  runner's pause-and-resume behaviour with a test; a nested Claude Code call inside a cloud session.
-- **What the team decided (not the AI):** full articles, one cheap LLM asked the source question,
-  feature groups (no emotion features), removing off-topic articles after the first run, public code with
-  private data, running in Anthropic's cloud, pull requests per cycle.
-- **What we learned:** about 17% of LOCO's 9/11 documents never mention 9/11 at all, in both classes.
-  That only showed up once we looked at the data instead of trusting the seed label.
+### Produced
+Claude in a claude.ai session, working with the repo owner (the model of that session is not recorded in the repo), made the project plan with the literature research for the feature groups, the cycle runner, the site generator, the feedback script, the 9/11 data subset with checksums in the private data repo, the first requirements file and the repo rules. The agent loop from cycle 1 on uses Claude Sonnet 5.5 for planner, implementer and reviewer (`config/agent.yaml`).
 
+### Checked
+Product facts used in the design (pricing, authentication, cloud limits) against the official documentation; the data subset against the LOCO paper (3,146 = 939 + 2,207, exact match); the full archive rebuilt from its parts and compared by checksum; the runner's pause-and-resume behaviour with a test.
+
+### Learned
+About 17% of LOCO's 9/11 documents never mention 9/11, in both classes; this was found by looking at the data, not at the seed label. The team decided: full articles, one cheap LLM asked the source question, the feature groups (no emotion features), removing off-topic articles, public code with private data, pull requests per cycle.
 
 ## Cycle 1 (17 Oct 2026)
 
-- **Tool:** Claude Code (Sonnet 5.5) working task by task under the repository rules; Claude Haiku 5.5 as the classifier under study; Claude Sonnet 5.5 for stance coding in the error analysis.
-- **What it produced:** the first version of `src/fml/`, the tests, `results/`, the notebook sections and the report.
-- **What was checked:** `tests/test_report_numbers.py` and `tests/test_section_numbers.py` compare quoted numbers with `results/`. Cycle 1 ended with open points: the LOCO licence (OSF page unreachable), the 40 stance codes without human labels (kappa `null`), and the review of the LLM temperature and output-limit choices. Details are in `docs/decisions.md`.
+### Produced
+Claude Code (Sonnet 5.5) wrote the first version of `src/fml/`, the tests, `results/`, the sections and the report. Claude Haiku 5.5 was the classifier under study; Claude Sonnet 5.5 coded stance in the error analysis.
+
+### Checked
+Tests compare quoted numbers with `results/`. Open at the end: the corpus licence, the 40 stance codes without human labels, and the review of the LLM temperature and output-limit choices (`docs/decisions.md`).
+
+### Learned
+Tests that check numbers against files do not show whether the analysis is well designed; the design was reworked in cycle 2.
 
 ## Cycle 2 (17 Oct 2026)
 
-- **Produced:** Claude Code (Sonnet 5.5) rewrote the pipeline to the four reported analyses with beginner-style code, added cleaning (off-topic, then near-duplicates), scored the final models once each on test, and drafted the notebook sections, glossary and report. Claude Haiku 5.5 is the classifier under study, not a helper.
-- **Checked:** the automated tests (numbers in text match `results/`, section format and word limits, privacy, frozen split, locked test set) and two identical `fml run-all` runs (`docs/reproducibility.md`). These show that numbers match files, not that they mean the right thing. Still pending for humans: the checks in the table below.
-- **Learned:** tests catch inconsistencies, not wrong reasoning; a glossary only helps if every technical word has an entry; the account name in the repo link and the corpus licence stay open (`docs/decisions.md`, "Needs a team decision").
+### Produced
+Claude Code (Sonnet 5.5) rewrote the pipeline to the four reported analyses with beginner-style code, added cleaning (off-topic, then near-duplicates), scored the final models once each on test, and drafted the sections, glossary and report.
 
-### Human checks (all pending; Members A-E fill in date and what was checked)
+### Checked
+Automated tests (numbers match `results/`, section format and word limits, privacy, frozen split, locked test set) and two identical `fml run-all` runs (`docs/reproducibility.md`). A reviewer in a fresh session scored the result against a checklist; the implementer then fixed what it found. Output that was changed or rejected:
+- A draft sentence said the LLM beat every model. The test table did not support it (high precision, low recall), so the claim was corrected to what the table shows.
+- A draft claim about 200,000 columns had no source in the repo or in `results/`. It was replaced by a figure read from the results.
+- Hypothesis H1 was relabelled and reworded as a plain guess (TF-IDF against word counts); the lettered sub-hypotheses were later merged.
+- Emotion scores in the AI's first plan were removed by the team, because emotional language is not the same as conspiracy language.
 
-| # | Check | Status |
-|---|---|---|
-| 1 | Spot-check about 10 numbers in the report against `results/metrics.json` after the last `fml run-all` | pending |
-| 2 | Fill `human_stance` for the 40 rows of `results/tables/stance_check_sample.csv` | pending |
-| 3 | Confirm the LOCO licence at the OSF page and record it in `docs/decisions.md` | pending |
-| 4 | Read the report and sections once for article text and personal data (including the repo link) | pending |
-| 5 | Decide the open points under "Needs a team decision" in `docs/decisions.md` | pending |
-| 6 | Read the glossary and section 12 for plain-language understanding | pending |
+### Learned
+Automated checks find inconsistencies, not wrong reasoning. A glossary helps only if every technical word has an entry, so the site links them automatically.
 
-## Cycle 2 - agent run (2026-10-17)
+## Cycle 3 (2026-10-25)
+
+### Produced
+Claude Code (Sonnet 5.5) merged results and error analysis into one section, renamed sections, used one identical set of logistic-regression settings for all three analyses, and scored new final models `final2_*` once on test. It added a per-website recall table, a trivial-baseline row and a methods-at-a-glance table, and rewrote limitations, conclusion and this log. Haiku 5.5 answers were reused from the cache; Sonnet 5.5 coded the new disagreement articles.
+
+### Checked
+Concrete checks, all automated or recorded in `docs/decisions.md` (none of them is a human action):
+- `tests/test_report_numbers.py` compares every number in the report with `results/metrics.json` and the CSV tables, and every three-decimal number in the sections with `results/`; a second test shows the checker fails when a number is changed.
+- The same file compares the numbers quoted in prose with the ablation table.
+- `tests/test_gates.py` counts the words of the report (3,000-5,000 before References) and of the plain-language parts (450 words).
+- `results/test_access_log.jsonl` was compared with the model ids: each `final2_*` id appears once (`tests/test_test_lock.py`).
+- Sentences were rewritten where a claim went beyond the tables (for example the introduction keeps only what Miani et al. 2022 and Fong et al. 2021 support).
+- Rejected suggestion: the claim that platforms and fact-checkers rely on automatic filters was dropped, because no published source could be confirmed.
+- Rejected suggestion: candidate classic references and 9/11 background sources were not added from memory; they stay open for a member to verify.
+The checks that need people are listed in `docs/human-todo.md` (placeholders; nothing there is done yet).
+
+### Altered or rejected by members
+- Member A (repo owner) and Member B commented on 11 of the 13 sections of the cycle-2 site; their 18 comments became
+  `requirements/cycle-03.md` (for example: merge results and error analysis, write the hypotheses out in full, keep
+  all three prompts, explain the code snippet by snippet).
+- After reviewing the method, Member A added decisions D10-D13: the feature model is the planned full combination
+  (the AI had kept only the best group by a threshold), all three logistic regressions share one setting, all
+  methods read the same text, and a per-website table must explain the drop from validation to test.
+
+### Learned
+- A number can match `results/metrics.json` and still stand beside a claim the table does not support; the platform-filter sentence was only caught by asking for a source.
+- Counting `final_*` and `final2_*` ids in `results/test_access_log.jsonl` showed that four earlier-configuration models had been scored on test, so `09-limitations` now says so instead of claiming a single scoring.
+- A feature count (47 hand-made words in four lists) had to be read from the results files, not written from memory.
+
+## Cycle 3 - agent run (2026-10-26)
 
 **Verdict:** STOPPED BELOW 10/10 (round limit reached) after 4 review round(s).
 
-**Requirements:** `requirements/cycle-02.md`
+**Requirements:** `requirements/cycle-03.md`
 
 ### What the AI produced (tasks completed)
-- T1: Config, conflicts and open items in decisions.md (plan)
-- T2: Cleaning: off-topic plus near-duplicates, drop the first all-documents run (plan)
-- T3: Remove dropped analyses, make outputs deterministic, beginner-style core code (plan)
-- T4: Analyses 1 and 2: word counts and TF-IDF on validation (plan)
-- T5: Analysis 3: TF-IDF plus engineered features, one comparison per group (plan)
-- T6: Analysis 4: the LLM classifier on validation (plan)
-- T7: One final run: score the four final models on test once (plan)
-- T8: Comparison: one table, confusion matrices, three McNemar tests (plan)
-- T9: Error analysis and the 40-article human check sheet (plan)
-- T10: Sections 00, 01, 02, 03 and 10, 11 rewritten for the audience (plan)
-- T11: Glossary, AI-use section and ai-log (plan)
-- T12: Final gates: report size, number check, reproducibility, README (plan)
+- T1: Same 3,000-word text and same C grid for all logistic regressions (plan)
+- T2: Analysis 3 = TF-IDF plus all three feature groups; ablation table validation-only (plan)
+- T3: Remove Cohen's kappa and unused code; plain error-table labels (plan)
+- T4: Final2 run: score three logistic regressions on test once, per-website table, trivial baseline (plan)
+- T5: Beginner-style code in all shown cells (plan)
+- T6: Rename and merge sections to the new slugs (plan)
+- T7: Write 01-question-and-hypotheses (summary, introduction, H1–H3, methods table) (plan)
+- T8: Rewrite 02-data-and-cleaning and 03-split-by-website (plan)
+- T9: Rewrite 04–07 as validation-only method sections (plan)
+- T10: Write 08-results-and-why-they-fail (plan)
+- T11: Rewrite 09-limitations, 10-conclusion, 11-how-we-used-ai, 00-how-to-use, docs (plan)
+- T12: Glossary, references, report length and final gates (plan)
 - gate-fix-1: Fix failed hard gates (gate)
 - gate-fix-2: Fix failed hard gates (gate)
-- gate-fix-3: Fix failed hard gates (gate)
-- T1: Refactor shown code into beginner-sized functions (review)
-- T2: Same small grid for all five feature models (review)
-- T3: Reproducibility evidence and version pinning (review)
-- T4: Error analysis: examples, blind check sheet, drop unparsed (review)
-- T5: Sections 02/03: data source, licence and split table after cleaning (review)
-- T6: Sections 01/04/05/06: hypotheses, features verdict, alternatives not taken (review)
-- T7: Section 07 and 10: LLM setup, truncation, probe (review)
-- T8: Compact results tables and report length <=5,000 words (review)
-- T9: References file (review)
-- T10: Glossary and Check-yourself questions (review)
-- T11: Interpretation, wording of limitations, decisions cleanup (review)
-- T12: AI-use log and privacy (GitHub name) (review)
+- T1: Fix false LLM-vs-LR per-website claim in 08 (review)
+- T2: One directional wording for H3 and a consistent hypothesis-status rule (review)
+- T3: Trim 01 Explained simply under 450 words and handle 9/11 background sources (D8) (review)
+- T4: Clarify near-duplicate rule and clue-removal counts in 02 (review)
+- T5: Report actual feature column count in 06 and soften causal wording (review)
+- T6: Refactor long stage functions and delete stale prediction files (review)
+- T7: Restore error table and describe the hand-check sheet in 08 (review)
+- T8: Teaching quality in 08 and 01: examples, check questions, glossary (review)
+- T9: Trim report to about 4,500 words (review)
+- T10: Condense AI-use log and split human to-do (review)
+- T11: Privacy and decisions.md cleanup (review)
+- T12: Two identical run-all runs and full test suite; update reproducibility doc (review)
 - gate-fix-1: Fix failed hard gates (gate)
-- T1: Drop out-of-scope analyses (website bootstrap, prior-knowledge probe) from code and metrics (review)
-- T2: Split StyleFeatures and long stage functions into short helpers (review)
-- T3: Make stance-check sample cover several websites (review)
-- T4: Strengthen number-vs-results test and fix section 06 numbers, validation-only verdict (review)
-- T5: Rewrite hypotheses as plain guesses (review)
-- T6: Report self-containment: tools, approach alternatives, licence wording, cross-references (review)
-- T7: Section 08: split explanations, test result lives here (review)
-- T8: Section 09 and 10: excerpts, LLM validation-to-test drop, limitations (review)
-- T9: Section 12 and ai-log: facts only, no process talk (review)
-- T10: Teaching pass and glossary linking (review)
-- T11: Privacy: neutral repo identity and declined-item notes (review)
-- T12: Final reproducible run: run-all twice, rebuild, test, commit (review)
-- T1: Simplify models.py and pipeline fitting paths (code readability) (review)
-- T2: LLM module: named prompts function, cell by name (review)
-- T3: Hypotheses honest and tested separately (01, 08, 11) (review)
-- T4: Data section: provenance, tools, licence, near-duplicate rule (02, 03) (review)
-- T5: Approach, features verdict and example (04, 06) (review)
-- T6: Results: consistent decimals, worked example, bootstrap caveat (08) (review)
-- T7: Errors: better examples, plain table, hand-back instructions (09) (review)
-- T8: Limitations: test-set sentence and LLM drop (10) (review)
-- T9: Report length, headline result, section order (review)
-- T10: Glossary cleanup (review)
-- T11: README, reproducibility evidence, decisions.md, ai-log (review)
-- T12: Final run, test-lock check and full verification (review)
+- T1: Simplify long functions and remove dead ablation code (review)
+- T2: Add validation-only ablation without n-grams and TF-IDF-features analysis (review)
+- T3: Strip cross-model verdicts from sections 04, 05, 07 (review)
+- T4: Rewrite 01 introduction, method table and training environment (review)
+- T5: Fix website-count inconsistency and tidy 02/03 report (review)
+- T6: Rework section 08: McNemar justification, tests table, validation vs test (review)
+- T7: Expand error examples and explain the hand-check sheet (review)
+- T8: Qualify LLM validation score and finish 09/10 wording (review)
+- T9: Glossary, jargon pass and decisions cleanup (review)
+- T10: Update AI-use log and section 11 (review)
+- T11: Privacy follow-ups for protected script (review)
+- T12: Run pipeline twice, document reproducibility, build report, commit (review)
+- gate-fix-1: Fix failed hard gates (gate)
+- gate-fix-2: Fix failed hard gates (gate)
+- T1: Shorten over-long functions and remove unused summary code (review)
+- T2: Section 08: show disagreement examples and per-website sentences (review)
+- T3: Section 08/09: validation-vs-test evidence and label-check wording (review)
+- T4: One consistent H1 verdict and the D13 methods table in section 01 (review)
+- T5: Report text for data, LOCO, tools and references (D8) (review)
+- T6: Explain logistic regression and the choice of C in the report (review)
+- T7: Features: discuss certainty words and lexicon limits (review)
+- T8: Limitations: earlier test scorings and AI-section wording (review)
+- T9: Privacy follow-ups (review)
+- T10: Trim the report to about 4,500 words (review)
+- T11: Reproducibility: two identical runs and full test suite (review)
 - gate-fix-1: Fix failed hard gates (gate)
 
 ### What was checked
@@ -112,39 +137,58 @@ Hard gates still failing:
 
 | criterion | score | evidence |
 |---|---|---|
-| ai_use | 7 | 12 and docs/ai-log.md are factual and short, with no failure diary. But the ai-log pairs 'Cycle 2 Produced' with all six human checks 'pending'; the model name  |
-| approach | 8 | 04–07 explain each analysis step by step and name the dropped alternatives: no other classifiers, no fine-tuning, no emotion features (report 'Word counts', 06) |
-| code_readability | 6 | decisions.md itself records 'Requirement 14 ... partly met ... not confirmed complete ... queued code task (T1)'. Dropped code is still in src: errors.py:293 st |
-| errors | 6 | 09 has the error table, four examples with short excerpts, a model-error vs label-problem split, and 40-row stance_check_sample.csv with instructions. Problems: |
-| evaluation | 7 | One website-grouped split; final models scored once under final_* ids (test_access_log.jsonl lines 5–8); the test-set sentence is in 10-limitations. Statistics  |
-| features | 8 | 06 gives literature reasons per group (Wang & Manning, Marini & Jezek, Fong, Horne & Adali, Pérez-Rosas), a five-row validation table (ablation) and a clear ver |
-| feedback_compliance | 6 | Most of the 18 requirements are addressed (structure, four analyses, final run, results table, stance sheet, glossary, run-all reproducibility). Misses: req 5/R |
-| interpretation | 8 | 10 covers labels describing websites, few websites, LLM prior knowledge, lexicon limits, style shortcuts, one topic and the test-set sentence, all honestly; it  |
-| privacy | 8 | No names, institution or course found in sections or report; excerpts are short (4 in the report table). decisions.md records that scripts/collect_feedback.py c |
-| question | 8 | 01 has one question and H1, H2(a–c), H3 with no gaps, plainly phrased, and each is answered in reports/report.md Results and Conclusion. Weaknesses: the odd sen |
-| report | 7 | The report is 4,961 words by whole-text count including References, so it is near the cap. It is coherent and covers goal, resources, approach, evaluation, find |
-| reproducibility | 8 | docs/reproducibility.md records two identical runs with SHA-256 lists and 98 s runtime (limit 480 s); requirements-lock.txt and seeds exist. Caveats: the eviden |
-| resources | 7 | 02 and the report describe LOCO, the website labels, the 9/11 subset (3,146 docs, 39/79 sites), both cleaning steps with reasons, Haiku 5.5 and pandas/scikit-le |
-| results | 7 | 08 holds one table of all four models, confusion matrices and the three McNemar tests. comparison_test.csv matches the report (e.g. LLM P 0.985, R 0.667, F1 0.7 |
-| teaching | 7 | All 13 sections follow the four-part format, there are analogies (exam, teacher ticking boxes) and the glossary is extensive (≈60 entries incl. TF-IDF, McNemar, |
+| ai_use | 7 | docs/ai-log.md has a Produced / Checked / Learned block per cycle, mostly factual, and report 'How we used AI' explains the planner/implementer/reviewer setup ( |
+| approach | 8 | 01 and the report give the ladder of four methods, an expectation for each, and the alternatives not taken (no other classifiers, no fine-tuning, no emotion fea |
+| code_readability | 6 | Most cells are short with plain names. But src/fml/features/style.py#mattr (l.58–74) uses numpy tricks (np.unique inverse, previous_positions, clip arithmetic)  |
+| errors | 6 | The report has a per-website recall table, a three-group error table with plain labels, and six excerpt examples. The excerpts are within limits. The label-prob |
+| evaluation | 8 | One website-grouped split, training-only fitting, a shared C grid with balanced class weights, the 3,000-word cut for all, and test scored once for each final2_ |
+| features | 7 | Each group has literature support (Wang & Manning 2012; Horne & Adali 2017; Marini & Jezek 2024; Islam 2020; Fong 2021) and a six-row ablation table on validati |
+| feedback_compliance | 6 | Done: D1 slugs, D4 critical LLM assessment (report l.165), D5 summary/intro split, D6 numbered hypotheses, D10 shared settings and final2 rerun, D11 per-website |
+| interpretation | 8 | 09 covers website-vs-text labels, six or fewer websites per split with one site giving 44 of 96 test conspiracy articles, LLM prior knowledge, lexicon limits (4 |
+| privacy | 8 | The report and the section grep show no names, e-mails, institution, or course; test websites are anonymised as Website 1–6; excerpts are short. Open items: scr |
+| question | 8 | 01 Report: H1–H3 numbered without gaps, each written in full, each answered in 08 and the conclusion (reports/report.md l.27, 207–211, 293–297). Executive summa |
+| report | 6 | The report is coherent and covers goal, resources, approach, evaluation, findings, limitations and AI use. By my estimate it is about 4,900 words before Referen |
+| reproducibility | 3 | docs/reproducibility.md says outright that for cycle 3 there is no two-run comparison, no new test count and no test-suite run. decisions.md confirms that 'fml  |
+| resources | 7 | Report 'Data and cleaning' describes LOCO, the website-level labels, the 85%/92% blind check, 3,146→2,608→2,554, the reason for each step, and pandas/scikit-lea |
+| results | 8 | All four models plus the always-mainstream baseline are shown together in 08. Spot-checks match results/tables/comparison_test.csv (e.g. LLM F1 0.795, 0.723–0.8 |
+| teaching | 7 | All sections have the four-part format, and the glossary has ~60 entries including MATTR, ablation, bootstrap, exact test and shortcut learning. Weaknesses: 'Ex |
 
 ### Open reviewer issues
-- [errors] Cohen's kappa is still explained and coded although requirement 13 removed it; decisions.md says the agreement code was removed, but it exists. (content/sections/09-where-they-fail.md (Explained simply, Check yourself, cells stance_agreement); src/fml/errors.py:293; content/sections/99-glossary.md 'Cohen's kappa')
-- [errors] The 09 report error table has raw column names (lr_only_wrong, stance_no_claim, not_sampled) that a non-technical reader cannot read. (reports/report.md Where they fail table; results/tables/error_classification.csv)
-- [evaluation] Test-set numbers appear in the method section 06, which should show validation only, and the 06 callout refers to test. (content/sections/06-feature-engineering.md line 8 and line 78 (Report: 'On test its gain (F1 0.610 against 0.582) ... p = 0.332'))
-- [results] Process and technical leakage in the 03 report: 'The 7 conspiracy websites ... in metrics.json (per_split) are counted before cleaning, the 6 here after it', plus a duplicated paragraph ('split file was made before cleaning' twice; 'Cleaning runs after the split' contradicts the earlier order). (reports/report.md Splitting by website; content/sections/03-split-by-website.md Report)
-- [resources] The licence status is on the site (10-limitations, report), but requirement 17 says the open check is recorded in docs/decisions.md, not on the site; the site should only say where the data come from and that texts are not redistributed. (content/sections/10-limitations.md 'The licence is not confirmed' and Report; reports/report.md Limitations; also 02 libraries)
-- [question] The sentence 'the exact date on which they were written down cannot be shown' is an awkward process remark in a hypothesis section, and H2 is split into H2a–c. (content/sections/01-question-and-hypotheses.md (Explained simply line 20, Report); reports/report.md)
-- [code_readability] decisions.md itself says requirement 14 is only partly met ('not confirmed complete', 'queued code task T1'); unused kappa code remains. (docs/decisions.md Cycle 2 'Requirement 14'; src/fml/errors.py:293; code cells in 06 (mattr, style_row), 09)
-- [feedback_compliance] Several requirements are unmet or partly met (13 kappa, 14 beginner code, 17 licence on site) and seven items are still [open] in decisions.md, including 'Report length counting' and 'Near-duplicate choice' that the owner expects to be resolved up front. (docs/decisions.md 'Needs a team decision'; section 09, 10, 06)
-- [report] The report is about 4,960 words with References, leaving no margin under the gate, and it holds process remarks and a repeated paragraph. (reports/report.md)
-- [features] The verdict on 'do the extra features help?' is a callout plus table and mixes validation and test; the answer is not one plain sentence. (content/sections/06-feature-engineering.md callout and Report; 11-conclusion)
-- [approach] The alternatives we did not take are scattered over several sections. (04 (no other classifiers, fine-tuning), 06 (no emotion features), report 'Word counts')
-- [interpretation] Status-like wording ('None of them is recorded as done', 'The licence has not been confirmed') reads as process, and the near-duplicate threshold and the stance-rule dependence are not discussed as limits. (reports/report.md Limitations and How we used AI; content/sections/10-limitations.md)
-- [ai_use] docs/ai-log.md lists all six human checks as pending and names the setup tool 'Opus 5.5' versus 'Sonnet 5.5' later; 12 holds only one concrete team change. (docs/ai-log.md Setup/Cycle 2 and the table; content/sections/12-how-we-used-ai.md)
-- [teaching] 09's Explained simply introduces kappa and a long 8-step instruction is hidden inside an 'A:' field; the glossary has non-required technical entries while the 450-word limit and link coverage could not be verified here. (content/sections/09-where-they-fail.md; 99-glossary.md)
-- [reproducibility] The evidence covers run-all only, with evaluate-final not re-run; results/run_info.json is modified in the working tree; README steps were not verified. (docs/reproducibility.md; results/run_info.json; README.md)
-- [privacy] The owner's account name sits in the protected scripts/collect_feedback.py default and the OSF URL is in decisions.md; these are recorded but not resolved. (scripts/collect_feedback.py; docs/decisions.md)
+- [reproducibility] No evidence for cycle 3 that two consecutive `fml run-all` runs are identical; the full test suite was not run; docs/reproducibility.md quotes stale timing (96.5 s vs 108.1 s in run_info.json). (docs/reproducibility.md; docs/decisions.md 'Cycle 3, T11 (two identical runs…)')
+- [report] Report is about 4,900 words before References, not about 4,500 (R8), and the introduction has one background source. (reports/report.md (sections 02, 06, 08 are longest))
+- [feedback_compliance] D8 not met: no classic method references beyond Hastie, Manning, McNemar, Efron and no published 9/11 background sources; D13 table missing from the 01 'Explained simply'. (content/references.md; content/sections/01-question-and-hypotheses.md)
+- [code_readability] `mattr` is vectorised with numpy tricks and is not beginner-readable; ablation_variants has a long docstring; the 06 text says 'five models' while there are six. (src/fml/features/style.py:58-74; src/fml/pipeline.py:323; content/sections/06-feature-engineering.md:26)
+- [errors] The label-problem share rests on one automatic coder and the 40-article check sample is from validation, not the test errors; examples don't show why models erred. (reports/report.md l.242–275; results/tables/stance_check_sample.csv)
+- [features] The 'why is all-three worse than TF-IDF' question is left as untested speculation, and simple text and report read the last ablation row differently. (content/sections/06-feature-engineering.md l.20, 77)
+- [interpretation] The development-use sentence names internal ids and process (`final_*`, `final2_*`). (content/sections/09-limitations.md l.26, 46)
+- [ai_use] Log 'Learned' lines read as a diary and member checks are empty. (docs/ai-log.md Cycle 1–3 'Learned'; report 'How we used AI')
+- [teaching] Open team items remain; glossary order and some terms in 'Explained simply' are not plain. (docs/decisions.md 'Needs a team decision'; content/sections/99-glossary.md l.217-222; 06 simple text)
+- [resources] The LLM and its access are barely described in the report, and the licence check stays [open]. (reports/report.md section 07 and 02; docs/decisions.md)
+- [question] The motivation is thin and 'weakly supported' for a significant McNemar result is confusing. (reports/report.md l.11, 28, 207)
+- [approach] The reason for dropping emotion features differs between site and report. (content/sections/01-question-and-hypotheses.md l.19 vs reports/report.md l.23)
+- [evaluation] Honest sentence is hidden under process detail; hand-check sample does not cover test errors. (09-limitations; stance_check_sample.csv)
+- [results] Baseline row shows meaningless CIs '0.000 (0.000 to 0.000)'. (reports/report.md l.179)
+- [privacy] The owner account name remains in a protected script; domains sit beside labels in the check sheet. (scripts/collect_feedback.py; results/tables/stance_check_sample.csv)
 
 ### Reviewer summary
-The cycle-2 rewrite is largely in place. All 14 section files follow the four-part format. The report is about 4,960 words and holds all four models' test results together. The numbers I checked match results/tables/comparison_test.csv. The test-access log shows each final_* model scored once. The main faults are leftovers that break specific requirements. Cohen's kappa is still explained and coded although requirement 13 removed it. Test-set numbers appear in the method section 06. The licence status is stated on the site, against requirement 17. Process remarks leak into the report, such as 'metrics.json (per_split)', the hypothesis-date sentence and 'None of them is recorded as done'. decisions.md itself calls the beginner-code requirement (14) only partly met and lists open items. The report also leaves little margin under the 5,000-word cap. I could not run the test suite or run-all, because the shell refused compound commands, so the glossary-link, word-limit and privacy gates are unverified here.
+The cycle-3 content is largely in place. The sections are merged, H1–H3 are numbered and answered, the shared-settings rerun and per-website recall table exist, and the numbers I spot-checked match results/*.json (comparison_test.csv, run_info.json, test log). I could not run Bash, so I did not run the tests or the pipeline. The main gaps are reproducibility (no two-run check and no test run for cycle 3, and a stale timing in docs/reproducibility.md), a report of about 4,900 words against the aim of 4,500, missing classic and 9/11 references (D8), the four-methods table absent from the 01 'Explained simply' (D13), a non-beginner `mattr`, an error analysis that rests on one automatic coder, and process-flavoured wording in limitations and the AI log.
+
+## Cycle 3 - owner review and polish (2026-10-26)
+
+### Produced
+A separate Claude session, working with the repo owner, edited the cycle-3 output directly: the verdict rule (a
+hypothesis counts as supported when McNemar's test gives p < 0.05), the introduction with verified background
+sources, the explanation of why all three feature groups together score lower (from the comparison table), a
+readable rewrite of the repetition measure (same values), shorter report text, and the harness change that runs
+`fml run-all` twice and gives the reviewer the test and pipeline results.
+
+### Checked
+Seven new references were looked up online before they were added; the LOCO paper's own label check (85% / 92%)
+was checked against the paper. `fml run-all` was run twice in the pinned environment with identical results, and
+the full test suite passed with no test skipped (`docs/reproducibility.md`). The number tests caught three edits
+that did not match `results/`; those sentences were rewritten.
+
+### Learned
+The agent's reviewer could not run commands, so it scored reproducibility low for lack of evidence; the harness now
+passes it the results of runs made in code. The agent had also deleted the tests of its own harness; those tests
+are now protected.

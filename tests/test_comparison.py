@@ -50,14 +50,34 @@ def test_bootstrap_is_reproducible():
     assert model_row("m", Y, A) == model_row("m", Y, A)
 
 
-def test_stage_output_has_four_rows_and_three_tests():
+def test_always_mainstream_baseline_scores_zero_but_looks_accurate_on_accuracy():
+    """Why: shows that accuracy hides the failure on the rarer conspiracy class, so F1 is used instead."""
+    row = model_row("b", Y, np.zeros(len(Y), dtype=bool))
+    assert (row["precision"], row["recall"], row["f1"]) == (0, 0, 0)
+    assert (row["tp"], row["fp"]) == (0, 0) and row["tn"] == 6
+
+
+def test_website_recall_counts_only_conspiracy_articles_of_each_site():
+    from fml.pipeline import conspiracy_website_recall
+    y = np.array([1, 1, 1, 0, 0], dtype=bool)
+    sites = np.array(["a", "a", "b", "a", "c"])
+    table = conspiracy_website_recall(y, {"m": np.array([1, 0, 1, 1, 0], dtype=bool)}, sites)
+    assert list(table["website"]) == ["a", "b"]              # mainstream-only site c is not listed
+    assert list(table["test_articles"]) == [2, 1] and list(table["recall_m"]) == [0.5, 1.0]
+
+
+def test_stage_output_has_four_models_plus_baseline_and_three_tests():
     """Real results: the stored McNemar counts must equal a re-count from the saved predictions."""
     path = results_dir() / "metrics.json"
     comp = json.loads(path.read_text())["comparison"] if path.exists() else {}
     if not comp.get("mcnemar"):
         pytest.skip("comparison stage has not run")
     from fml.pipeline import read_final_predictions
-    assert len(comp["table"]) == 4 and set(comp["mcnemar"]) == {"words_vs_tfidf", "tfidf_vs_features", "best_lr_vs_llm"}
+    models = [r["model"] for r in comp["table"]]
+    assert models == ["final2_word_counts", "final2_tfidf", "final2_tfidf_features", "final_llm", "always_mainstream"]
+    assert comp["baseline"]["accuracy"] == pytest.approx(1 - comp["test_conspiracy"] / comp["test_documents"], abs=1e-3)
+    assert (results_dir() / "tables" / "test_website_recall.csv").is_file()
+    assert set(comp["mcnemar"]) == {"words_vs_tfidf", "tfidf_vs_features", "best_lr_vs_llm"}
     lr, llm = read_final_predictions()
     llm = llm[llm["pass"] == 1].set_index("doc_id")
     best = lr[lr["model_id"] == comp["lr_best"]].set_index("doc_id").loc[llm.index]
@@ -67,3 +87,20 @@ def test_stage_output_has_four_rows_and_three_tests():
     assert (m["a_only_correct"], m["b_only_correct"]) == (int((a_ok & ~b_ok).sum()), int((~a_ok & b_ok).sum()))
     n = m["a_only_correct"] + m["b_only_correct"]
     assert m["p_value"] == pytest.approx(hand_mcnemar_p(min(m["a_only_correct"], m["b_only_correct"]), n), abs=1e-4)
+
+
+def test_validation_website_table_lists_conspiracy_sites_only_with_llm_recall():
+    """Why: a claim that validation websites were easier needs per-website numbers, and mainstream sites must not appear."""
+    from fml.comparison import validation_website_table
+    sites = ["a", "a", "a", "b", "c", "c"]
+    y = [1, 1, 1, 1, 0, 0]
+    table = validation_website_table(sites, y, [1, 1, 0, 0, 1, 0])
+    assert list(table["Conspiracy articles"]) == [3, 1]       # biggest site first, mainstream site c left out
+    assert list(table["Recall: LLM"]) == [0.6667, 0.0]
+    assert table["Website"].str.startswith("Validation website").all()      # real domains stay out
+
+
+def test_check_sheet_layout_matches_the_blind_sheet_columns():
+    from fml.errors import CHECK_COLUMNS, check_sheet_layout
+    layout = check_sheet_layout()
+    assert list(layout["Column"]) == CHECK_COLUMNS and "claude" not in " ".join(layout["Column"]).lower()

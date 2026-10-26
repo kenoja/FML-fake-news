@@ -1,9 +1,9 @@
 category,list_size,class,train_documents,share_with_hit
 hedges,13,conspiracy,542,0.699
-hedges,13,mainstream,1226,0.457
-boosters,12,conspiracy,542,0.494
-boosters,12,mainstream,1226,0.176
-hidden_truth,11,conspiracy,542,0.452
-hidden_truth,11,mainstream,1226,0.032
-debunking,11,conspiracy,542,0.277
-debunking,11,mainstream,1226,0.099
+hedges,13,mainstream,1226,0.454
+boosters,12,conspiracy,542,0.487
+boosters,12,mainstream,1226,0.174
+hidden_truth,11,conspiracy,542,0.439
+hidden_truth,11,mainstream,1226,0.031
+debunking,11,conspiracy,542,0.262
+debunking,11,mainstream,1226,0.095

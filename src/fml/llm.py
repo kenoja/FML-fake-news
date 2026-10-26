@@ -23,38 +23,42 @@ WAIT_SECONDS = 5.0
 MAX_WAIT_SECONDS = 60.0
 PARALLEL_CALLS = 4
 
+ANSWER_FORMAT = ('Answer with strict JSON only, no other text: '
+                 '{"label": "conspiracy" or "mainstream", "confidence": a number from 0 to 1, '
+                 '"reason": "at most 25 words"}')
+
+
+BARE_QUESTION = (
+    "Read the article below. Would it have been published on a conspiracy-oriented website or on a "
+    "mainstream website?\n"
+)
+WITH_DEFINITIONS = (
+    "You classify web articles by the kind of website that published them.\n"
+    "A conspiracy-oriented website mainly promotes alternative explanations of events, claims that "
+    "official accounts are lies or cover-ups, and distrusts mainstream institutions and media.\n"
+    "A mainstream news website is an established news, reference or magazine outlet that reports "
+    "events through sourced reporting and accepts official findings unless evidence contradicts them.\n"
+    "Would the article below have been published on a conspiracy-oriented website or on a mainstream "
+    "news website?\n"
+)
+STEP_BY_STEP = (
+    "You classify web articles by the kind of website that published them: conspiracy-oriented or "
+    "mainstream news.\n"
+    "Work step by step before you answer: (1) note how the article treats sources, evidence and "
+    "official accounts; (2) note its tone and how certain it sounds; (3) decide which kind of "
+    "website would publish it.\n"
+    "Do not decide by topic alone: mainstream sites also write about 9/11 and its conspiracy "
+    "theories, and conspiracy sites also publish other stories. Judge how the article is written "
+    "and argued.\n"
+)
+
+
 def prompt_variants() -> dict[str, str]:
     """The three prompts we try: bare question, with definitions, step by step."""
-    answer_format = ('Answer with strict JSON only, no other text: '
-                     '{"label": "conspiracy" or "mainstream", "confidence": a number from 0 to 1, '
-                     '"reason": "at most 25 words"}')
-    # prompt 1: just the question
-    v1 = (
-        "Read the article below. Would it have been published on a conspiracy-oriented website or on a "
-        "mainstream website?\n" + answer_format
-    )
-    # prompt 2: the question plus a short definition of both website types
-    v2 = (
-        "You classify web articles by the kind of website that published them.\n"
-        "A conspiracy-oriented website mainly promotes alternative explanations of events, claims that "
-        "official accounts are lies or cover-ups, and distrusts mainstream institutions and media.\n"
-        "A mainstream news website is an established news, reference or magazine outlet that reports "
-        "events through sourced reporting and accepts official findings unless evidence contradicts them.\n"
-        "Would the article below have been published on a conspiracy-oriented website or on a mainstream "
-        "news website?\n" + answer_format
-    )
-    # prompt 3: step-by-step advice and a warning not to decide by topic alone
-    v3 = (
-        "You classify web articles by the kind of website that published them: conspiracy-oriented or "
-        "mainstream news.\n"
-        "Work step by step before you answer: (1) note how the article treats sources, evidence and "
-        "official accounts; (2) note its tone and how certain it sounds; (3) decide which kind of "
-        "website would publish it.\n"
-        "Do not decide by topic alone: mainstream sites also write about 9/11 and its conspiracy "
-        "theories, and conspiracy sites also publish other stories. Judge how the article is written "
-        "and argued.\n" + answer_format
-    )
-    return {"v1": v1, "v2": v2, "v3": v3}
+    return {"v1": BARE_QUESTION + ANSWER_FORMAT,
+            "v2": WITH_DEFINITIONS + ANSWER_FORMAT,
+            "v3": STEP_BY_STEP + ANSWER_FORMAT}
+
 
 
 PROMPTS = prompt_variants()
@@ -219,38 +223,57 @@ def append_cache(path: Path, record: dict) -> None:
 
 # ---------------------------------------------------------------- classification
 
+def client_for_missing(missing: list, variant: str, key: str, cfg: dict) -> Client:
+    """A real API client, or a loud error when there is no key."""
+    if not os.environ.get(api_key_env_name(cfg)):
+        raise RuntimeError(f"No cached answer for doc_id {missing[0]} with prompt {variant} (hash {key}) "
+                           f"and {api_key_env_name(cfg)} is not set; {len(missing)} answers are missing")
+    return make_client(cfg)
+
+
+def ask_model(doc_id: str, article: str, cut: bool, call: dict) -> dict:
+    """Ask the model about one article, save its answer in the cache file and return it."""
+    done = call["client"].complete(call["prompt"], article)
+    record = {"doc_id": doc_id, "prompt_hash": call["key"], **parse_response(done.text),
+              "variant": call["variant"], "pass": call["pass_id"], "truncated": cut,
+              "output_tokens": done.output_tokens}
+    append_cache(call["path"], record)
+    return record
+
+
+def fetch_missing(articles: dict, missing: list, call: dict) -> dict:
+    """Ask the model about every article that is not cached yet, several at once."""
+    def ask(doc_id):
+        article, cut = articles[doc_id]
+        return ask_model(doc_id, article, cut, call)
+
+    with ThreadPoolExecutor(PARALLEL_CALLS) as pool:           # ask for several articles at once
+        records = list(pool.map(ask, missing))
+    return {record["doc_id"]: record for record in records}
+
+
+def cached_answers(df: pd.DataFrame, key: str, path: Path, max_words: int) -> tuple[dict, dict, list]:
+    """Cut each article to the word limit; return the articles, the cache and the doc_ids not cached yet."""
+    articles = {doc_id: truncate_words(txt, max_words)                      # (text, was it cut?)
+                for doc_id, txt in zip(df["doc_id"], df["txt"])}
+    cache = read_cache(path)
+    missing = [doc_id for doc_id in articles if (doc_id, key) not in cache]
+    return articles, cache, missing
+
+
 def classify(df: pd.DataFrame, variant: str = "v1", pass_id: int = 1, client: Client | None = None,
              cache_file: Path | None = None, cfg: dict | None = None) -> pd.DataFrame:
     """Label every row of `df` (columns doc_id, txt): from the cache first, from the API only on a miss."""
     cfg = cfg or llm_config()
     check_variants([variant])
-    prompt = PROMPTS[variant]
-    key = prompt_hash(prompt, cfg["model"], cfg["max_input_words"], pass_id, cfg["max_output_tokens"])
+    key = cache_key(variant, pass_id, cfg)
     path = cache_file or cache_path(cfg)
-    cache = read_cache(path)
-    articles = {}
-    for doc_id, txt in zip(df["doc_id"], df["txt"]):
-        articles[doc_id] = truncate_words(txt, cfg["max_input_words"])          # (text, was it cut?)
-    missing = [doc_id for doc_id in articles if (doc_id, key) not in cache]
-
+    articles, cache, missing = cached_answers(df, key, path, cfg["max_input_words"])
     if missing and client is None:
-        if not os.environ.get(api_key_env_name(cfg)):
-            raise RuntimeError(f"No cached answer for doc_id {missing[0]} with prompt {variant} (hash {key}) "
-                               f"and {api_key_env_name(cfg)} is not set; {len(missing)} answers are missing")
-        client = make_client(cfg)
-
-    def ask(doc_id: str) -> dict:
-        article, cut = articles[doc_id]
-        done = client.complete(prompt, article)
-        record = {"doc_id": doc_id, "prompt_hash": key, **parse_response(done.text), "variant": variant,
-                  "pass": pass_id, "truncated": cut, "output_tokens": done.output_tokens}
-        append_cache(path, record)
-        return record
-
-    with ThreadPoolExecutor(PARALLEL_CALLS) as pool:           # ask for several articles at once
-        for record in pool.map(ask, missing):
-            cache[(record["doc_id"], key)] = record
-
-    rows = [{"doc_id": d, "label": cache[(d, key)]["label"], "truncated": bool(cache[(d, key)]["truncated"])}
-            for d in articles]
-    return pd.DataFrame(rows)
+        client = client_for_missing(missing, variant, key, cfg)
+    call = {"client": client, "prompt": PROMPTS[variant], "key": key, "variant": variant,
+            "pass_id": pass_id, "path": path}
+    new = fetch_missing(articles, missing, call)
+    records = [new.get(doc_id) or cache[(doc_id, key)] for doc_id in articles]
+    return pd.DataFrame([{"doc_id": r["doc_id"], "label": r["label"], "truncated": bool(r["truncated"])}
+                         for r in records])

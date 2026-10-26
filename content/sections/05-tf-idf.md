@@ -12,9 +12,11 @@ hypothesis: Giving rare, telling words more weight than everyday words improves 
 **What stays the same.** Everything else is identical to the word-count analysis, so that any difference comes from the weighting alone:
 - The same articles, the same split, the same list of words (words in at least two training articles).
 - The same model, logistic regression, with class weight "balanced" so the smaller conspiracy group is not ignored.
-- The same three values (0.1, 1, 10) of the cautiousness setting (regularisation), and the one with the best validation F1 for the conspiracy class wins.
+- The same five values (0.01, 0.1, 1, 10, 100) of the regularisation strength (C), and the one with the best validation F1 for the conspiracy class wins. F1 balances precision (how many of the articles called conspiracy really are) and recall (how many of the conspiracy articles are found).
 
 **Why we do it this way.** The rarity part (IDF) is learned from the articles, so it must be computed on the training articles only. If validation or test articles shaped it, the model would have peeked at the exam. We also use a gentle version of the term frequency (the logarithm of the count), so that a word repeated fifty times does not count fifty times as much as a word used once. And TF-IDF scales every article to the same length, so long articles do not win just because they have more words.
+
+**Our expectation.** Section 01 says what we expected from rare, telling words. This section only reports the TF-IDF model on the validation articles; the methods are compared in the results section, using the test articles.
 
 **What to look out for.** Better scores do not mean the model understands the articles. It still only sees words. Strong words can still reflect how a website is built rather than what it argues.
 
@@ -34,18 +36,21 @@ The analysis function is shared, so both analyses run in exactly the same way.
 
 <!-- output: results/tables/tfidf_grid.csv -->
 <!-- output: results/figures/tfidf_validation_confusion.png | TF-IDF: validation confusion matrix -->
-<!-- output: results/tables/tfidf_top_words.csv -->
+<!-- output: results/tables/tfidf_top_conspiracy_words.csv -->
+<!-- output: results/tables/tfidf_top_mainstream_words.csv -->
 <!-- output: results/metrics.json#tfidf.validation -->
 
 ## Report
 
-The second analysis keeps everything from the word-count analysis (articles, split, vocabulary, balanced logistic regression, grid for C) and replaces raw counts by TF-IDF weights. Term frequencies were damped with a logarithm, article vectors were scaled to unit length, and the inverse document frequencies were computed on the training articles only. C was again chosen from {0.1, 1, 10} by the validation F1 score of the conspiracy class.
+The second analysis keeps everything from the word-count analysis (articles, split, vocabulary, balanced logistic regression, with its weights and the choice of C by validation F1 as explained in section 4) and replaces raw counts by TF-IDF weights (Salton and Buckley, 1988; Manning, Raghavan and Schütze, 2008). Term frequencies were damped with a logarithm, article vectors were scaled to unit length, and the inverse document frequencies were computed on the training articles only. C was again chosen from {0.01, 0.1, 1, 10, 100} by the validation F1 score of the conspiracy class. All numbers here are validation numbers.
 
-The largest value, C = 10, scored best, with a precision of 0.922, a recall of 0.906 and an F1 score of 0.914 on validation. Compared with word counts (F1 0.839), the weighting raised all three numbers. Unlike with raw counts, larger C helped: because TF-IDF vectors have a fixed length, the model can use larger weights without being dominated by long articles. The chosen value is at the edge of the grid, so a still larger C might do slightly better. We kept the grid as planned.
-
-The strongest words resemble those of the word-count model. "Posted", "truth" and "article" point to conspiracy websites, and "killed", "tower" and "response" point to mainstream websites. Part of this signal therefore reflects how websites write and present their articles. TF-IDF improves the use of words, but it does not remove this limitation. Whether the improvement holds on unseen articles from other websites is only decided by the final comparison.
+The value C = 10 scored best, with a precision of 0.930, a recall of 0.906 and an F1 score of 0.918. The model called 8 mainstream articles conspiracy. Larger C helped here: because TF-IDF vectors have a fixed length, the model can use larger weights without being dominated by long articles. The chosen value lies inside the grid, and C = 100 scored almost the same (F1 0.909).
 
 <!-- output: results/figures/tfidf_validation_confusion.png | TF-IDF: validation confusion matrix -->
+
+TF-IDF down-weights words that occur in nearly every article, damps repeated words, and scales each article to the same length. Everything else was kept identical to the word-count analysis so that only the weighting changes.
+
+The strongest words resemble those of the word-count model. "Posted", "truth" and "article" point to conspiracy websites; "killed", "tower" and "york" point to mainstream websites. Part of this signal reflects how websites present their articles.
 
 ## Check yourself
 

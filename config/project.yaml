@@ -33,8 +33,8 @@ llm_classifier:
   cache_file: results/llm_cache.jsonl   # doc_id + prompt hash + answer only; never article text
 
 lr:                                     # logistic regression, shared by analyses 1-3
-  c_grid: [0.1, 1, 10]
-  class_weight: balanced
+  c_grid: [0.01, 0.1, 1, 10, 100]
+  class_weight: balanced                # fixed for analyses 1-3 (never tuned)
 
 features:
   groups: [ngrams, epistemic, style]    # G4 emotion dropped by team decision

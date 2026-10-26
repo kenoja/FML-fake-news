@@ -1,5 +1,7 @@
 Case,Website type,Logistic regression said,Claude said,What the article does,Excerpt
-Only Claude was right,mainstream,conspiracy,mainstream,reports neutrally,"""This story that we are hearing from the families of those who were killed on ..."
-Only the logistic regression was right,conspiracy,conspiracy,mainstream,reports neutrally,The vacuum left after the invasion is widely believed to have spawned terror group ISIS. ...
-Mainstream article called conspiracy,mainstream,conspiracy,mainstream,makes no claim,"The FBI document indicated that, before the 9-11 attack, agents were ordered to close down ..."
-Conspiracy-site article called mainstream,conspiracy,mainstream,mainstream,makes no claim,"An organization with links to terrorism, that's backed by radical ..."
+Only Claude was right,mainstream,conspiracy,mainstream,reports neutrally,It is also well known that the Saudi government has long funded mosques and other institutions around the world that ...
+Only the logistic regression was right,conspiracy,conspiracy,mainstream,makes no claim,"""A rapist needs to be removed, not negotiated with,” he continued. “These are raping our system, they’re destroying it right ..."
+Both models were wrong,conspiracy,mainstream,mainstream,reports neutrally,"Some 3,000 died in the 9/11 attacks, after four hijacked passenger planes were crashed into the World Trade Center in New York, the Pentagon and ..."
+The label does not fit the text,conspiracy,mainstream,mainstream,makes no claim,"A military judge has set the trial date for five men accused of masterminding the 9/11 attacks that murdered almost 3,000 Americans on September 11, ..."
+Mainstream article called conspiracy,mainstream,conspiracy,mainstream,makes no claim,"Not only is there a smoking gun in the 28 pages, but Saudi Arabia’s fingerprints can be seen all over ..."
+Conspiracy-site article called mainstream,conspiracy,mainstream,mainstream,makes no claim,"The gunman, who fired a semi-automatic weapon inside the synagogue, froze, dropped his gun and sprinted to his car when ..."

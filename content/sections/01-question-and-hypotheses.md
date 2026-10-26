@@ -1,66 +1,79 @@
 ---
 title: Question and hypotheses
 part: Introduction
-hypothesis: Weighting words helps, our own features help, and the language model beats the models we trained.
+hypothesis: Richer inputs help the logistic regression, and the LLM beats all three.
 ---
 ## Explained simply
 
-**The question.** Can a computer tell from the text of a 9/11 article whether it was published on a conspiracy-oriented website or on a mainstream website, and which of four ways of doing this works best?
+**The question.** Can a computer tell from the text of a 9/11 article whether it was published on a conspiracy-oriented website or on a mainstream website?
 
-**Why this question.** Conspiracy websites publish too much to check by hand, so we ask how well computer methods work.
+**The four ways.** All four see the same articles, cut to the same length. Analyses 1 to 3 are all **logistic regression**, a method that learns from examples which words go with which kind of website. They differ only in what we feed it:
+1. **Word counts**: how often each word appears.
+2. **TF-IDF**: the same, but rare and telling words count more than everyday words.
+3. **TF-IDF plus extra features**: we add phrases of two or three words, words of certainty or doubt, and style clues such as capital letters and exclamation marks.
 
-**The four ways.** All four see the same articles.
-1. **Word counts.** The computer counts how often each word appears and learns which words go with which kind of website.
-2. **TF-IDF.** The same idea, but rare and telling words count more than everyday words.
-3. **TF-IDF plus extra features.** We add clues that we made ourselves: words that express certainty or doubt, and features of writing style such as capital letters and exclamation marks.
-4. **A language model.** A ready-made AI system (an LLM) that has never seen our training articles. It reads each article and answers.
+Analysis 4 is different: a ready-made AI system (an **LLM**) that has never seen our training articles. It reads each article and answers. It is not trained by us.
 
-The first three use logistic regression, which we train ourselves. The fourth is used as it comes.
+**Why these four.** They form a ladder from simple to rich. Word counts are the plainest baseline, TF-IDF is the standard small improvement, the extra features test our own ideas about how conspiracy writing sounds, and the LLM shows what a very different, untrained approach can do.
 
-**What is a hypothesis?** A hypothesis is a clear guess that the results can prove wrong. Ours were chosen from what earlier studies suggest and were fixed before the final test run; we cannot show the exact date on which they were written down. We have three, and the second has three parts. Later we say for each one whether the data support it, or that they do not clearly.
+**What we did not do.** We did not try other classifiers, because comparing many methods would hide which *input* matters. We did not fine-tune an LLM, which needs more data and money than we have. We did not use emotion features, because fear and anger are normal in any report on an attack, so they say little about conspiracy.
 
-- **H1.** Weighting words by how telling they are (TF-IDF) improves on plain word counts.
-- **H2.** Adding our own features improves the TF-IDF model. We test three kinds of features one by one:
-  - **H2a.** Certainty words (such as "obviously" or "perhaps") improve it.
-  - **H2b.** Style features (such as capital letters and exclamation marks) improve it.
-  - **H2c.** Phrases of two or three words in a row (n-grams) improve it.
-- **H3.** The language model does better than the best of the three models we trained.
+**The four at a glance.** What each method reads, whether we train it, its settings, how long it runs and what it costs:
 
-**Why these three?** They follow the order of the study: how to represent words (H1), whether our own ideas add anything (H2a to H2c), and the comparison with a very different approach (H3).
+<!-- output: results/tables/methods_overview.csv | The four methods at a glance -->
 
-**How we judge "better".** Most articles come from mainstream websites. A model that always says "mainstream" would be right most of the time and would find no conspiracy article. So we do not use the share of correct answers. We use the F1 score for the conspiracy class, which rewards finding conspiracy articles without false alarms.
+**What is a hypothesis?** A clear guess that the results can prove wrong. We have three:
+- **H1.** TF-IDF beats plain word counts, because telling words carry more information.
+- **H2.** Adding the three feature groups (phrases, certainty words, style) improves TF-IDF.
+- **H3.** The LLM, used without any training, beats the best logistic regression, because it has read a great deal of text.
 
-**A warning about the label.** The label belongs to the website, not to the single article. A calm news item on a conspiracy website still counts as "conspiracy".
+**How we judge "better".** Most articles come from mainstream websites, so a model that always says "mainstream" is right most of the time and finds nothing. We use the F1 score for the conspiracy class instead. To decide whether one model really beats another, we look at the articles where exactly one of the two is right (the McNemar test). If that test gives p below 0.05 and the better model is the one we predicted, the hypothesis is supported.
+
+**A warning.** The label belongs to the website, not the article: a calm news item on a conspiracy website counts as "conspiracy".
+
 ## The code
 
-This section only sets the question. The one piece of code that belongs here is the F1 score that we use to judge every method. It combines how many of the flagged articles are right with how many conspiracy articles we find.
+This section only sets the question. The first function builds the "at a glance" table from the files the pipeline writes. The second is the F1 score we use to judge every method.
 
+<!-- cell: src/fml/methods_overview.py#methods_table -->
+<!-- output: results/tables/methods_overview.csv -->
 <!-- cell: src/fml/evaluate.py#f1_score -->
-
-The real analysis code starts in the next sections.
 
 ## Report
 
-On the 410 held-out test articles, the best method was the large language model Claude Haiku 5.5, which reached an F1 score of 0.795 for the conspiracy class (95% confidence interval 0.723 to 0.857), against 0.610 for the best logistic regression. This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, and how four methods compare on this task. The methods are logistic regression on word counts, logistic regression on TF-IDF weights, logistic regression on TF-IDF weights plus hand-made features, and one low-cost large language model (LLM) used without any training on our data. The hypotheses were chosen from the literature and fixed before the final test run; the exact date on which they were written down cannot be shown.
+### Executive summary
 
-H1. Weighting words by their distinctiveness (TF-IDF) improves on plain word counts.
+We asked whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website. Three logistic regressions (on word counts, on TF-IDF weights, and on TF-IDF plus three hand-made feature groups) and one low-cost language model, Claude Haiku 5.5, were compared on 410 held-out test articles. The language model reached the highest F1 score for the conspiracy class, 0.795 (95% confidence interval 0.723 to 0.857), against 0.567 for word counts, 0.598 for TF-IDF and 0.560 for TF-IDF with features. H1 (weighting words helps) was supported, H2 (hand-made features help) was not supported, and H3 (the language model beats the best logistic regression) was supported. All models found fewer than seven in ten conspiracy articles on the test websites, so none is reliable enough for automatic flagging.
 
-H2. Adding hand-made features improves the TF-IDF model. This is tested separately for three kinds of features: H2a, certainty words; H2b, style features; H2c, phrases of two or three words (n-grams).
+### Introduction
 
-H3. The LLM does better than the best logistic regression.
+The attacks of 11 September 2001 are among the most persistent subjects of conspiracy theories: claims that they were an "inside job", a "controlled demolition" or a "false flag" are held by a notable minority and are actively argued for online (Swami, Chamorro-Premuzic & Furnham, 2010; Wood & Douglas, 2013). Automatic detection of misleading web content has become an active research field (Shu et al., 2017), and much of it asks whether the wording of a text gives away its source. This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, using machine-learning methods for text classification. The articles come from the LOCO corpus, and the label describes the website, not the single article.
 
-All methods are judged by precision, recall and F1 score for the conspiracy class, because the classes are unbalanced: most articles come from mainstream websites, so the share of correct answers would reward a model that never finds a conspiracy article. A hypothesis counts as supported only if the confidence interval and the significance test agree with the direction of the difference. Results are reported in the results section, and the conclusion returns to each hypothesis.
+We compare four methods that form a ladder from simple to rich; the expectation for each is our hypothesis.
+
+1. **Word counts with logistic regression**, the plainest baseline. We expect it to beat always guessing "mainstream", because the two kinds of website use different words.
+2. **TF-IDF with logistic regression**, the standard step beyond counting (Salton & Buckley, 1988; Manning, Raghavan & Schütze, 2008). **H1:** it reaches a higher conspiracy-class F1 than word counts, because distinctive words carry more information than common ones.
+3. **TF-IDF plus three feature groups** (word sequences, certainty words, style). **H2:** it reaches a higher F1 than TF-IDF alone, because these features capture how conspiracy texts argue.
+4. **A low-cost LLM used without training** (zero-shot). **H3:** it reaches a higher F1 than the best logistic regression, because it brings broad knowledge of how texts are written.
+
+We used logistic regression for every trained model because it is simple, well understood and its weights can be read as word lists (Hastie, Tibshirani & Friedman, 2009). We tried no other classifiers, because the question is about the input, not about the best algorithm. We did not fine-tune a language model, which needs more data and money than a small study has, and we left out emotion features, because fear and anger are normal in any report on an attack and so say little about conspiracy content. The whole pipeline, without the language model, runs on an ordinary computer in about two minutes; only the language model needs an internet connection and a paid service.
+
+All methods are judged by precision, recall and F1 for the conspiracy class, because most articles are mainstream and the share of correct answers would reward a model that never finds a conspiracy article. Two models are compared with McNemar's test, which uses only the articles on which exactly one of the two is right; it is the recommended test for two classifiers scored on the same test set (Dietterich, 1998). Separate confidence intervals can overlap even when such a paired difference is real, so they describe uncertainty but do not decide. A hypothesis is supported if the difference points in the predicted direction and McNemar's test gives p < 0.05, and not supported otherwise.
+
+The four methods at a glance:
+
+<!-- output: results/tables/methods_overview.csv | The four methods at a glance -->
 
 ## Check yourself
 
-Q: Why should a hypothesis be fixed before the final test run and not adjusted afterwards?
-A: A guess adjusted after seeing the results would always seem to fit, so the results could no longer show it to be wrong.
+Q: Which of the four methods are trained on our articles, and which is not?
+A: The three logistic regressions learn from our training articles; they differ only in their input. The LLM is used as it comes, with no training on our data.
 
-Q: Why do we test H2a, H2b and H2c separately and not all features together?
-A: Together, a helpful group could be hidden by a harmful one. Separately we see which kind of feature helps and which does not.
+Q: Why do we use only one kind of classifier for analyses 1 to 3?
+A: If the classifier stayed the same and only the input changed, any difference in results can be traced to the input.
 
 Q: Why can a model with high accuracy still be useless here?
 A: Most articles are mainstream, so always answering "mainstream" is right most of the time while finding no conspiracy article.
 
 Q: A calm news item sits on a conspiracy website. Why is it still labelled "conspiracy"?
-A: The label describes the website that published the article, not the content of the single article.
+A: We did not read and label each article; we labelled the website. So a calm article inherits its site's label, and a model that calls it "mainstream" may be reading the text correctly. This is why some "errors" are really label problems.

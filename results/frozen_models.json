@@ -47,5 +47,26 @@
     "selection_source": "validation",
     "at": "2026-10-17T17:32:06+00:00",
     "retroactive": false
+  },
+  "final2_word_counts": {
+    "model_id": "final2_word_counts",
+    "config_hash": "ac0b9ee92760a1a0",
+    "selection_source": "validation",
+    "at": "2026-10-25T22:50:24+00:00",
+    "retroactive": false
+  },
+  "final2_tfidf": {
+    "model_id": "final2_tfidf",
+    "config_hash": "bba844dfd4c01c1d",
+    "selection_source": "validation",
+    "at": "2026-10-25T22:50:50+00:00",
+    "retroactive": false
+  },
+  "final2_tfidf_features": {
+    "model_id": "final2_tfidf_features",
+    "config_hash": "3fe4b3203816d5ca",
+    "selection_source": "validation",
+    "at": "2026-10-25T22:50:51+00:00",
+    "retroactive": false
   }
 }

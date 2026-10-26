@@ -36,7 +36,7 @@ NAME_ALLOWLIST = {
 }
 _CAP_TOKEN = re.compile(r"[A-Z][\w'’-]*")
 CHECK_COLUMNS = ["doc_id", "website", "human_stance"]     # no Claude stance: the team reads blind
-EXCERPT_WORDS = 25
+EXCERPT_WORDS = 29
 
 STANCE_PROMPT = (
     "You code how a web article treats CONSPIRACY CLAIMS about the 9/11 attacks (for example: the attacks "
@@ -83,11 +83,8 @@ def stance_key(cfg: dict | None = None) -> str:
 # ---------------------------------------------------------------- disagreement sets
 
 def disagreement_sets(lr: pd.DataFrame, llm_pred: pd.DataFrame) -> pd.DataFrame:
-    """One row per test document that at least one model gets wrong, with its set.
-
-    Inputs have columns doc_id, label, pred (bool). `error_type` is the LR/LLM-shared kind of mistake in a
-    binary task: a mainstream document called conspiracy is a false positive, the reverse a false negative.
-    """
+    """One row per test document that at least one model gets wrong, with its set."""
+    # inputs have doc_id, label and pred (True = conspiracy)
     m = lr[["doc_id", "label", "pred"]].merge(llm_pred[["doc_id", "pred"]], on="doc_id", suffixes=("_lr", "_llm"))
     if len(m) != len(lr) or len(m) != len(llm_pred):
         raise RuntimeError("LR and LLM predictions cover different test documents")
@@ -96,6 +93,7 @@ def disagreement_sets(lr: pd.DataFrame, llm_pred: pd.DataFrame) -> pd.DataFrame:
     m = m[m["lr_wrong"] | m["llm_wrong"]].copy()
     m["set"] = np.select([m["lr_wrong"] & m["llm_wrong"], m["lr_wrong"]], ["both_wrong", "lr_only_wrong"],
                          "llm_only_wrong")
+    # a mainstream article called conspiracy is a false positive, the reverse a false negative
     m["error_type"] = np.where(m["label"], "false negative", "false positive")
     return m.rename(columns={"pred_lr": "lr_pred", "pred_llm": "llm_pred", "label": "true_label"}) \
             .drop(columns=["lr_wrong", "llm_wrong"]).reset_index(drop=True)
@@ -195,10 +193,7 @@ def stance_client(cfg: dict | None = None):
 
 def code_stances(df: pd.DataFrame, client=None, cache_file: Path | None = None,
                  cfg: dict | None = None) -> pd.DataFrame:
-    """Stance and justification per row of `df` (columns doc_id, txt). Cache first, client only on a miss.
-
-    The cache record is {doc_id, prompt_hash, answer} and nothing else: no article text, no raw reply.
-    """
+    """Stance and justification per row of `df` (columns doc_id, txt), asking the client only on a cache miss."""
     cfg = cfg or stance_config()
     path = cache_file or stance_cache_path(cfg)
     key = stance_key(cfg)
@@ -211,7 +206,7 @@ def code_stances(df: pd.DataFrame, client=None, cache_file: Path | None = None,
                 client = stance_client(cfg)
             article, _ = llm.truncate_words(txt, cfg["max_input_words"])
             answer = parse_stance(client.complete(STANCE_PROMPT, article).text)
-            rec = {"doc_id": doc_id, "prompt_hash": key, "answer": answer}
+            rec = {"doc_id": doc_id, "prompt_hash": key, "answer": answer}   # no article text in the cache
             llm.append_cache(path, rec)
             cache[(doc_id, key)] = rec
         rows.append({"doc_id": doc_id, "claude_stance": rec["answer"]["stance"],
@@ -228,60 +223,62 @@ def missing_stances(doc_ids, cache_file: Path | None = None, cfg: dict | None = 
 # ---------------------------------------------------------------- the rule
 
 def classify_error(true_label: bool, stance: str) -> str:
-    """Explicit rule: does the label describe the text?
-
-    - conspiracy site, but the article rejects/debunks, reports neutrally or makes no claim
-      -> the text does not look like conspiracy content: LABEL PROBLEM (the model's call is understandable);
-    - mainstream site, but the article endorses a conspiracy claim -> LABEL PROBLEM;
-    - everything else (conspiracy site + endorses; mainstream site + rejects / neutral / no claim)
-      -> MODEL WRONG: the text fits its label, the model still missed it. A mainstream article that debunks
-      conspiracy theories is still mainstream content, so a conspiracy call on it is a model mistake
-      (it reacted to the topic), even though it explains the error.
-    """
+    """Does the website label describe the text, or did the model get it wrong?"""
     if stance not in STANCES:
         raise ValueError(f"unknown stance {stance!r}: drop unreadable answers before applying the rule")
     if true_label:
+        # conspiracy site: only an article that endorses a claim fits its label
         return MODEL_WRONG if stance == "endorses" else LABEL_PROBLEM
+    # mainstream site: an article that endorses a claim does not fit its label
+    # (a mainstream article that debunks theories still counts as mainstream)
     return LABEL_PROBLEM if stance == "endorses" else MODEL_WRONG
 
 
-def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
-    """Counts by set x error type: all errors, coded, and the coded ones per verdict.
+PLAIN_LABELS = {"lr_only_wrong": "Only the logistic regression is wrong", "llm_only_wrong": "Only the LLM is wrong",
+                "both_wrong": "Both are wrong", "all": "All errors",
+                "false positive": "Mainstream article called conspiracy",
+                "false negative": "Conspiracy-site article called mainstream",
+                "endorses": "Article endorses a conspiracy claim", "rejects_or_debunks": "Article debunks claims",
+                "reports_neutrally": "Article reports claims neutrally", "no_claim": "Article makes no claim about 9/11",
+                "not_sampled": "Not coded"}
 
-    `coded` holds only readable stances. Columns `model wrong` + `label does not describe the text` +
-    `not_sampled` (error without a usable stance) always add up to `errors_total`.
-    """
+
+def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
+    """Counts by group x error type, with plain labels: all errors, coded, and the coded ones per verdict."""
     rows = []
     for s in (*SETS, "all"):
         for et in ("false positive", "false negative", "all"):
             sel = lambda d: d[((d["set"] == s) | (s == "all")) & ((d["error_type"] == et) | (et == "all"))]  # noqa: E731
             c = sel(coded)
-            rows.append({"set": s, "error_type": et, "errors_total": len(sel(totals)), "coded": len(c),
-                         **{v: int((c["verdict"] == v).sum()) for v in (MODEL_WRONG, LABEL_PROBLEM)},
-                         "not_sampled": len(sel(totals)) - len(c),
-                         **{f"stance_{st}": int((c["claude_stance"] == st).sum()) for st in STANCES}})
+            rows.append({"Group": PLAIN_LABELS[s], "Error type": PLAIN_LABELS.get(et, "All errors"),
+                         "Errors": len(sel(totals)), "Coded": len(c),
+                         "Model wrong": int((c["verdict"] == MODEL_WRONG).sum()),
+                         "Label does not describe the text": int((c["verdict"] == LABEL_PROBLEM).sum()),
+                         PLAIN_LABELS["not_sampled"]: len(sel(totals)) - len(c),
+                         **{PLAIN_LABELS[st]: int((c["claude_stance"] == st).sum()) for st in STANCES}})
     return pd.DataFrame(rows)
 
 
 # ---------------------------------------------------------------- human check
 
-def has_human_input(path: Path) -> bool:
-    """True if a teammate has already typed something into the check file."""
-    if not path.is_file():
-        return False
-    df = pd.read_csv(path, dtype=str, keep_default_na=False)
-    return bool((df["human_stance"].str.strip() != "").any())
-
-
 def write_check_sample(sample: pd.DataFrame, path: Path) -> bool:
-    """Write the blind CSV for the team (doc_id, website, empty human_stance). False if a human started it."""
-    if has_human_input(path):
-        return False
+    """Write the blind CSV for the team; False if the file already exists."""
+    if path.is_file():
+        return False                  # the team's tool is built on these doc_ids: never redraw them
     out = sample.copy()
     out["human_stance"] = ""          # left empty on purpose: the team fills it in
     path.parent.mkdir(parents=True, exist_ok=True)
     out[CHECK_COLUMNS].to_csv(path, index=False)
     return True
+
+
+def check_sheet_layout() -> pd.DataFrame:
+    """Plain description of the blind check sheet, one row per column (no article text, no model answer)."""
+    stances = ", ".join(s.replace("_", " ") for s in STANCES)
+    return pd.DataFrame({"Column": CHECK_COLUMNS,
+                         "What it holds": ["Identifier of one validation article", "The website that published it",
+                                           f"Left empty: the reader ticks one of {stances}"],
+                         "Filled by": ["Prepared", "Prepared", "Each member, without seeing the model's answer"]})
 
 
 def write_claude_answers(sample: pd.DataFrame, path: Path) -> None:
@@ -290,14 +287,15 @@ def write_claude_answers(sample: pd.DataFrame, path: Path) -> None:
     sample[["doc_id", "claude_stance", "claude_justification"]].to_csv(path, index=False)
 
 
-def stance_agreement(check_file: Path, claude_file: Path) -> float:
-    """Cohen's kappa between the team's returned stances and Claude's, on the rows the team filled in."""
-    from sklearn.metrics import cohen_kappa_score
-
-    human = pd.read_csv(check_file, dtype=str, keep_default_na=False)
-    human = human[human["human_stance"].str.strip() != ""]
-    both = human.merge(pd.read_csv(claude_file, dtype=str), on="doc_id")
-    return float(cohen_kappa_score(both["human_stance"].str.strip(), both["claude_stance"]))
+def plain_counts(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
+    """Three rows for the report: articles per group, how many were coded, and the label-problem share."""
+    rows = []
+    for s in SETS:
+        c = coded[coded["set"] == s]
+        problems = int((c["verdict"] == LABEL_PROBLEM).sum())
+        rows.append({"Group": PLAIN_LABELS[s], "Articles": int((totals["set"] == s).sum()), "Coded": len(c),
+                     "Label problems": problems, "Label-problem share": round(problems / len(c), 3)})
+    return pd.DataFrame(rows)
 
 
 # ---------------------------------------------------------------- examples
@@ -305,8 +303,8 @@ def stance_agreement(check_file: Path, claude_file: Path) -> float:
 BOILERPLATE = re.compile(r"click|cached|subscribe|cookie|posted by|copyright|share this|read more|sign up|"
                          r"follow us|advertis|newsletter|all rights|menu|http|www\.|@|\d{4}", re.IGNORECASE)
 EXAMPLE_CASES = {"lr_only_wrong": "Only Claude was right", "llm_only_wrong": "Only the logistic regression was right",
-                 "false_positive": "Mainstream article called conspiracy",
-                 "false_negative": "Conspiracy-site article called mainstream"}
+                 "both_wrong": "Both models were wrong", "label_problem": "The label does not fit the text",
+                 "false_positive": PLAIN_LABELS["false positive"], "false_negative": PLAIN_LABELS["false negative"]}
 STANCE_WORDS = {"endorses": "endorses a claim", "rejects_or_debunks": "debunks claims",
                 "reports_neutrally": "reports neutrally", "no_claim": "makes no claim"}
 
@@ -321,12 +319,9 @@ def plain_examples(examples: pd.DataFrame) -> pd.DataFrame:
 
 
 def find_excerpt(text: str, words: int = EXCERPT_WORDS, scan: int = 400) -> str | None:
-    """First sentence-start window of up to `words` words that is no boilerplate and names nobody.
-
-    Tries `words`, then shorter windows, so an article with few clean passages still gets an excerpt.
-    """
+    """First sentence-start window of words that is no boilerplate and names nobody."""
     tokens = str(text).split()[:scan]
-    for size in (words, 15, 10):
+    for size in (words, 25, 20):                      # try shorter windows if no long one is clean
         for start in range(0, max(len(tokens) - size, 0) + 1):
             if start and not re.search(r"[.!?]$", tokens[start - 1]):
                 continue                              # start only at the beginning of a sentence
@@ -339,14 +334,12 @@ def find_excerpt(text: str, words: int = EXCERPT_WORDS, scan: int = 400) -> str 
 
 
 def pick_examples(sets: pd.DataFrame, texts: pd.Series, seed: int) -> pd.DataFrame:
-    """One example per case, drawn with a seeded shuffle from documents with a clean excerpt.
-
-    `sets` needs doc_id, set, error_type, true_label, lr_pred, llm_pred, claude_stance (coded documents only);
-    `texts` maps doc_id to the article text. Cases: LR right / LLM wrong, LLM right / LR wrong, a false
-    positive and a false negative. One document is used once.
-    """
+    """One example per case, drawn with a seeded shuffle from documents with a clean excerpt."""
+    # `sets` holds the coded documents; `texts` maps doc_id to the article text; each document is used once
     rng = np.random.default_rng(seed)
     pools = {"lr_only_wrong": sets[sets["set"] == "lr_only_wrong"], "llm_only_wrong": sets[sets["set"] == "llm_only_wrong"],
+             "both_wrong": sets[sets["set"] == "both_wrong"],
+             "label_problem": sets[sets.get("verdict", pd.Series("", index=sets.index)) == LABEL_PROBLEM],
              "false_positive": sets[sets["error_type"] == "false positive"],
              "false_negative": sets[sets["error_type"] == "false negative"]}
     rows, used = [], set()

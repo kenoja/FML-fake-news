@@ -1,75 +1,60 @@
 # Reproducibility evidence
 
-`fml run-all` was run twice in a row (2026-10-17, LLM and stance answers from the committed caches, no API
-calls, `evaluate-final` not run). After each run the SHA-256 of `results/metrics.json` and every file in
-`results/tables/` was recorded. The two lists below are identical. They also match the committed files
-(`git status results` showed only `run_info.json` changed, which holds the timing: 98.7 s and 98.4 s,
-limit 480 s). `results/test_access_log.jsonl` was not touched.
+`fml run-all` rebuilds `results/` from the committed LLM and stance caches (no API calls). The three
+logistic regressions (`final2_word_counts`, `final2_tfidf`, `final2_tfidf_features`) and the LLM (`final_llm`)
+were each scored on test once with `fml evaluate-final <model_id>`; `results/test_access_log.jsonl` lists every
+scoring with its configuration hash.
 
-Check it yourself: run `fml run-all`, then `sha256sum results/metrics.json results/tables/*` and compare.
+## Two identical runs (26 Oct 2026)
 
-## Run 1
+In the pinned environment of `requirements-lock.txt` (Python 3.11.17, numpy 2.4.6,
+scikit-learn 1.9.1), `fml run-all` was run twice on 2 CPUs (about
+106 seconds each). All 50 result files except `run_info.json` (the run's own
+timing) were byte-identical between the two runs, and `python -m pytest -q` passed with no test skipped.
+The agent harness now repeats this check after every pipeline run and fails a gate if any file differs.
+
+On a different Python or numpy version one word weight in `word_counts_top_conspiracy_words.csv` can round
+differently in the third decimal (0.098 or 0.099); it is not quoted anywhere in the text.
+
+Check it yourself: run `fml run-all` twice and compare `sha256sum results/metrics.json results/tables/*`.
+
+## Checksums of the committed results
 
 ```
-0ba44256a8e52947b297f88c8b1ae9cf1719df6e22a3e4e45c463f53dc413f54  results/metrics.json
-d76fd2fa1f97ff7c0206ddd54bba093866578329c164caef4a5d0c04c4cae1cc  results/tables/ablation.csv
-4c7a86ef2c277caf935674c6660754dd455c42dab08d7d3d2fe2011a028ce9b8  results/tables/cleaning_log.csv
-297f4c7ecfdd03c9c53e433ea3417e72c660e50f7b64c44c72338929b96a3d69  results/tables/comparison_compact.csv
-0920cea0360486d8695e4a5246ebf8365e9f3137cc0434e29368590e0001278d  results/tables/comparison_test.csv
-444cc0c2e8b9d9e5eca94043d232b36e5763ffb444876e1f93f99aa7a82385d3  results/tables/epistemic_coverage.csv
-0e54a61341a44bf2aee91bcc80dab281c16c4efec6a2b7db3a9546d6d9bcd396  results/tables/error_classification.csv
-33b48e0165315109f543a6f91c2a340703cf110b7465ba837d085aa5b15c1993  results/tables/error_examples.csv
-7424c7ec2d5f9aadff2c7a245376fad06a70f390137c53581aef0f45c1123cad  results/tables/error_examples_plain.csv
+2aaf5ce5c7596c6c4cd935fa4587aabddabf536b7aee6325e31aa305a87be171  results/frozen_models.json
+95ecf467630ef6daab63162932bc6739ec6d18177c375705bb5e345f01517d95  results/metrics.json
+11fb3374205d25f2b000e5ee0d5cc1a583f0b1f79abd74639f83ef97ef99026b  results/tables/ablation.csv
+5e826c9ad1fe2fd2a2df8c9ba6c9008968bf2c70b48e1aaa20ba10787a154ae7  results/tables/cleaning_log.csv
+a5f3722c9718774946779f692a1c410d59d7b2bc75d0d383f7a1ccdd7b1f217a  results/tables/comparison_compact.csv
+0cf0b2030bdfd22c44b924a54e0ce60a7554a15f966e85a018d01f60f68dbdb1  results/tables/comparison_test.csv
+ae8430c767f4fcc70bdf0739466f2f7bef54278fb129b33c4d9a3af95869d772  results/tables/epistemic_coverage.csv
+61363bf16483c6cd321125650154da4f7da69ab17fdf91b4f228aa785684cf15  results/tables/error_classification.csv
+113bf3dab9c8ae92ace70059a6da747301d67c11087ed17886a2a854824ee6c7  results/tables/error_counts_plain.csv
+94568ae832a406d2225a26a42b9803dc98286eec45f6f7677673472b5c21fe63  results/tables/error_examples.csv
+da1e6a2ecec40daaef2d5e57f43ffa85efe78c1c3d818e25e563311235fbd137  results/tables/error_examples_plain.csv
 b62e90654323db4f99328a43e4a294d517712a5c8c42626c9dfbaa85497e6172  results/tables/feature_examples.csv
-f6ed47d341135e9b2560b9f469857a1d754723cd52871114e5d9d7090f5487e8  results/tables/feature_summary.csv
+a8a3202e73f0c20cc087b6e56613f6904e1a44fb978e3f23f163756d3d7cc208  results/tables/feature_summary.csv
 c167da1729952ff530f6b29393aed4d69a75bb94a334749690511bb6fb080c38  results/tables/length_quantiles.csv
 425a56cebe245ddfb8d0aab02f5f0f12b2bba84fc909f94ab43db892d9ff49e0  results/tables/llm_prompt_variants.csv
+3f531803fa0cd8184caadb8974d5929f1ba179f9bb9c8b268ae5461cde6eb0b6  results/tables/mcnemar_tests.csv
+f4d847e2ae414839f9a8fecb81b5fd6c7b8aae7c3464f51a95d87ea4325b0b12  results/tables/methods_overview.csv
+4ae8f0c16e3f9d7598a4604f6fce47077f865654a11a9578f3cf9915ad1a8b71  results/tables/predictions_final2_tfidf.csv
+b5b78ba5dcf2829cc817486bee39b76b67c06a330b25d8c18a169861fd0c6d8a  results/tables/predictions_final2_tfidf_features.csv
+24f115335e8f36d64654a868f97254ad8d8fbca9c8ef4427b2819e5a232cad27  results/tables/predictions_final2_word_counts.csv
 6f839d6ca3f28372c0597ba4359679475af4ed0583cbc1dd7a1eb9811d28ac71  results/tables/predictions_final_llm.csv
-a8dd735b60ceddcd138cd4d639e8153fd684ad80098e245f64f41538a6cd4a30  results/tables/predictions_final_tfidf.csv
-240431377de3e41bad7b365f09f73cb9a997577eae0748efcf9b6aed39d34ffe  results/tables/predictions_final_tfidf_features.csv
-e7dcebb13e7b9586b215f74f7670745cb1245ad29b570fb3d49ae1aa81e5f138  results/tables/predictions_final_word_counts.csv
 500139ab75cd6de7d565da299df7ccc7decf1b9a4a0f84e646dc5599001d2109  results/tables/predictions_llm.csv
 a0ceea0e311c49c951e85bd28bcc1cbfa0b12a9c79c75836782b2004a90f0acc  results/tables/predictions_lr.csv
-01a3ced785ff95cdd63983ee565043071701bf5318871e155a4722ada8d032f8  results/tables/split_summary.csv
+cca8da6623f44c28928029f24efeb36e85a3e30ea6144f69bcb1b7872df5deaa  results/tables/split_summary.csv
+d4213b89677d0910003fe709279567380d987dc4af2ddd5cc6b1438f16b4d724  results/tables/stance_check_layout.csv
 63358373351362b66d5be6ad89cb08386f1ba9ece0e25911b0b881d28aa95580  results/tables/stance_check_sample.csv
 8a64939f66801b72bc7204fef199c12b4f35fb6d5c8fef98db17754fcae65e2d  results/tables/stance_claude_answers.csv
 9a97acb1d2b76d3bc361476180d8ae2ca8f2ba4839afbef5deabca326a4a9f66  results/tables/test_lr.csv
-eaf574019abee27e3cefb481402e218469988ac2039464243f6036b51c62aca4  results/tables/tfidf_grid.csv
-7c28596fabf8e1e5877a80a23b339eab91cb0bc55ec74ca244db34cad8df4fc2  results/tables/tfidf_top_words.csv
-c4affd2889070a661ac02bfb9d4daca585aed9e650223c847d88bdc35ab7bf6c  results/tables/word_counts_grid.csv
-8d6ef3f8a9a5682355d688bf16356d43ef21b777ebe82bfefe51604941a69d31  results/tables/word_counts_top_words.csv
+07cafb070042ca706164cb15137e9449ff34d0c34d50853f377433c755c9af43  results/tables/test_website_recall.csv
+33f4dfa71012304dd4b3c9646c25b561f0dcd900e6ae36eb382f878de7e678bf  results/tables/tfidf_grid.csv
+f71ce780f41a03424077f30ea3db1077dace694edf69454f63f5f60a08439e53  results/tables/tfidf_top_conspiracy_words.csv
+08f80e1da47877479f299f5463c4eaf3d54c5f3e659f9e56336cbc7b6ba3b653  results/tables/tfidf_top_mainstream_words.csv
+8b717fb166e438fa99f78b01d0296ae959df0300ada64a7df87ccf95f5deaba2  results/tables/validation_website_recall.csv
+f02d2f31fdc83ab08628f50daa11487bbaa64c20a86ebdd6c43437b6afdbfe05  results/tables/word_counts_grid.csv
+90c217953be5d8bde71ccc4e0b3d42102118e89343c84de6c9675134baec5746  results/tables/word_counts_top_conspiracy_words.csv
+004faaa13ec9f2a91b1881308b2c590a5d7aba80b942f2e476e74e9871dd5584  results/tables/word_counts_top_mainstream_words.csv
 ```
-
-## Run 2
-
-```
-0ba44256a8e52947b297f88c8b1ae9cf1719df6e22a3e4e45c463f53dc413f54  results/metrics.json
-d76fd2fa1f97ff7c0206ddd54bba093866578329c164caef4a5d0c04c4cae1cc  results/tables/ablation.csv
-4c7a86ef2c277caf935674c6660754dd455c42dab08d7d3d2fe2011a028ce9b8  results/tables/cleaning_log.csv
-297f4c7ecfdd03c9c53e433ea3417e72c660e50f7b64c44c72338929b96a3d69  results/tables/comparison_compact.csv
-0920cea0360486d8695e4a5246ebf8365e9f3137cc0434e29368590e0001278d  results/tables/comparison_test.csv
-444cc0c2e8b9d9e5eca94043d232b36e5763ffb444876e1f93f99aa7a82385d3  results/tables/epistemic_coverage.csv
-0e54a61341a44bf2aee91bcc80dab281c16c4efec6a2b7db3a9546d6d9bcd396  results/tables/error_classification.csv
-33b48e0165315109f543a6f91c2a340703cf110b7465ba837d085aa5b15c1993  results/tables/error_examples.csv
-7424c7ec2d5f9aadff2c7a245376fad06a70f390137c53581aef0f45c1123cad  results/tables/error_examples_plain.csv
-b62e90654323db4f99328a43e4a294d517712a5c8c42626c9dfbaa85497e6172  results/tables/feature_examples.csv
-f6ed47d341135e9b2560b9f469857a1d754723cd52871114e5d9d7090f5487e8  results/tables/feature_summary.csv
-c167da1729952ff530f6b29393aed4d69a75bb94a334749690511bb6fb080c38  results/tables/length_quantiles.csv
-425a56cebe245ddfb8d0aab02f5f0f12b2bba84fc909f94ab43db892d9ff49e0  results/tables/llm_prompt_variants.csv
-6f839d6ca3f28372c0597ba4359679475af4ed0583cbc1dd7a1eb9811d28ac71  results/tables/predictions_final_llm.csv
-a8dd735b60ceddcd138cd4d639e8153fd684ad80098e245f64f41538a6cd4a30  results/tables/predictions_final_tfidf.csv
-240431377de3e41bad7b365f09f73cb9a997577eae0748efcf9b6aed39d34ffe  results/tables/predictions_final_tfidf_features.csv
-e7dcebb13e7b9586b215f74f7670745cb1245ad29b570fb3d49ae1aa81e5f138  results/tables/predictions_final_word_counts.csv
-500139ab75cd6de7d565da299df7ccc7decf1b9a4a0f84e646dc5599001d2109  results/tables/predictions_llm.csv
-a0ceea0e311c49c951e85bd28bcc1cbfa0b12a9c79c75836782b2004a90f0acc  results/tables/predictions_lr.csv
-01a3ced785ff95cdd63983ee565043071701bf5318871e155a4722ada8d032f8  results/tables/split_summary.csv
-63358373351362b66d5be6ad89cb08386f1ba9ece0e25911b0b881d28aa95580  results/tables/stance_check_sample.csv
-8a64939f66801b72bc7204fef199c12b4f35fb6d5c8fef98db17754fcae65e2d  results/tables/stance_claude_answers.csv
-9a97acb1d2b76d3bc361476180d8ae2ca8f2ba4839afbef5deabca326a4a9f66  results/tables/test_lr.csv
-eaf574019abee27e3cefb481402e218469988ac2039464243f6036b51c62aca4  results/tables/tfidf_grid.csv
-7c28596fabf8e1e5877a80a23b339eab91cb0bc55ec74ca244db34cad8df4fc2  results/tables/tfidf_top_words.csv
-c4affd2889070a661ac02bfb9d4daca585aed9e650223c847d88bdc35ab7bf6c  results/tables/word_counts_grid.csv
-8d6ef3f8a9a5682355d688bf16356d43ef21b777ebe82bfefe51604941a69d31  results/tables/word_counts_top_words.csv
-```
-
-Run 1 == run 2: yes (27 files, byte-identical lists).

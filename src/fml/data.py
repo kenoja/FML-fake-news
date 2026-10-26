@@ -20,6 +20,14 @@ def load_corpus() -> pd.DataFrame:
     return df
 
 
+def first_words(text: str, n: int) -> str:
+    """Keep the first `n` words of a text; shorter texts stay exactly as they are."""
+    words = text.split()
+    if len(words) <= n:
+        return text
+    return " ".join(words[:n])
+
+
 def on_topic_mask(df: pd.DataFrame) -> pd.Series:
     """True where the title or text mentions 9/11 (configured pattern)."""
     pattern = re.compile(project_config()["data"]["topic_filter_pattern"], re.IGNORECASE)
