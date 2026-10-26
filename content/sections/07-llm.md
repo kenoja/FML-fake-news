@@ -63,7 +63,7 @@ The analysis: try the three prompts, keep the best by F1, repeat it once.
 
 The fourth analysis uses a language model instead of a trained classifier. Claude Haiku 5.5 received each article without any examples (zero-shot) and answered the source question: would the article appear on a conspiracy-oriented or on a mainstream website? The answers are scored against the same labels as for the logistic regressions.
 
-Articles were cut to their first 3,000 words, as for the other methods, and the model could write up to 1,000 tokens. The model has no temperature setting, so default sampling was used. Three prompts were tried on the validation articles only: the bare question (v1), the question with short definitions of both website types (v2), and a step-by-step version that warns against judging by topic alone (v3). The prompt with the highest conspiracy-class F1 was chosen. Answers were saved, so repeated runs need no new requests.
+Articles were cut to their first 3,000 words, as for the other methods, and the model could write up to 1,000 tokens. The model has no temperature setting, so default sampling was used. Three prompts were tried on the validation articles only: the bare question (v1), the question with short definitions of both website types (v2), and a step-by-step version that warns against judging by topic alone (v3). The prompt with the highest conspiracy-class F1 was chosen.
 
 <!-- output: results/tables/llm_prompt_variants.csv -->
 
@@ -71,9 +71,9 @@ All three prompts reached almost the same F1 score on the 376 validation article
 
 <!-- output: results/figures/llm_validation_confusion.png | LLM: validation confusion matrix of the chosen prompt -->
 
-The model was not fine-tuned and received no solved examples. Fine-tuning needs many labelled articles and would turn a cheap, ready-made tool into a trained one, and few-shot examples drawn from our websites would teach the model our labels, so that its score would no longer show what it can do alone. The comparison with the other methods, which tests the expectation stated in section 1, is made in the results section.
+The model was not fine-tuned and received no solved examples, so that its score shows what a cheap, ready-made tool can do alone. The comparison with the other methods is made in the results section.
 
-Scoring the LLM against website labels is not a fully fair comparison with the trained models, for four reasons. First, the LLM never saw our labels or training websites, so it cannot overfit to them, but it was never taught what our labels mean. Second, the labels describe websites, not texts, so a "wrong" answer may be a correct reading of the text. Third, the model may recognise a site from its style or bylines through its own training; a correct answer can then be memory rather than reading, which the logistic regressions cannot use. Fourth, all methods see only the first 3,000 words.
+Scoring the LLM against website labels is not a fully fair comparison with the trained models. It never saw our labels, so it cannot overfit to them, but it was never taught what they mean. The labels describe websites, not texts, so a "wrong" answer may be a correct reading. And the model may recognise a site from its style or bylines through its own training, which the logistic regressions cannot use.
 
 
 ## Check yourself

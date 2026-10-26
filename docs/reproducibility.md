@@ -15,11 +15,13 @@ and compare. Only `results/run_info.json` (timing) may differ.
 
 ## Status of the two-run comparison
 
-**Not yet recorded for the cycle-3 results.** The task that wrote this file did not run `fml run-all` (the
-harness runs it afterwards, and a task must not run it). The list below is the SHA-256 of the committed
-`results/metrics.json` and `results/tables/*` at the time of writing. The final-gates task must run
-`fml run-all` twice, paste both lists here and state whether they are identical; until it does, this file
-claims no identical runs for cycle 3. (The cycle-2 evidence of two identical runs is in the git history.)
+**Still not recorded for the cycle-3 results.** The final-gates task (T11) was asked to run `fml run-all` twice,
+diff the SHA-256 lists and run `pytest -q`. It could not: the shell command that would start those runs in the
+background was refused (no one could approve it in this session), and the task rules also forbid running
+`fml run-all` and the full test suite inside a task. So there are no new run times, no second checksum list and
+no new test counts. This file therefore claims no identical runs for cycle 3. The list below is the SHA-256 of
+the committed `results/metrics.json` and `results/tables/*` and nothing more. To close the gap, run `fml run-all`
+twice, then `sha256sum results/metrics.json results/tables/*` after each run, and `pytest -q`.
 
 ## Committed files
 

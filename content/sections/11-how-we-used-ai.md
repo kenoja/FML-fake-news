@@ -33,11 +33,11 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 ## Report
 
-**Setup.** The analysis was produced with Claude Code, an AI coding assistant, in three Claude Sonnet 5.5 roles: a planner splits the team's requirements into tasks, an implementer writes code and text and runs the tests, and a reviewer in a fresh session scores the result against a checklist. A generator builds this website and report from the project files, so the code shown is the code that ran.
+**Setup.** The analysis was produced with Claude Code, an AI coding assistant, in three Claude Sonnet 5.5 roles: a planner splits the team's requirements into tasks, an implementer writes code and text and runs the tests, and a reviewer in a fresh session scores the result against a checklist.
 
 **Cycles.** Work ran in three cycles. After each cycle the team read the website and wrote feedback, which became the next cycle's requirements. A log in the repository records what the AI produced and what was checked.
 
-**Checks.** The agent checked every number in the report against the result files with automated tests (`test_report_numbers`); further tests cover length limits, the split, training-only fitting and the locked test set. The agent also rewrote claims that went beyond the tables and left out references it could not confirm. Members' own checks are recorded in the log only where they entered them; so far none are recorded. The team's hand check of 40 articles for the automatic stance coding is planned for the next cycle. Claude Haiku 5.5 is one of the four classifiers under study, not a helper.
+**Checks.** The agent checked every number in the report against the result files with automated tests (`test_report_numbers`); further tests cover length limits, the split, training-only fitting and the locked test set. Members' own checks are recorded in the log only where they entered them; so far none are recorded. The team's hand check of 40 articles for the automatic stance coding is planned for the next cycle. Claude Haiku 5.5 is one of the four classifiers under study, not a helper.
 
 ## Check yourself
 

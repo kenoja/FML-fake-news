@@ -105,7 +105,7 @@ All four final models were scored once on the same 410 test articles (96 from co
 
 <!-- output: results/figures/comparison_confusion.png | Confusion matrices on the test set (rows: true website type, columns: predicted) -->
 
-The LLM has the highest F1 (0.795, interval 0.723 to 0.857), followed by TF-IDF (0.598), word counts (0.567) and TF-IDF with features (0.560). The three logistic regressions have overlapping intervals. The LLM is almost never wrong when it says "conspiracy" (precision 0.985) but misses a third of the conspiracy articles (recall 0.667).
+The LLM has the highest F1 (0.795, interval 0.723 to 0.857), followed by TF-IDF (0.598), word counts (0.567) and TF-IDF with features (0.560). The LLM is almost never wrong when it says "conspiracy" (precision 0.985) but misses a third of the conspiracy articles (recall 0.667).
 
 A bootstrap interval for each model alone does not compare a pair. McNemar's test (McNemar, 1947) compares two models on the same articles by counting the articles where only one of them is right; if the two counts are close, the difference may be chance. We run three exact two-sided tests, one per pair, and use the plain result of each (p < 0.05 counts as a difference).
 
@@ -117,11 +117,7 @@ A bootstrap interval for each model alone does not compare a pair. McNemar's tes
 
 **H3: The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05.** Supported: the LLM is better. F1 is 0.795 against 0.598, the intervals do not overlap, and 4 articles are right only for the best logistic regression (TF-IDF) against 37 only for the LLM (p < 0.0001).
 
-**Why the scores are lower on test than on validation.** Validation F1 was 0.865 for word counts, 0.918 for TF-IDF, 0.896 for TF-IDF with features and 0.987 for the LLM. The figure shows the confusion matrices of the best logistic regression and the LLM on both sets. The test set has fewer and different websites, so the models face sites they never saw. The first table gives the LLM's recall on each conspiracy website of the validation set, the second the recall of every model on each test website.
-
-<!-- output: results/tables/validation_website_recall.csv | Recall of the LLM on the conspiracy articles of each validation website -->
-
-On validation the LLM found between 0.905 and 1.000 of the articles of every conspiracy website, and no validation site was as hard as the large test site below.
+**Why the scores are lower on test than on validation.** Validation F1 was 0.865 for word counts, 0.918 for TF-IDF, 0.896 for TF-IDF with features and 0.987 for the LLM. The test set has fewer and different websites, so the models face sites they never saw. The table gives the recall of every model on each test website.
 
 <!-- output: results/figures/validation_vs_test_confusion.png | Confusion matrices on validation (top) and test (bottom); rows: true website type, columns: predicted -->
 
@@ -135,19 +131,15 @@ Three findings stand out.
 
 **Where the models fail, and why.** The labels describe websites, not articles. We examined the test articles on which the best logistic regression or the LLM disagrees with the label. A second model (Claude Sonnet 5.5) coded the stance of each towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
 
-Of the 70 wrongly classified articles, 69 have a readable coding: 49 are label problems and 20 are model errors. The one article left out is a conspiracy-site article that both models got wrong; the second model's answer for it was not in the required form, and the code drops such answers instead of guessing a stance. The table gives the three groups with the share of coded articles that are label problems.
+Of the 70 wrongly classified articles, 69 have a readable coding: 49 are label problems and 20 are model errors. One article was left out because the second model's answer was not in the required form. The table gives the three groups with the share of coded articles that are label problems.
 
 <!-- output: results/tables/error_counts_plain.csv | Test articles wrongly classified, by who is wrong, and the share that are label problems -->
 
 <!-- output: results/tables/error_examples_plain.csv | Examples where the models disagree -->
 
-Each row is one test article with a short excerpt. The first two rows show that the two models make different mistakes: each is sometimes right where the other is wrong. The rows where both models are wrong, or where the label does not fit the text, show articles that carry little or no conspiracy claim, so the website label describes them badly.
+Each row is one test article with a short excerpt; rows where the label does not fit the text show articles with little or no conspiracy claim.
 
-The label-problem share rests on automatic coding by a Claude model, so it is a rough estimate; the coder of the 49 label problems among the 69 coded articles belongs to the same model family as the classifier under test, the LLM. For a hand check, the file stance_check_sample.csv lists 40 validation articles, with the model's answer kept in a separate file so the team reads blind. The table shows the layout of the sheet.
-
-<!-- output: results/tables/stance_check_layout.csv | Layout of the 40-row check sheet -->
-
-Each member reads the article without seeing that answer and ticks one of the four stances in the sheet, and the team then compares the ticks with the model's answers, article by article. The sheet has not been filled in yet, so no agreement is reported.
+The label-problem share rests on automatic coding by a Claude model, so it is a rough estimate; the coder of the 49 label problems among the 69 coded articles belongs to the same model family as the classifier under test, the LLM. A hand check on 40 validation articles is prepared but not yet filled in, so no agreement is reported.
 
 ## Check yourself
 Q: A model that always answers "mainstream" is right most of the time. Why do we still not use accuracy?

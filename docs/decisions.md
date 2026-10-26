@@ -149,6 +149,10 @@ before References, tables included; near-duplicates follow the rule above; websi
 - **Skipped:** no 9/11-conspiracy background sources were added, because none could be confirmed without a web check (no invented references). Still a team decision.
 - **Skipped:** I did not run `fml run-all` twice or the full test suite in this task (the task rules say the harness does that); only the glossary, gates, privacy, report-numbers, comparison, sections and sitegen tests were run (86 passed).
 
+## Cycle 3, T11 (two identical runs, full test suite)
+- **Skipped:** `fml run-all` twice, the checksum diff and `pytest -q` were NOT run. The command to start them was denied (no approval surface in this session) and the task rules forbid running them inside a task. No determinism check, run time or test count exists for cycle 3. `docs/reproducibility.md` says the same and lists only the committed checksums.
+- Needs a team decision / next run: execute the two runs and the test suite by hand (or via the harness) and paste the results into `docs/reproducibility.md`.
+
 ## D8 background sources on 9/11 conspiracy content (declined, cycle 3 T3)
 - WebSearch was denied in this session (no approval surface), so no extra source could be verified. No reference was added from memory; the 01 introduction keeps only claims supported by Miani et al. (2022) and Fong et al. (2021). Still a team decision: a member can verify one or two sources and add them.
 - 01 "Explained simply" trimmed (method table marker removed there; it stays in the Report).
