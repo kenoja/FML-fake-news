@@ -722,7 +722,7 @@ def code_disagreements(sets: pd.DataFrame, frame: pd.DataFrame, cfg: dict, seed:
 
 
 def pick_examples(coded: pd.DataFrame, frame: pd.DataFrame, seed: int) -> pd.DataFrame:
-    """Four disagreement examples with a short excerpt, picked by a seeded rule among coded articles."""
+    """Six disagreement examples with a short excerpt, picked by a seeded rule among coded articles."""
     ex = errors.pick_examples(coded, frame["txt"], seed)
     ex["website"] = ex["doc_id"].map(frame["website"])
     for col in ("true_label", "lr_pred", "llm_pred"):

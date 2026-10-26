@@ -9,11 +9,11 @@ hypothesis: Our results are real but narrow, because the labels describe website
 
 **Few websites, and one large one.** We have only 39 conspiracy and 79 mainstream websites. The validation and test sets hold only six conspiracy websites each, and in the test set one site supplies almost half of the conspiracy articles. So we give a range (a confidence interval) with every score.
 
-**The language model may know too much.** The LLM was trained on a huge amount of web text. It may have seen these articles or may know a website's reputation from its name or tone. Our own models cannot use such knowledge.
+**The language model may know too much.** The LLM was trained on a huge amount of web text. It may have seen these articles or may know a website's reputation from its name or tone. Our own models cannot use such knowledge. Its very high validation score was also reached on websites that happened to be easier, so it should not be taken at face value.
 
 **The cleaning rules are choices.** We treat two articles as copies when their word weights are more than 90 percent alike. A stricter or looser line would remove a few more or fewer articles. When a copy sat in training, we dropped the other one, and for a pair across validation and test we kept the validation copy, so that no test article repeats an article from the other sets.
 
-**The error analysis rests on a second AI.** Whether a disputed article is a "label problem" or a "model error" depends on a fixed rule and on the stance that a second language model read from the text. A different rule, or a different reader, would give a different share.
+**The error analysis rests on a second AI.** Whether a disputed article is a "label problem" or a "model error" depends on a fixed rule and on the stance that a second language model read from the text. The second reader is itself a Claude model, so the share is a rough estimate. A different rule, or a different reader, would give a different share.
 
 **Hand-made word lists are crude.** They count words and ignore context: "no evidence of a cover-up" counts like "it was a cover-up".
 
@@ -39,7 +39,7 @@ Several limitations qualify the results. First, the label describes the website 
 
 Second, the number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. Documents from one website resemble each other, so the confidence intervals are probably too narrow.
 
-Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
+Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. Its validation F1 of 0.987 was reached on websites that happened to be easier, and the stance coder behind the label-problem share is also a Claude model, so that share is a rough estimate. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
 
 Fourth, some choices are thresholds that could be set differently, such as the cosine similarity of 0.9 for copies, which removed 54 articles. The split between label problems and model errors is an estimate. The certainty and doubt features ignore negation, and website style can serve as a shortcut.
 

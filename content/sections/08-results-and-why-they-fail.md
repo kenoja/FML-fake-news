@@ -80,7 +80,6 @@ The stage puts it all together and writes the tables.
 <!-- cell: src/fml/pipeline.py#errors_stage -->
 
 <!-- output: results/tables/error_classification.csv -->
-<!-- output: results/tables/error_examples_plain.csv -->
 <!-- output: results/tables/error_counts_plain.csv -->
 <!-- output: results/metrics.json#errors.label_problem_share -->
 
@@ -114,13 +113,11 @@ The test set holds six conspiracy websites, and one of them, Website 4, supplies
 
 **Where the models fail, and why.** The labels describe websites, not articles. We examined the test articles on which the best logistic regression or the LLM disagrees with the label. A second model (Claude Sonnet 5.5) coded the stance of each towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
 
-Of the 69 articles with a readable coding, 49 are label problems and 20 are model errors.  The table gives the three groups with the share of coded articles that are label problems.
+Of the 70 wrongly classified articles, 69 have a readable coding: 49 are label problems and 20 are model errors. The one article left out is a conspiracy-site article that both models got wrong; the second model's answer for it was not in the required form, and the code drops such answers instead of guessing a stance. The table gives the three groups with the share of coded articles that are label problems.
 
 <!-- output: results/tables/error_counts_plain.csv | Test articles wrongly classified, by who is wrong, and the share that are label problems -->
 
-<!-- output: results/tables/error_examples_plain.csv | Four examples of wrongly classified test articles -->
-
-The label-problem share rests on the automatic coding alone. For a hand check, the file stance_check_sample.csv lists 40 validation articles, with the second model's answer kept in a separate file so the team reads blind. The sheet has not been filled in yet, so no agreement is reported.
+The label-problem share rests on automatic coding by a Claude model, so it is a rough estimate. For a hand check, the file stance_check_sample.csv lists 40 validation articles, with the model's answer kept in a separate file so the team reads blind. Each member reads the article without seeing that answer and ticks one of the four stances in the sheet, and the team then compares the ticks with the model's answers, article by article. The sheet has not been filled in yet, so no agreement is reported.
 
 ## Check yourself
 Q: A model that always answers "mainstream" is right most of the time. Why do we still not use accuracy?

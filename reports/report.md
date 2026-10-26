@@ -10,20 +10,7 @@ We asked whether the text of a full 9/11 article reveals if it was published on 
 
 Online, the attacks of 11 September 2001 remain a lasting subject of conspiracy content, with claims that they were an "inside job", a "controlled demolition" or a "false flag" (see the 9/11 material in Miani, Hills & Bangerter, 2022). This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, using machine-learning methods for text classification. The articles come from the LOCO corpus, and the label describes the website, not the single article.
 
-We use four methods, shown in Table 1. Each rests on an expectation, and each has a reason for being in the study.
-
-
-
-| Method | Input | Reads | Trained on our data | Settings | Runtime | Cost |
-|---|---|---|---|---|---|---|
-| 1. Word counts + logistic regression | word counts | first 3,000 words of each article | yes | C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation | 3 seconds | free (runs locally) |
-| 2. TF-IDF + logistic regression | TF-IDF weights | first 3,000 words of each article | yes | C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation | 2 seconds | free (runs locally) |
-| 3. TF-IDF + features + logistic regression | TF-IDF weights, n-grams, certainty words, style | first 3,000 words of each article | yes | C from [0.01, 0.1, 1, 10, 100], class weight balanced, chosen on validation | 56 seconds | free (runs locally) |
-| 4. LLM (claude-haiku-5-5) | the article text itself, with a written question | first 3,000 words of each article | no | prompt v1 of 3, default sampling | about 1.0 seconds per article | about $0.26 per 1,000 articles |
-
-*Table 1. The four methods at a glance*
-
-
+We use four methods. Each rests on an expectation, and each has a reason for being in the study.
 
 **Word counts with logistic regression.** We expect plain word counts to tell the two kinds of website apart better than always guessing mainstream, because the two kinds tend to use different words. This is the plainest baseline, and every other method has to beat it to be worth its extra effort.
 
@@ -237,7 +224,7 @@ The test set holds six conspiracy websites, and one of them, Website 4, supplies
 
 **Where the models fail, and why.** The labels describe websites, not articles. We examined the test articles on which the best logistic regression or the LLM disagrees with the label. A second model (Claude Sonnet 5.5) coded the stance of each towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
 
-Of the 69 articles with a readable coding, 49 are label problems and 20 are model errors.  The table gives the three groups with the share of coded articles that are label problems.
+Of the 70 wrongly classified articles, 69 have a readable coding: 49 are label problems and 20 are model errors. The one article left out is a conspiracy-site article that both models got wrong; the second model's answer for it was not in the required form, and the code drops such answers instead of guessing a stance. The table gives the three groups with the share of coded articles that are label problems.
 
 
 
@@ -251,20 +238,7 @@ Of the 69 articles with a readable coding, 49 are label problems and 20 are mode
 
 
 
-
-
-| Case | Website type | Logistic regression said | Claude said | What the article does | Excerpt |
-|---|---|---|---|---|---|
-| Only Claude was right | mainstream | conspiracy | mainstream | makes no claim | New York time, paced to display as they were broadcast at the corresponding time on ... |
-| Only the logistic regression was right | conspiracy | conspiracy | mainstream | reports neutrally | The vacuum left after the invasion is widely believed to have spawned terror group ISIS. ... |
-| Mainstream article called conspiracy | mainstream | conspiracy | mainstream | debunks claims | government investigations, whose reports are all available online, have concluded that there is no evidence ... |
-| Conspiracy-site article called mainstream | conspiracy | mainstream | mainstream | makes no claim | An organization with links to terrorism, that's backed by radical ... |
-
-*Four examples of wrongly classified test articles*
-
-
-
-The label-problem share rests on the automatic coding alone. For a hand check, the file stance_check_sample.csv lists 40 validation articles, with the second model's answer kept in a separate file so the team reads blind. The sheet has not been filled in yet, so no agreement is reported.
+The label-problem share rests on automatic coding by a Claude model, so it is a rough estimate. For a hand check, the file stance_check_sample.csv lists 40 validation articles, with the model's answer kept in a separate file so the team reads blind. Each member reads the article without seeing that answer and ticks one of the four stances in the sheet, and the team then compares the ticks with the model's answers, article by article. The sheet has not been filled in yet, so no agreement is reported.
 
 ## Limitations
 
@@ -272,7 +246,7 @@ Several limitations qualify the results. First, the label describes the website 
 
 Second, the number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. Documents from one website resemble each other, so the confidence intervals are probably too narrow.
 
-Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
+Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. Its validation F1 of 0.987 was reached on websites that happened to be easier, and the stance coder behind the label-problem share is also a Claude model, so that share is a rough estimate. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
 
 Fourth, some choices are thresholds that could be set differently, such as the cosine similarity of 0.9 for copies, which removed 54 articles. The split between label problems and model errors is an estimate. The certainty and doubt features ignore negation, and website style can serve as a shortcut.
 
@@ -282,7 +256,7 @@ Finally, all results concern one topic, one corpus and one split, so we cannot s
 
 The study compared four methods for deciding whether a full 9/11 article comes from a conspiracy-oriented or a mainstream website. All numbers are conspiracy-class F1 scores on the 410 test articles.
 
-H1 (TF-IDF improves on word counts) is weakly supported: F1 0.598 against 0.567 (p = 0.029), but the confidence intervals overlap.
+H1 (TF-IDF improves on word counts) is supported: F1 0.598 against 0.567 (p = 0.029), although the confidence intervals overlap.
 
 H2 (adding the three feature groups improves the TF-IDF model) is not confirmed: on test the F1 was 0.560 against 0.598, within chance (p = 0.243). The hand-made features did not help.
 

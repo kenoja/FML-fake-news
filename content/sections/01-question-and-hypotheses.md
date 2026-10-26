@@ -45,9 +45,7 @@ We asked whether the text of a full 9/11 article reveals if it was published on 
 
 Online, the attacks of 11 September 2001 remain a lasting subject of conspiracy content, with claims that they were an "inside job", a "controlled demolition" or a "false flag" (see the 9/11 material in Miani, Hills & Bangerter, 2022). This study asks whether the text of a full article about the 9/11 attacks reveals if it was published on a conspiracy-oriented or on a mainstream website, using machine-learning methods for text classification. The articles come from the LOCO corpus, and the label describes the website, not the single article.
 
-We use four methods, shown in Table 1. Each rests on an expectation, and each has a reason for being in the study.
-
-<!-- output: results/tables/methods_overview.csv | Table 1. The four methods at a glance -->
+We use four methods. Each rests on an expectation, and each has a reason for being in the study.
 
 **Word counts with logistic regression.** We expect plain word counts to tell the two kinds of website apart better than always guessing mainstream, because the two kinds tend to use different words. This is the plainest baseline, and every other method has to beat it to be worth its extra effort.
 

@@ -43,9 +43,9 @@ resolve a conflict (see AGENTS.md).
   analyses, prior-knowledge probe) were removed; only the statistics listed in AGENTS.md remain.
   (d) Near-duplicates are now removed before any model runs.
 - **[done] Cleaning.** `clean.clean_documents()`: off-topic removal (3,146 to 2,608), then near-duplicate
-  removal (cosine 0.9 or higher; 2,608 to 2,554). Across splits the validation/test copy goes; for a
-  validation/test pair the test copy goes; inside one split the lower doc_id stays. No minimum length (the
-  shortest article has 102 words). Numbers: `results/metrics.json#cleaning`.
+  removal (cosine 0.9 or higher; 2,608 to 2,554). Which copy of a pair goes is stated once, in the cycle-3 entry
+  "R7 near-duplicate choice" (the cycle-2 wording of this rule is dropped). No minimum length (the shortest
+  article has 102 words). Numbers: `results/metrics.json#cleaning`.
 - **[done] Four analyses.** Word counts, TF-IDF, TF-IDF plus features (five models compared on validation; the
   final model always uses all three groups), and the LLM (at most
   three prompt variants, validation only). Shared logistic-regression settings: C grid and balanced class
@@ -83,26 +83,26 @@ resolve a conflict (see AGENTS.md).
 
 ## Needs a team decision
 
-Each item has a status and an owner.
+Only items that need people. Each has an owner (Member A-E) in `docs/human-todo.md`.
 
-- **[open] Owner account name (protected path). Owner: repository owner.** `scripts/collect_feedback.py` (protected,
+- **[open] Owner account name (protected path). Owner: repository owner (Member A).** `scripts/collect_feedback.py` (protected,
   not edited by agents) still has the owner's account name as the default of `--repo`. The owner must replace that
   default or move the repository to a neutral organisation, then set `repo_url` and `giscus.repo` in
   `config/site.yaml`. Until then pass `--repo` or set `GITHUB_REPOSITORY`. Git history cannot be rewritten by the
   agent. To make `tests/test_privacy.py` search for the name itself, set `FML_PRIVACY_TERMS=<account name>`.
-- **[open] Dataset licence. Owner: one team member.** Open the dataset's licence page (linked from the corpus
-  description) and record here: licence text, date checked, Member letter. Until then the safe default applies:
-  texts private, excerpts at most 50 words and 6 per section.
-- **[open] Background references on 9/11 conspiracy content (D8, declined in T3). Owner: one team member.** Verify
-  one or two sources and add them to `content/references.md`; none was added from memory.
-- **[closed] R8 (limitations wording).** Met: `09-limitations` says in one sentence that the test set was used during
-  development and that every final model was chosen on validation and scored on test once.
-- **[open] Human stance check. Owner: the team (cycle 4).** The team labels the 40 rows of `results/tables/stance_check_sample.csv` with a separate
-  private tool during the cycle-3 feedback period; the results arrive for cycle 4 (D3). Until then the Claude stance
-  codes are a single automatic source and the error analysis says so in one statement.
-- **[open] What the team altered or rejected in AI output. Owner: all members.** Only one concrete case is recorded (emotion scores
-  removed from the AI-drafted plan, cycle 1). Members add further cases here and in `docs/ai-log.md`.
-- **[closed] Test file for the agent.** `tests/test_agent_graph.py` stays (it tests the protected `agent/` code).
+- **[open] Dataset licence. Owner: Member B.** Open the dataset's licence page and record here: licence text, date
+  checked, Member letter. Until then the safe default applies: texts private, excerpts at most 50 words and 6 per section.
+- **[open] Background references on 9/11 conspiracy content and classic method sources (declined, no web check possible). Owner: Member C.**
+  Verify one or two sources and add them to `content/references.md`; none was added from memory.
+- **[open] Human stance check. Owner: Member D (with the team, cycle 4).** Label the 40 rows of
+  `results/tables/stance_check_sample.csv` with a separate private tool. Until then the Claude stance codes are a single
+  automatic source and the error analysis says so.
+- **[open] What the team altered or rejected in AI output. Owner: Member E.** Only one concrete case is recorded
+  (emotion scores removed, cycle 1). Collect further cases from all members in `docs/ai-log.md`.
+
+Closed with a conservative decision (no human needed): report length is a plain whitespace count of `reports/report.md`
+before References, tables included; near-duplicates follow the rule above; website names next to labels are shown as
+"Website 1-6"; `tests/test_agent_graph.py` stays; R8 limitations wording is met.
 
 ## Cycle 3, T4: final2 run
 - **Final2 logistic regressions scored once on test** under `final2_word_counts`, `final2_tfidf`, `final2_tfidf_features`
@@ -132,7 +132,7 @@ Each item has a status and an owner.
 - **[done] R4/R5 process and licence remarks.** Licence status, "None of them is recorded as done" and similar remarks are gone from the site and report; the licence stays here only.
 - **[done] Requirement 14 (beginner code).** Marked done at the owner's request in the cycle-3 task list; the final gates and the reviewer re-check the shown cells.
 - **[done] R7 report length counting.** Closed with the conservative choice: plain whitespace count of `reports/report.md` before References, tables included (stricter than prose-only). Stated once in `docs/decisions.md`; gate in `tests/test_gates.py`.
-- **[done] R7 near-duplicate choice.** Closed: when a near-duplicate pair crosses validation and test, the validation copy stays and the test copy goes; a copy in training stays and the other is dropped. The limitations section names the 0.9 threshold as a choice.
+- **[done] R7 near-duplicate choice (the only statement of the rule; matches `clean.near_duplicate_drops`).** Closed. Across splits the priority is train, then validation, then test: the copy in the lower-priority split goes (so a validation/test pair loses the test copy; a pair with a training copy loses the other). Inside one split the lower doc_id stays. The limitations section names the 0.9 threshold as a choice.
 - **[done] Conflict: model name in the AI log.** `docs/ai-log.md` said Opus 5.5 for the setup and Sonnet 5.5 later. `config/agent.yaml` sets Sonnet 5.5 for planner, implementer and reviewer, so the log now says that; the model of the original claude.ai setup session is not recorded in the repo and is stated as such.
 - **[open] Hand check.** Follows in cycle 4 (see "Needs a team decision").
 

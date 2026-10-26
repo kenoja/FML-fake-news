@@ -36,7 +36,7 @@ NAME_ALLOWLIST = {
 }
 _CAP_TOKEN = re.compile(r"[A-Z][\w'’-]*")
 CHECK_COLUMNS = ["doc_id", "website", "human_stance"]     # no Claude stance: the team reads blind
-EXCERPT_WORDS = 25
+EXCERPT_WORDS = 40
 
 STANCE_PROMPT = (
     "You code how a web article treats CONSPIRACY CLAIMS about the 9/11 attacks (for example: the attacks "
@@ -294,6 +294,7 @@ def plain_counts(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
 BOILERPLATE = re.compile(r"click|cached|subscribe|cookie|posted by|copyright|share this|read more|sign up|"
                          r"follow us|advertis|newsletter|all rights|menu|http|www\.|@|\d{4}", re.IGNORECASE)
 EXAMPLE_CASES = {"lr_only_wrong": "Only Claude was right", "llm_only_wrong": "Only the logistic regression was right",
+                 "both_wrong": "Both models were wrong", "label_problem": "The label does not fit the text",
                  "false_positive": PLAIN_LABELS["false positive"], "false_negative": PLAIN_LABELS["false negative"]}
 STANCE_WORDS = {"endorses": "endorses a claim", "rejects_or_debunks": "debunks claims",
                 "reports_neutrally": "reports neutrally", "no_claim": "makes no claim"}
@@ -311,7 +312,7 @@ def plain_examples(examples: pd.DataFrame) -> pd.DataFrame:
 def find_excerpt(text: str, words: int = EXCERPT_WORDS, scan: int = 400) -> str | None:
     """First sentence-start window of words that is no boilerplate and names nobody."""
     tokens = str(text).split()[:scan]
-    for size in (words, 15, 10):                      # try shorter windows if no long one is clean
+    for size in (words, 35, 30):                      # try shorter windows if no long one is clean
         for start in range(0, max(len(tokens) - size, 0) + 1):
             if start and not re.search(r"[.!?]$", tokens[start - 1]):
                 continue                              # start only at the beginning of a sentence
@@ -328,6 +329,8 @@ def pick_examples(sets: pd.DataFrame, texts: pd.Series, seed: int) -> pd.DataFra
     # `sets` holds the coded documents; `texts` maps doc_id to the article text; each document is used once
     rng = np.random.default_rng(seed)
     pools = {"lr_only_wrong": sets[sets["set"] == "lr_only_wrong"], "llm_only_wrong": sets[sets["set"] == "llm_only_wrong"],
+             "both_wrong": sets[sets["set"] == "both_wrong"],
+             "label_problem": sets[sets.get("verdict", pd.Series("", index=sets.index)) == LABEL_PROBLEM],
              "false_positive": sets[sets["error_type"] == "false positive"],
              "false_negative": sets[sets["error_type"] == "false negative"]}
     rows, used = [], set()
