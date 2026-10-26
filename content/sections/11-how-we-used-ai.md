@@ -19,7 +19,7 @@ The loop repeats until the reviewer is satisfied or a round limit is reached. Th
 
 **What the team did.** People set the question, the four ways of sorting, the feature groups and the rule that final models are scored on test once, and wrote the feedback. They removed emotion scores from the first plan, because emotional language is not the same as conspiracy language. They compared the article counts with those published for the corpus.
 
-**How output was checked.** Small test programs fail when a rule is broken, for example if the split changes or a number in the report is missing from the result files. Other checks need a person, such as whether the automatic stance coding is right: the team reads 40 articles by hand, and the results come next round.
+**How output was checked.** The agent ran small test programs that fail when a rule is broken, for example if the split changes or a number in the report is missing from the result files. Other checks need a person, such as whether the automatic stance coding is right: the team's hand check of 40 articles is planned for the next cycle.
 
 **What we learned.** A test can confirm that a number matches a file, but not that the number answers the right question; that judgement stays with people. Saving the language model's answers makes every figure repeatable without new cost.
 
@@ -33,13 +33,11 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 ## Report
 
-**Setup.** The analysis was produced with Claude Code, an AI coding assistant that reads and edits the files of a project. Three agents, each a separate Claude Sonnet 5.5 session, take turns. A planner splits the team's written requirements into small tasks. An implementer carries out one task at a time, writes code and text, and runs the tests. A reviewer, started fresh so that it has not seen the work being made, scores the result against a checklist and lists what is missing; the implementer then fixes these points.
+**Setup.** The analysis was produced with Claude Code, an AI coding assistant, in three Claude Sonnet 5.5 roles: a planner splits the team's requirements into tasks, an implementer writes code and text and runs the tests, and a reviewer in a fresh session scores the result against a checklist. A generator builds this website and report from the project files, so the code shown is the code that ran.
 
-**Site generator.** A small generator builds the website and this report from the project files: the section files hold the text, the code cells point at real functions, and the output markers point at result files. The code shown is therefore the code that ran, and the report is assembled from the sections, not edited by hand.
+**Cycles.** Work ran in three cycles. After each cycle the team read the website and wrote feedback, which became the next cycle's requirements. A log in the repository records what the AI produced and what was checked.
 
-**Iteration cycles.** Work ran in three cycles. After each cycle the team read the website, wrote feedback under each section, and the feedback became the requirements of the next cycle. Each cycle ended in a pull request, and a log records what the AI produced and what was checked.
-
-**Checks.** Tests compare every number in the report with the result files, count words against the length limits, and fail when the split, the training-only fitting or the locked test set are touched. Claims that tables did not support were corrected, and references that could not be confirmed were not added. A hand check of 40 articles for the automatic stance coding is done by the team and follows. Claude Haiku 5.5 is one of the four classifiers under study, not a helper.
+**Checks.** The agent checked every number in the report against the result files with automated tests (`test_report_numbers`); further tests cover length limits, the split, training-only fitting and the locked test set. The agent also rewrote claims that went beyond the tables and left out references it could not confirm. Members' own checks are recorded in the log only where they entered them; so far none are recorded. The team's hand check of 40 articles for the automatic stance coding is planned for the next cycle. Claude Haiku 5.5 is one of the four classifiers under study, not a helper.
 
 ## Check yourself
 

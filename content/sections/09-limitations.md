@@ -15,7 +15,7 @@ hypothesis: Our results are real but narrow, because the labels describe website
 
 **The error analysis rests on a second AI.** Whether a disputed article is a "label problem" or a "model error" depends on a fixed rule and on the stance that a second language model read from the text. The second reader is itself a Claude model, so the share is a rough estimate. A different rule, or a different reader, would give a different share.
 
-**Hand-made word lists are crude.** They count words and ignore context: "no evidence of a cover-up" counts like "it was a cover-up".
+**Hand-made word lists are crude.** The four lists hold only 47 words and phrases in total, so they miss many ways of sounding certain. They count words and ignore context: "no evidence of a cover-up" counts like "it was a cover-up".
 
 **Style can give a website away.** Even after we delete names, web addresses and repeated menu lines, a typical habit such as writing "posted by" can remain, and a model can use it as a shortcut. Splitting by website cannot remove style signals that similar sites share.
 
@@ -23,7 +23,7 @@ hypothesis: Our results are real but narrow, because the labels describe website
 
 **One topic, one collection.** Everything here concerns 9/11 articles from one collection. We cannot say whether the results carry over to other topics.
 
-**The test set.** The test set was used during development; every final model was chosen on validation and scored on test once.
+**The test set.** The test set was used during development: four earlier models and four models of an earlier configuration (the `final_*` ids in the test log) were scored on it before the rerun. Every final model of the rerun (`final2_*`) was chosen on validation and scored on test once.
 
 ## The code
 
@@ -41,9 +41,9 @@ Second, the number of websites is small. The validation and test sets each conta
 
 Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. Its validation F1 of 0.987 was reached on validation websites where it found 0.905 to 1.000 of the conspiracy articles, with no site as hard as the large test site (recall 0.318), and the stance coder behind the label-problem share is also a Claude model, so that share is a rough estimate. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
 
-Fourth, some choices are thresholds that could be set differently, such as the cosine similarity of 0.9 for copies, which removed 54 articles. The split between label problems and model errors is an estimate. The certainty and doubt features ignore negation, and website style can serve as a shortcut.
+Fourth, some choices are thresholds that could be set differently, such as the cosine similarity of 0.9 for copies, which removed 54 articles. The split between label problems and model errors is an estimate. The certainty and doubt features ignore negation, and they rest on four short hand-made word lists of 13, 12, 11 and 11 entries (47 in total), which reach only a small part of the vocabulary. Website style can serve as a shortcut.
 
-Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer to other topics or websites. The test set was used during development; every final model was chosen on validation and scored on test once.
+Finally, all results concern one topic, one corpus and one split, so we cannot say whether they transfer to other topics or websites. The test set was used during development: four earlier models and four models of an earlier configuration (the `final_*` ids in the test log) were scored on it before the rerun. Every final model of the rerun (`final2_*`) was chosen on validation and scored on test once.
 
 ## Check yourself
 

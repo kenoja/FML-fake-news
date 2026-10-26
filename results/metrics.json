@@ -350,7 +350,14 @@
         "train_documents": 1226,
         "share_with_hit": 0.0946
       }
-    ]
+    ],
+    "lexicon_sizes": {
+      "hedges": 13,
+      "boosters": 12,
+      "hidden_truth": 11,
+      "debunking": 11,
+      "total": 47
+    }
   },
   "llm": {
     "model": "claude-haiku-5-5",

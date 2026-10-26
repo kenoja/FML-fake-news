@@ -74,7 +74,7 @@ The numeric groups were standardised with training statistics only. We ran an ab
 
 <!-- output: results/figures/ablation_f1.png | Validation F1 of the six models -->
 
-Without n-grams, certainty words and style together reach 0.913, against 0.896 for all three groups, so the phrases cost part of the drop. Even without them the combination stays below certainty words alone (0.930), so style also pulls the score down. With 376 validation articles, differences of one or two hundredths can be chance, and this check does not identify the cause, which remains open.
+Without n-grams, certainty words and style together reach 0.913, against 0.896 for all three groups, so the phrases cost part of the drop. Even without them the combination stays below certainty words alone (0.930), so style also pulls the score down. Certainty words alone gave the best validation F1 of all six models (0.930), but the planned full combination did not help, so the verdict on H2 stays "no". With 376 validation articles, differences of one or two hundredths can be chance, and this check does not identify the cause, which remains open.
 
 Why can the full combination be worse than TF-IDF alone? The table cannot prove a cause, and we did not test any of the following three explanations; they remain open. First, the full model has far more columns than articles (146,172 columns against 1,768 training articles), so it could fit single articles. Second, the groups overlap with words TF-IDF already holds. Third, style habits may belong to single websites, which would fit style alone scoring below TF-IDF alone.
 

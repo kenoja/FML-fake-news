@@ -34,7 +34,7 @@ The study compared four methods for deciding whether a full 9/11 article comes f
 
 H1 (TF-IDF improves on word counts) is weakly supported: F1 0.598 against 0.567 (p = 0.029), although the confidence intervals overlap.
 
-H2 (adding the three feature groups improves the TF-IDF model) is not supported: on test the F1 was 0.560 against 0.598, within chance (p = 0.243). The hand-made features did not help.
+H2 (adding the three feature groups improves the TF-IDF model) is not supported: on test the F1 was 0.560 against 0.598, within chance (p = 0.243). The hand-made features did not help: certainty words alone gave the best validation F1 (0.930), but the planned full combination did not help, so the verdict on H2 stays "no".
 
 H3 (The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05) is supported: F1 0.795 against 0.598 (p < 0.0001). It misses one third of the conspiracy articles.
 

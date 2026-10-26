@@ -398,10 +398,12 @@ def _features_spec(model_id: str) -> ModelSpec:
 def ablation() -> dict:
     """Score the feature sets on validation and write the table, figure and metrics."""
     from .ablation import run_ablation
-    from .features.epistemic import lexicon_coverage
+    from .features.epistemic import LEXICON, lexicon_coverage
 
     frames = split_frames(analysis_frame(), ("train", "validation"))
     train, valid = frames["train"], frames["validation"]
+    lexicon_sizes = {category: len(terms) for category, terms in LEXICON.items()}
+    lexicon_sizes["total"] = sum(lexicon_sizes.values())      # size of the hand-made word lists
     table = run_ablation(train, valid, ablation_variants(), reference=LR_WORDS_ID)
     write_table("ablation", table.round(4))
     savefig(plot_ablation(table), "ablation_f1")
@@ -415,7 +417,8 @@ def ablation() -> dict:
               "documents": {"train": int(len(train)), "validation": int(len(valid))},
               "final_model": LR_EXTENDED_ID, "n_columns_full": table.attrs["n_columns"][LR_EXTENDED_ID],
               "validation": models[LR_EXTENDED_ID], "models": models,
-              "coverage": coverage.to_dict("records")}
+              "coverage": coverage.to_dict("records"),
+              "lexicon_sizes": lexicon_sizes}
     write_metrics("tfidf_features", round_floats(values, 4))
     return values
 
@@ -739,8 +742,8 @@ def write_error_tables(coded: pd.DataFrame, sets: pd.DataFrame, examples: pd.Dat
     written = errors.write_check_sample(sample, tables / "stance_check_sample.csv")
     errors.write_claude_answers(sample, tables / "stance_claude_answers.csv")
     write_table("stance_check_layout", errors.check_sheet_layout())
-    write_table("error_examples", examples[["cell", "doc_id", "website", "true_label", "lr_prediction",
-                                            "llm_prediction", "stance", "excerpt"]])
+    write_table("error_examples", examples[["cell", "doc_id", "true_label", "lr_prediction",
+                                            "llm_prediction", "stance", "excerpt"]])    # no website next to a label
     write_table("error_examples_plain", errors.plain_examples(examples))
     write_table("error_counts_plain", errors.plain_counts(coded, sets))
     return written

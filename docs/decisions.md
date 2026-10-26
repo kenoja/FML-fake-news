@@ -90,6 +90,11 @@ Only items that need people. Each has an owner (Member A-E) in `docs/human-todo.
   default or move the repository to a neutral organisation, then set `repo_url` and `giscus.repo` in
   `config/site.yaml`. Until then pass `--repo` or set `GITHUB_REPOSITORY`. Git history cannot be rewritten by the
   agent. To make `tests/test_privacy.py` search for the name itself, set `FML_PRIVACY_TERMS=<account name>`.
+- **[open] Website names in the blind check sheet. Owner: Member D.** T9: `error_examples.csv` no longer has a `website`
+  column (`error_examples_plain.csv` only ever had the label type). `stance_check_sample.csv` still lists domains
+  (frozen doc_ids, never redrawn) and `doc_id` starts with C for conspiracy, so a domain sits implicitly beside a
+  conspiracy label. It is not used in the site or report. Decide before publishing whether to drop that column
+  once the hand check is done.
 - **[open] Dataset licence. Owner: Member B.** Open the dataset's licence page and record here: licence text, date
   checked, Member letter. Until then the safe default applies: texts private, excerpts at most 50 words and 6 per section.
 - **[open] Background references on 9/11 conspiracy content and classic method sources (declined, no web check possible). Owner: Member C.**
@@ -163,3 +168,7 @@ before References, tables included; near-duplicates follow the rule above; websi
 - **Why the agent cannot do it:** `scripts/` and `config/site.yaml` are protected paths (AGENTS.md); only the repo owner may edit them. The account name is not repeated here.
 - Checked `reports/` and `content/` for names, e-mails and usernames (see the T11 summary); `tests/test_privacy.py` was run.
 
+
+## Cycle 3, T5 (02 report, references)
+- 02 Report: added two sentences on how LOCO was built and rated (keyword retrieval, website-level subcorpus, authors' blind check 85% / 92%), all from `docs/PROJECT_PLAN.md` section 2; licence left out. Library versions copied from `results/run_info.json`. Trimmed the cleaning paragraph.
+- References (D8) **declined**: no 9/11 background source and no extra source for regularised logistic regression could be confirmed from existing files, and no web check is possible here (no invented citations). Hastie et al. (2009) already covers regularised logistic regression. `content/references.md` has no "[open]" markers.

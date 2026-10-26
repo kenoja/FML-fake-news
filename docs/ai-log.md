@@ -57,5 +57,10 @@ Concrete checks, all automated or recorded in `docs/decisions.md` (none of them 
 - Rejected suggestion: candidate classic references and 9/11 background sources were not added from memory; they stay open for a member to verify.
 The checks that need people are listed in `docs/human-todo.md` (placeholders; nothing there is done yet).
 
+### Altered or rejected by members
+None recorded yet; members add their cases via `docs/human-todo.md` items 7, 8 and 10.
+
 ### Learned
-A requirements file built from the team's feedback gives cleaner cycles than loose reviewer lists. A fact without a source in `results/` (such as a feature count) must be read from the files, not written from memory.
+- A number can match `results/metrics.json` and still stand beside a claim the table does not support; the platform-filter sentence was only caught by asking for a source.
+- Counting `final_*` and `final2_*` ids in `results/test_access_log.jsonl` showed that four earlier-configuration models had been scored on test, so `09-limitations` now says so instead of claiming a single scoring.
+- A feature count (47 hand-made words in four lists) had to be read from the results files, not written from memory.

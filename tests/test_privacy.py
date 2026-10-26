@@ -154,6 +154,26 @@ def test_scanner_catches_long_quote_block_and_csv_cell(tmp_path):
     assert scan_files([table])
 
 
+def website_columns(path: Path) -> list[str]:
+    with path.open(encoding="utf-8", newline="") as f:
+        return [h for h in next(csv.reader(f)) if "website" in h.lower() and "type" not in h.lower()]
+
+
+def test_error_tables_have_no_website_column():
+    """A site name beside a 'conspiracy' label would publicly tag a real website; show label types only."""
+    for name in ("error_examples.csv", "error_examples_plain.csv"):
+        path = REPO / "results" / "tables" / name
+        if not path.is_file():
+            pytest.skip(f"{name} not built")
+        assert website_columns(path) == [], f"{name} names the website"
+
+
+def test_website_column_check_catches_injected_column(tmp_path):
+    table = tmp_path / "t.csv"
+    table.write_text("doc_id,website,true_label\nC1,example.org,conspiracy\n")
+    assert website_columns(table) == ["website"]
+
+
 def test_scanner_allows_short_quote(tmp_path):
     md = tmp_path / "x.md"
     md.write_text("> " + " ".join(["word"] * 40) + "\n")

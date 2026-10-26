@@ -1,7 +1,7 @@
-cell,doc_id,website,true_label,lr_prediction,llm_prediction,stance,excerpt
-lr_only_wrong,M1c66a,nbcnews.com,mainstream,conspiracy,mainstream,reports_neutrally,It is also well known that the Saudi government has long funded mosques and other institutions around the world that ...
-llm_only_wrong,C05f24,neonnettle.com,conspiracy,conspiracy,mainstream,no_claim,"""A rapist needs to be removed, not negotiated with,” he continued. “These are raping our system, they’re destroying it right ..."
-both_wrong,C0121b,neonnettle.com,conspiracy,mainstream,mainstream,reports_neutrally,"Some 3,000 died in the 9/11 attacks, after four hijacked passenger planes were crashed into the World Trade Center in New York, the Pentagon and ..."
-label_problem,C03231,neonnettle.com,conspiracy,mainstream,mainstream,no_claim,"A military judge has set the trial date for five men accused of masterminding the 9/11 attacks that murdered almost 3,000 Americans on September 11, ..."
-false_positive,M0d70e,latimes.com,mainstream,conspiracy,mainstream,no_claim,"Not only is there a smoking gun in the 28 pages, but Saudi Arabia’s fingerprints can be seen all over ..."
-false_negative,C070d2,neonnettle.com,conspiracy,mainstream,mainstream,no_claim,"The gunman, who fired a semi-automatic weapon inside the synagogue, froze, dropped his gun and sprinted to his car when ..."
+cell,doc_id,true_label,lr_prediction,llm_prediction,stance,excerpt
+lr_only_wrong,M1c66a,mainstream,conspiracy,mainstream,reports_neutrally,It is also well known that the Saudi government has long funded mosques and other institutions around the world that ...
+llm_only_wrong,C05f24,conspiracy,conspiracy,mainstream,no_claim,"""A rapist needs to be removed, not negotiated with,” he continued. “These are raping our system, they’re destroying it right ..."
+both_wrong,C0121b,conspiracy,mainstream,mainstream,reports_neutrally,"Some 3,000 died in the 9/11 attacks, after four hijacked passenger planes were crashed into the World Trade Center in New York, the Pentagon and ..."
+label_problem,C03231,conspiracy,mainstream,mainstream,no_claim,"A military judge has set the trial date for five men accused of masterminding the 9/11 attacks that murdered almost 3,000 Americans on September 11, ..."
+false_positive,M0d70e,mainstream,conspiracy,mainstream,no_claim,"Not only is there a smoking gun in the 28 pages, but Saudi Arabia’s fingerprints can be seen all over ..."
+false_negative,C070d2,conspiracy,mainstream,mainstream,no_claim,"The gunman, who fired a semi-automatic weapon inside the synagogue, froze, dropped his gun and sprinted to his car when ..."
