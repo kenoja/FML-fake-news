@@ -22,7 +22,7 @@ We use four methods. Each rests on an expectation, and each has a reason for bei
 
 We used logistic regression for every trained model because it is simple and its weights can be read as word lists. We did not try other classifiers, because the question is about features, not about which method is best. We did not fine-tune a language model, which needs more data and money than we have. We left out emotion features, because fear and anger are normal in reports on an attack and so tell us little.
 
-All models were trained and run on a 4-CPU Linux machine; the whole pipeline took about 97 seconds. This means the work runs on laptop-class hardware. Only the LLM needs an internet connection and a paid API; the three logistic regressions run locally and cost nothing.
+All models were trained and run on a 4-CPU Linux machine; the whole pipeline took about 108 seconds. This means the work runs on laptop-class hardware. Only the LLM needs an internet connection and a paid API; the three logistic regressions run locally and cost nothing.
 
 We test three hypotheses, each stated in full. **H1:** TF-IDF weights give a higher conspiracy-class F1 than plain word counts, because distinctive words carry more information than common ones. **H2:** adding the three feature groups (word sequences, certainty words, style) to TF-IDF gives a higher conspiracy-class F1 than TF-IDF alone, because they capture how conspiracy texts argue. **H3:** the zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05.
 All methods are judged by precision, recall and F1 for the conspiracy class, because most articles are mainstream and the share of correct answers would reward a model that never finds a conspiracy article. A hypothesis is called confirmed only if the difference points in the predicted direction, the McNemar test gives p < 0.05 and the 95% confidence intervals do not overlap. If the test is significant but the intervals overlap, it is called weakly supported; otherwise it is not confirmed.
@@ -266,13 +266,13 @@ In sum, only the advantage of the LLM is clear, and no method finds enough consp
 
 ## How we used AI
 
-**Setup.** The analysis was produced with Claude Code, an AI coding assistant that reads and edits the files of a project. A planner split the team's requirements into small tasks, an implementer carried out one task at a time and ran the tests, and a reviewer, started in a fresh session, scored the result against a checklist. The website and this report are generated from the project files, so the code shown is the code that ran.
+**Setup.** The analysis was produced with Claude Code, an AI coding assistant that reads and edits the files of a project. Three agents, each a separate Claude Sonnet 5.5 session, take turns. A planner splits the team's written requirements into small tasks. An implementer carries out one task at a time, writes code and text, and runs the tests. A reviewer, started fresh so that it has not seen the work being made, scores the result against a checklist and lists what is missing; the implementer then fixes these points.
 
-**What the AI produced.** The assistant drafted the plan, the code, the tests, the tables, figures and text. Claude Sonnet 5.5 coded how disputed articles treat conspiracy claims.
+**Site generator.** A small generator builds the website and this report from the project files: the section files hold the text, the code cells point at real functions, and the output markers point at result files. The code shown is therefore the code that ran, and the report is assembled from the sections, not edited by hand.
 
-**What the team checked or changed.** The team fixed the research question, the four methods, the feature groups and the rule that each final model is scored on test once, and removed emotion scores from the AI's draft plan. Tests fail when a rule is broken, such as fitting on training articles only. A hand check of 40 articles, which tests the automatic stance coding, is done by the team and follows.
+**Iteration cycles.** Work ran in three cycles. After each cycle the team read the website, wrote feedback under each section, and the feedback became the requirements of the next cycle. Each cycle ended in a pull request, and a log records what the AI produced and what was checked.
 
-**What we learned.** Tests confirm that numbers match files, not that they mean the right thing, so a person must judge the reasoning.
+**Checks.** Tests compare every number in the report with the result files, count words against the length limits, and fail when the split, the training-only fitting or the locked test set are touched. Claims that tables did not support were corrected, and references that could not be confirmed were not added. A hand check of 40 articles for the automatic stance coding is done by the team and follows. Claude Haiku 5.5 is one of the four classifiers under study, not a helper.
 
 ## References
 

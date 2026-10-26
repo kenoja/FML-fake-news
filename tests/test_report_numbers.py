@@ -211,7 +211,9 @@ def test_environment_sentence_matches_run_info():
     info = json.loads((REPO / "results" / "run_info.json").read_text(encoding="utf-8"))
     text = (REPO / "content" / "sections" / "01-question-and-hypotheses.md").read_text(encoding="utf-8")
     assert f"{info['machine']['cpus']}-CPU {info['machine']['system']} machine" in text
-    assert f"about {info['run_all_seconds']:.0f} seconds" in text
+    stated = int(re.search(r"took about (\d+) seconds", text).group(1))
+    # run time differs a little on every run, so allow 25% either way
+    assert abs(stated - info["run_all_seconds"]) <= 0.25 * info["run_all_seconds"]
 
 
 def test_worked_example_matches_metrics():
