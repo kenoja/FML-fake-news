@@ -35,7 +35,7 @@ NAME_ALLOWLIST = {
     "Congress", "Senate", "Arabia", "Arab", "Middle", "East", "Taliban", "ISIS", "UK", "EU", "NATO",
 }
 _CAP_TOKEN = re.compile(r"[A-Z][\w'’-]*")
-CHECK_COLUMNS = ["doc_id", "website", "human_stance"]     # no Claude stance: the team reads blind
+CHECK_COLUMNS = ["doc_id", "human_stance"]     # no website and no Claude stance: the team reads blind
 EXCERPT_WORDS = 29
 
 STANCE_PROMPT = (
@@ -276,9 +276,9 @@ def check_sheet_layout() -> pd.DataFrame:
     """Plain description of the blind check sheet, one row per column (no article text, no model answer)."""
     stances = ", ".join(s.replace("_", " ") for s in STANCES)
     return pd.DataFrame({"Column": CHECK_COLUMNS,
-                         "What it holds": ["Identifier of one validation article", "The website that published it",
+                         "What it holds": ["Identifier of one validation article",
                                            f"Left empty: the reader ticks one of {stances}"],
-                         "Filled by": ["Prepared", "Prepared", "Each member, without seeing the model's answer"]})
+                         "Filled by": ["Prepared", "Each member, without seeing the website or the model's answer"]})
 
 
 def write_claude_answers(sample: pd.DataFrame, path: Path) -> None:

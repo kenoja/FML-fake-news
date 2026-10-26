@@ -243,12 +243,12 @@ def ask_model(doc_id: str, article: str, cut: bool, call: dict) -> dict:
 
 def fetch_missing(articles: dict, missing: list, call: dict) -> dict:
     """Ask the model about every article that is not cached yet, several at once."""
-    def ask(doc_id):
-        article, cut = articles[doc_id]
-        return ask_model(doc_id, article, cut, call)
-
     with ThreadPoolExecutor(PARALLEL_CALLS) as pool:           # ask for several articles at once
-        records = list(pool.map(ask, missing))
+        jobs = []
+        for doc_id in missing:
+            article, cut = articles[doc_id]
+            jobs.append(pool.submit(ask_model, doc_id, article, cut, call))   # send the request
+        records = [job.result() for job in jobs]                # wait for every answer
     return {record["doc_id"]: record for record in records}
 
 

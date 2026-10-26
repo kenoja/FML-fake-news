@@ -7,7 +7,7 @@ Short-term: the LangGraph checkpoint for the current cycle (.agent_state/cycle-N
 Long-term: plain files that survive across cycles and that humans can read and edit:
   .agent_state/memory.json  - lessons and scores the agent carries into the next cycle
   docs/decisions.md         - decisions and conflicts (never blended; see AGENTS.md)
-  docs/ai-log.md            - what the AI produced, what was checked/changed, what we learned
+  docs/agent-runs.md        - the agent's own record of each cycle (tasks, gates, reviewer scores)
 """
 from __future__ import annotations
 

@@ -11,6 +11,17 @@ Also: Ablation study, Ablations
 
 Taking one group of features out, or adding one in, to see what changes. Like removing one ingredient from a recipe to learn what it contributes.
 
+### Accuracy
+The share of all articles a model labels correctly. It can mislead when one group is much larger: a model that always says "mainstream" is right for about three in four of our test articles, yet finds no conspiracy article. That is why we use F1 instead.
+
+### Algorithm
+A fixed list of steps that a computer follows, like a recipe. Logistic regression, for example, is an algorithm that learns word weights from examples.
+
+### API
+Also: application programming interface
+
+A way for one program to send requests to another over the internet and get answers back. We sent each article to the language model through such a service, much like ordering by filling in a form instead of phoning.
+
 ### Bag of words
 
 Treating an article as a pile of words and ignoring their order. Like tipping a letter's words into a bag: you can count them but no longer see the sentences. Our first two analyses work this way.
@@ -18,6 +29,9 @@ Treating an article as a pile of words and ignoring their order. Like tipping a 
 ### Baseline
 
 A simple method we compare other methods against. If a fancy model cannot beat the baseline, the extra effort did not help. Like walking as the baseline against which a bicycle is judged.
+
+### Boilerplate
+Text that a website repeats on many pages, such as menus, "share this" buttons or a newsletter banner. It says nothing about the article but can give away the website.
 
 ### Bootstrap
 Also: Bootstrap resampling
@@ -43,6 +57,11 @@ A setting that makes mistakes on the rarer class count more during training. "Ba
 Also: Classifiers
 
 A program that puts each item into one of a few groups. Ours decides whether an article comes from a conspiracy-oriented or a mainstream website. Like a mail sorter who looks at each letter and drops it in one of two boxes.
+
+### Column
+Also: columns
+
+One kind of number that describes every article, like one column in a spreadsheet where each row is an article. Each word in the vocabulary is one column, and so is each extra feature.
 
 ### Confidence interval
 Also: 95% confidence interval, interval, Confidence intervals, Intervals
@@ -96,6 +115,11 @@ Training an existing language model further on our own labelled articles. We did
 
 Fixed once and never changed, such as the split of articles. We keep it frozen so every model faces the same exam. Like sealing the exam paper before anyone studies.
 
+### Generalise
+Also: generalises, generalisation, carry over
+
+To work well on new cases, not only on the ones a model learned from. A student who understood the method can solve new exercises; one who memorised the answers cannot.
+
 ### Grid search
 Also: Grid
 
@@ -120,6 +144,9 @@ Hedges are words that soften a claim ("perhaps", "seems"); boosters make it stro
 Also: Hypotheses
 
 A clear guess about what we will find, that the results can prove wrong. It is chosen before the final test run, from earlier studies, not from the results. Like predicting that a new recipe tastes better before anyone tastes it.
+
+### JSON
+A plain text format for storing data as named values, for example {"label": "mainstream"}. Our result files and the language model's answers use it.
 
 ### Label
 Also: Class, Labels
@@ -181,6 +208,9 @@ A number between 0 and 1 that says how surprising our result would be if there w
 Also: Recall per website
 
 Recall worked out separately for each website: of the conspiracy articles one website published, the share a model found. Like checking a teacher's marks class by class, to see which class drags the average down.
+
+### Pipeline
+The full chain of steps that turns the raw articles into results: cleaning, splitting, building features, training, scoring and drawing the tables. One command (fml run-all) runs all of it.
 
 ### Precision
 

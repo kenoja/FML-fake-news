@@ -1,9 +1,4 @@
-"""The two entry points the CLI calls, plus the stages they are made of.
-
-Stages are added one by one over the cycle. Until every stage exists `run_all` raises after running
-the finished ones, so `fml run-all` can never look successful while results are missing
-(AGENTS.md: fail loud).
-"""
+"""The two entry points the CLI calls (`run_all`, `evaluate_final`) and the stages they are made of."""
 from __future__ import annotations
 
 import hashlib
@@ -207,15 +202,10 @@ def read_frozen(path: Path) -> dict[str, dict]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def freeze_model(model_id: str, builders: dict[str, Callable[[], ModelSpec]] | None = None,
+def freeze_model(model_id: str, builders: dict | None = None,
                  frozen_path: Path | None = None, log_path: Path | None = None) -> dict:
-    """Write the configuration chosen on validation to results/frozen_models.json BEFORE any test look.
-
-    Why: `evaluate_final` refuses to score a model whose chosen config is not frozen, or whose hash
-    differs from the frozen one, so the test split cannot influence which configuration is reported.
-    An entry is never rewritten. If the access log already holds a look for this model (a freeze made
-    after the fact), the entry says `retroactive: true` instead of pretending it came first.
-    """
+    """Record the configuration chosen on validation before any test look; an entry is never rewritten."""
+    # evaluate_final refuses a model that is not frozen, so the test set cannot change the reported choice
     builders = MODEL_BUILDERS if builders is None else builders
     digest = config_hash(builders[model_id]().config)
     frozen_path = frozen_path or results_dir() / "frozen_models.json"
@@ -282,7 +272,7 @@ def earlier_test_accesses(model_id: str, digest: str, log_path: Path) -> list[di
     return previous
 
 
-def evaluate_final(model_id: str, builders: dict[str, Callable[[], ModelSpec]] | None = None,
+def evaluate_final(model_id: str, builders: dict | None = None,
                    frame: pd.DataFrame | None = None, log_path: Path | None = None,
                    frozen_path: Path | None = None) -> dict:
     """Score one model on the locked test split, once, and log the access."""
@@ -461,7 +451,10 @@ def llm_stage() -> dict:
     table = pd.DataFrame([{"variant": v, "documents": len(valid), "precision": r["precision"],
                            "recall": r["recall"], "f1": r["f1"]} for v, r in runs.items()])
     write_table("llm_prompt_variants", table.round(4))
-    chosen = max(variants, key=lambda v: round(runs[v]["f1"], 4))             # best F1 wins; a tie keeps the first prompt
+    chosen = variants[0]
+    for variant in variants:                         # best F1 wins; a tie keeps the earlier prompt
+        if round(runs[variant]["f1"], 4) > round(runs[chosen]["f1"], 4):
+            chosen = variant
     first, second = runs[chosen], llm_scores(valid, chosen, pass_id=2)
     repeat_agreement = float((first["labels"] == second["labels"]).mean())     # share of equal answers
     savefig(plot_confusion(first["confusion"], f"LLM, prompt {chosen} (validation)"), "llm_validation_confusion")

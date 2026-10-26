@@ -38,7 +38,7 @@ H2 (adding the three feature groups improves the TF-IDF model) is not supported:
 
 H3 (the zero-shot LLM beats the best logistic regression) is supported: F1 0.795 against 0.598 (p < 0.0001). It misses one third of the conspiracy articles.
 
-In sum, only the advantage of the LLM is clear, and no method finds enough conspiracy articles to be used alone for automatic flagging. Further work should test other topics and more websites; the team's hand check of the automatic stance coding follows this report.
+In sum, only the advantage of the LLM is clear, and no method finds enough conspiracy articles to be used alone for automatic flagging. All three logistic regressions beat the baseline that always answers mainstream. Further work should test other topics and more websites; the results of the team's hand check of the automatic stance coding will be added once it is complete.
 
 ## Check yourself
 

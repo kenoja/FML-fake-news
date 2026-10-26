@@ -119,13 +119,13 @@ before References, tables included; near-duplicates follow the rule above; websi
   `results/stance_cache.jsonl`. A later run without the key works from that cache; a missing entry fails loudly.
 - The three old `results/tables/predictions_final_{word_counts,tfidf,tfidf_features}.csv`
   files were deleted later (nothing read them). Section prose and
-  `docs/reproducibility.md` still quote earlier numbers and file names; the queued section rewrites must update them
+  `docs/reproducibility.md` still quote earlier numbers and file names; the queued section rewrites must update them **[Superseded 26 Oct 2026: see "Cycle 3, owner polish" below.]**
   (`tests/test_report_numbers.py` fails until then).
 
 ## Cycle 3, T7 (section 01)
 - Added `src/fml/methods_overview.py` (writes `results/tables/methods_overview.csv` at the end of `run_all`); `run_info.json` now also holds machine info and per-stage seconds. LR runtime = stage time (the first stage includes loading data); LLM runtime and cost = averages from the answer cache rows that recorded tokens, at list price from the config.
 - References: no new sources were added. The web check of candidate classics (Spärck Jones 1972; Swami et al. 2010; Douglas et al. 2019) was not possible in this run, so the introduction cites only Miani et al. (2022) and Fong et al. (2021), which are already in `content/references.md`. Needs a team decision: add confirmed classic references for TF-IDF, logistic regression and 9/11 conspiracy background.
-- `tests/test_gates.py` report-length gate (≤5000 words) and several number checks in sections 04–08/11 fail from other, queued tasks, not from section 01.
+- `tests/test_gates.py` report-length gate (≤5000 words) and several number checks in sections 04–08/11 fail from other, queued tasks, not from section 01. **[Superseded 26 Oct 2026: see "Cycle 3, owner polish" below.]**
 
 ## Cycle 3, T11 (sections 00, 09, 10, 11, docs)
 - **[done] D1 slugs.** `09-limitations`, `10-conclusion` and `11-how-we-used-ai` replace the old 10-12 files (old files deleted). Section 00 mentions the new order.
@@ -144,10 +144,10 @@ before References, tables included; near-duplicates follow the rule above; websi
 - Glossary: Cohen's kappa was already gone; added Shortcut learning (also target leakage) and Per-website recall.
 - References added (all well known, cited in the matching Report parts): Hastie et al. 2009, Manning et al. 2008, McNemar 1947, Efron & Tibshirani 1993, Pedregosa et al. 2011.
 - **Skipped:** no 9/11-conspiracy background sources were added, because none could be confirmed without a web check (no invented references). Still a team decision.
-- **Skipped:** I did not run `fml run-all` twice or the full test suite in this task (the task rules say the harness does that); only the glossary, gates, privacy, report-numbers, comparison, sections and sitegen tests were run (86 passed).
+- **Skipped:** I did not run `fml run-all` twice or the full test suite in this task (the task rules say the harness does that); only the glossary, gates, privacy, report-numbers, comparison, sections and sitegen tests were run (86 passed). **[Superseded 26 Oct 2026: see "Cycle 3, owner polish" below.]**
 
 ## Cycle 3, T11 (two identical runs, full test suite)
-- **Skipped:** `fml run-all` twice, the checksum diff and `pytest -q` were NOT run. The command to start them was denied (no approval surface in this session) and the task rules forbid running them inside a task. No determinism check, run time or test count exists for cycle 3. `docs/reproducibility.md` says the same and lists only the committed checksums.
+- **Skipped:** `fml run-all` twice, the checksum diff and `pytest -q` were NOT run. The command to start them was denied (no approval surface in this session) and the task rules forbid running them inside a task. No determinism check, run time or test count exists for cycle 3. `docs/reproducibility.md` says the same and lists only the committed checksums. **[Superseded 26 Oct 2026: see "Cycle 3, owner polish" below.]**
 - Needs a team decision / next run: execute the two runs and the test suite by hand (or via the harness) and paste the results into `docs/reproducibility.md`.
 
 ## D8 background sources on 9/11 conspiracy content (declined, cycle 3 T3)
@@ -155,7 +155,7 @@ before References, tables included; near-duplicates follow the rule above; websi
 - 01 "Explained simply" trimmed (method table marker removed there; it stays in the Report).
 
 ## Cycle 3, T4 (01 introduction)
-- The "platforms and fact-checkers rely on automatic filters" claim was dropped: no published source could be confirmed (no web check available), so no reference was invented. The "inside job / controlled demolition / false flag" framing is cited only to Miani et al. (2022) as general 9/11 material.
+- The "platforms and fact-checkers rely on automatic filters" claim was dropped: no published source could be confirmed (no web check available), so no reference was invented. The "inside job / controlled demolition / false flag" framing is cited only to Miani et al. (2022) as general 9/11 material. **[Superseded 26 Oct 2026: see "Cycle 3, owner polish" below.]**
 - No textbook references were added beyond those already listed (Hastie et al. 2009, Manning et al. 2008, McNemar 1947); Manning et al. is now cited in the 01 introduction for TF-IDF.
 - Methods table headers are plain words ("Trained on our data"); the CSV was rewritten from existing results without rerunning the pipeline.
 
@@ -172,7 +172,7 @@ before References, tables included; near-duplicates follow the rule above; websi
 
 ## Cycle 3, T5 (02 report, references)
 - 02 Report: added two sentences on how LOCO was built and rated (keyword retrieval, website-level subcorpus, authors' blind check 85% / 92%), all from `docs/PROJECT_PLAN.md` section 2; licence left out. Library versions copied from `results/run_info.json`. Trimmed the cleaning paragraph.
-- References (D8) **declined**: no 9/11 background source and no extra source for regularised logistic regression could be confirmed from existing files, and no web check is possible here (no invented citations). Hastie et al. (2009) already covers regularised logistic regression. `content/references.md` has no "[open]" markers.
+- References (D8) **declined**: no 9/11 background source and no extra source for regularised logistic regression could be confirmed from existing files, and no web check is possible here (no invented citations). Hastie et al. (2009) already covers regularised logistic regression. `content/references.md` has no "[open]" markers. **[Superseded 26 Oct 2026: see "Cycle 3, owner polish" below.]**
 
 ## Cycle 3, owner polish (2026-10-26)
 
@@ -184,8 +184,17 @@ before References, tables included; near-duplicates follow the rule above; websi
   result file differs (except `run_info.json`).
 - **Baseline row.** A score without spread is shown without an interval.
 - **MATTR.** Rewritten as a plain sliding window; same values (tests unchanged and passing).
-- **Report length.** Measured on the assembled report before References: 4,079 words of prose (tables and figure
-  lines excluded, the gate's rule) and 4,901 words by a plain whitespace count with tables. Both are inside
+- **Verified state (26 Oct 2026).** In the pinned environment (`requirements-lock.txt`, Python 3.11) the full test suite
+  passed with no test skipped, and two consecutive `fml run-all` runs gave byte-identical results
+  (`docs/reproducibility.md`). This replaces the earlier entries marked "superseded".
+- **Report length.** Measured on the assembled report before References: 4,136 words of prose (tables and figure
+  lines excluded, the gate's rule) and 4,958 words by a plain whitespace count with tables. Both are inside
   3,000-5,000; R8 (about 4,500) is met by the prose count.
 - **Examples in the report.** The six-row examples table stays on the site (section 08, The code); the report quotes
   two of its rows in prose to save length.
+- **Check sheet without website names (26 Oct 2026).** `stance_check_sample.csv` now holds only `doc_id` and
+  `human_stance`; the same 40 ids in the same order. Coders never see the website.
+- **Hand-check answers.** Each member's downloaded CSV goes to `data/hand_check/stance_check_member_<letter>.csv`
+  (ids, letter, stance only). Member A's file is in; the analysis of agreement is added once all five are in.
+- **AI-use log vs run records.** The harness's automatic end-of-cycle record moved to `docs/agent-runs.md`;
+  `docs/ai-log.md` keeps only the factual Produced / Checked / Learned summary used for the report.

@@ -132,7 +132,7 @@ def test_check_sheet_is_blind_and_claude_answers_are_separate(tmp_path):
     assert errors.write_check_sample(sample, p) is True
     assert errors.write_check_sample(sample.iloc[:1], p) is False        # an existing sheet is never redrawn
     out = pd.read_csv(p, dtype=str, keep_default_na=False)
-    assert list(out.columns) == ["doc_id", "website", "human_stance"]
+    assert list(out.columns) == ["doc_id", "human_stance"]          # no website: coders judge the text only
     assert (out["human_stance"] == "").all()
     errors.write_claude_answers(sample, tmp_path / "answers.csv")
     assert list(pd.read_csv(tmp_path / "answers.csv").columns) == ["doc_id", "claude_stance", "claude_justification"]
