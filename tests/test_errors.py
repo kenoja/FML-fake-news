@@ -214,3 +214,17 @@ def test_parse_stance_tolerates_reasoning_before_complete_json_only():
     assert ok["stance"] == "no_claim"
     cut = errors.parse_stance('It is news.\n\n{"stance":"no_claim","justification":"cut off')
     assert cut["stance"] == errors.UNREADABLE
+
+
+def test_public_excerpts_stay_within_the_word_limit():
+    # Why: article texts are not ours to publish; every excerpt in a public table must stay short.
+    import csv
+    from pathlib import Path
+    limit = 50
+    tables = Path(__file__).resolve().parents[1] / "results" / "tables"
+    for path in tables.glob("*.csv"):
+        with path.open(encoding="utf-8", newline="") as fh:
+            for row in csv.DictReader(fh):
+                for column, value in row.items():
+                    if column and column.lower() == "excerpt" and value:
+                        assert len(value.split()) <= limit, f"{path.name}: excerpt of {len(value.split())} words"

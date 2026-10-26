@@ -1,7 +1,7 @@
 ---
 title: Results and why they fail
 part: Evaluation
-hypothesis: The zero-shot LLM reaches a higher conspiracy-class F1 on the test set than the best logistic regression, and the McNemar test gives p < 0.05.
+hypothesis: The LLM beats the three trained models on unseen websites, and many errors are label problems rather than model mistakes.
 ---
 ## Explained simply
 
@@ -9,13 +9,13 @@ hypothesis: The zero-shot LLM reaches a higher conspiracy-class F1 on the test s
 
 **Why F1 and not accuracy.** Most of the articles are mainstream. A lazy "model" that always answers "mainstream" is right about three times in four, which sounds decent and finds no conspiracy article at all. That is the baseline row of the table: its F1 is zero.
 
-**A worked case.** The test set has 96 conspiracy articles and 314 mainstream ones. The LLM caught 64 of the 96 (recall 0.667) and wrongly flagged 1 mainstream article, so 64 of its 65 alarms were right (precision 0.985); its F1 is 0.795. Intervals are a bit optimistic.
+**A worked case.** The test set has 96 conspiracy articles and 314 mainstream ones. The LLM caught 64 of the 96 (recall 0.667) and wrongly flagged 1 mainstream article, so 64 of its 65 alarms were right (precision 0.985); its F1 is 0.795. The intervals are a bit optimistic, that is too narrow, because articles from the same website are alike and the test set holds only six conspiracy websites.
 
-**Why McNemar for the comparisons.** Two judges rate the same cases. Where they agree, we learn nothing about who is better. Only the cases where they disagree count. If one judge is right in 20 of 22 disagreements, that judge is clearly better; if it is 11 against 11, it may be luck. McNemar's test does this with our models, on the same articles: it counts the articles where only one of the two is right. A confidence interval for each model alone cannot compare a pair, because it says nothing about who wins on the same articles.
+**Why McNemar for the comparisons.** Two judges rate the same cases. Where they agree, we learn nothing about who is better. Only the cases where they disagree count. If one judge is right in 20 of 22 disagreements, that judge is clearly better; if it is 11 against 11, it may be luck. McNemar's test counts exactly these cases for two models on the same articles.
 
 **Why validation scores are higher.** Models were tuned on validation articles and then scored on test articles from other websites, and there are fewer conspiracy websites in the test set. The per-website table shows where the test scores are lost: one large site in the test set is hard for every model.
 
-**Model errors and label problems.** The label belongs to the website, not to the article. A conspiracy site can print an ordinary news item, and then the label describes the text badly. To tell the two apart, a second language model read each disputed article and ticked what it does with conspiracy claims: endorses, debunks, reports neutrally, or makes no claim. A conspiracy-site article without an endorsed claim, or a mainstream article that endorses one, counts as a label problem; everything else is a model error. Because a machine did the ticking, the team checks 40 articles by hand.
+**Model errors and label problems.** The label belongs to the website, not to the article. A conspiracy site can print an ordinary news item, and then the label describes the text badly. To tell the two apart, a second language model read each disputed article and recorded its **stance**, that is, what the article does with conspiracy claims: endorses them, debunks them, reports them neutrally, or makes no such claim. A conspiracy-site article without an endorsed claim, or a mainstream article that endorses one, counts as a label problem; everything else is a model error. Because a machine did the ticking, the team checks 40 articles by hand.
 
 ## The code
 
@@ -27,15 +27,7 @@ The McNemar test counts who is right where the other is wrong.
 
 <!-- cell: src/fml/comparison.py#mcnemar_pair -->
 
-The stage reads the saved test predictions, builds the table and the figures, and runs the three tests.
-
-<!-- cell: src/fml/pipeline.py#align_predictions -->
-
-<!-- cell: src/fml/pipeline.py#run_mcnemar_pairs -->
-
-<!-- cell: src/fml/pipeline.py#write_website_recall -->
-
-<!-- cell: src/fml/pipeline.py#comparison_stage -->
+The pipeline applies these two functions to the saved test predictions of all four models.
 
 <!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals -->
 <!-- output: results/figures/comparison_confusion.png | Confusion matrix of each model on the test articles -->
@@ -81,14 +73,6 @@ The examples are picked with a seeded shuffle among articles that have a clean e
 
 <!-- cell: src/fml/errors.py#pick_examples -->
 
-The stage puts it all together and writes the tables.
-
-<!-- cell: src/fml/pipeline.py#label_problem_values -->
-
-<!-- cell: src/fml/pipeline.py#errors_values -->
-
-<!-- cell: src/fml/pipeline.py#errors_stage -->
-
 <!-- output: results/tables/error_classification.csv -->
 <!-- output: results/tables/error_counts_plain.csv -->
 
@@ -99,7 +83,7 @@ Each row is one test article with a short excerpt. The first two rows show that 
 
 ## Report
 
-All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993; 2,000 resamples of documents). The baseline row always answers "mainstream": its accuracy is 0.766, but it finds no conspiracy article, which is why accuracy is not used. All three logistic regressions clearly beat this baseline, as expected for the word-count model in section 1.
+All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993), which treat articles as independent and are therefore somewhat too narrow for six conspiracy websites. The baseline row always answers "mainstream": its accuracy is 0.766, but it finds no conspiracy article, which is why accuracy is not used. All three logistic regressions clearly beat this baseline, as expected in the introduction.
 
 <!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals (the baseline has no spread, so no interval) -->
 
@@ -107,7 +91,7 @@ All four final models were scored once on the same 410 test articles (96 from co
 
 The LLM has the highest F1 (0.795, interval 0.723 to 0.857), followed by TF-IDF (0.598), word counts (0.567) and TF-IDF with features (0.560). The LLM is almost never wrong when it says "conspiracy" (precision 0.985) but misses a third of the conspiracy articles (recall 0.667).
 
-Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1947) on the articles where only one of the two is right, as set out in section 1.
+Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1947) on the articles where only one of the two is right, as set out in the introduction.
 
 <!-- output: results/tables/mcnemar_tests.csv | The three McNemar tests: articles where only one model is right, and the p-value -->
 
@@ -117,7 +101,7 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 
 **H3: The LLM beats the best logistic regression.** Supported. F1 is 0.795 against 0.598, the intervals do not overlap, and 4 articles are right only for the best logistic regression (TF-IDF) against 37 only for the LLM (p < 0.0001).
 
-**Why the scores are lower on test than on validation.** Validation F1 was 0.865 for word counts, 0.918 for TF-IDF, 0.896 for TF-IDF with features and 0.987 for the LLM. The likely reason is the websites: the test set has few and different conspiracy websites that no model saw. The table tests this reading. Each row is one conspiracy website in the test set; a recall of 0.5 means that a model found half of that website's articles.
+**Why the scores are lower on test than on validation.** Validation F1 was between 0.865 and 0.987. The likely reason is the websites: the test set has few and different conspiracy websites that no model saw. The table tests this reading. Each row is one conspiracy website in the test set; a recall of 0.5 means that a model found half of that website's articles.
 
 <!-- output: results/figures/validation_vs_test_confusion.png | Confusion matrices on validation (top) and test (bottom); rows: true website type, columns: predicted -->
 
@@ -127,11 +111,11 @@ One site, Website 4, supplies 44 of the 96 conspiracy test articles, and all fou
 
 **Where the models fail, and why.** We examined the test articles on which the best logistic regression or the LLM disagrees with the label. A second model (Claude Sonnet 5.5) coded the stance of each towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
 
-Of the 70 wrongly classified articles, 69 have a readable coding: 49 are label problems and 20 are model errors. One article was left out because the second model's answer was not in the required form. The table gives the three groups with the share of coded articles that are label problems.
+Of the 70 wrongly classified articles, 69 have a readable coding: 49 are label problems and 20 are model errors.
 
 <!-- output: results/tables/error_counts_plain.csv | Test articles wrongly classified, by who is wrong, and the share that are label problems -->
 
-These shares are estimates from one automatic coder. That all 28 coded articles missed by both models count as label problems follows partly from the rule itself: a conspiracy-site article without a conspiracy claim is a label problem by definition.
+These shares are estimates from one automatic coder. That all 28 coded articles missed by both models count as label problems follows partly from the rule itself, since a conspiracy-site article without a conspiracy claim is a label problem by definition; leaving that group out, 21 of the 41 coded articles that only one model got wrong are label problems.
 
 Two test articles show the pattern. A conspiracy-site article that both models called mainstream begins "A military judge has set the trial date for five men accused of masterminding the 9/11 attacks": a plain court report without a conspiracy claim, so this is a label problem. A mainstream article opening "Not only is there a smoking gun in the 28 pages" was called conspiracy by the logistic regression and mainstream by the LLM; the stance coder found no conspiracy claim in it, so this is a model error: the trained model reacted to wording that only sounds like conspiracy writing.
 

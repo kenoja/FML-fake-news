@@ -10,7 +10,7 @@ one LLM (Claude Haiku 5.5) that never saw our training data. We study where each
 - `content/` the walkthrough sections (code, outputs, plain explanations); [how to join in](content/guide.md)
 - `src/fml/` the analysis; `results/` numbers, tables and figures; `reports/report.md` the report
 - `docs/PROJECT_PLAN.md` method and reasoning; `docs/decisions.md` choices and open questions
-- `docs/ai-log.md` what the AI did and what we checked; `docs/reproducibility.md` checksums of two runs
+- `docs/ai-log.md` what the AI did and what we checked; [`docs/reproducibility.md`](docs/reproducibility.md) evidence that two runs give identical results
 - `AGENTS.md` the rules for the AI assistant
 
 The article texts are not in this repository (private data repo; corpus: Miani, Hills & Bangerter, 2022).
@@ -23,7 +23,7 @@ Python 3.11 or newer.
 pip install -r requirements-lock.txt && pip install -e . --no-deps
 export FML_DATA_DIR=/path/to/data-repo     # private data repo with the article texts
 export LLM_CLASSIFIER_API_KEY=...          # only needed if results/llm_cache.jsonl lacks entries
-fml run-all                                # rebuilds results/ (under 8 minutes, no API calls with the cache)
+fml run-all                                # rebuilds results/ in about two minutes (no API calls with the cache)
 python -m sitegen build                    # rebuilds reports/report.md and the site from content/
 python -m pytest -q                        # tests; those marked needs_data skip without the data repo
 ```

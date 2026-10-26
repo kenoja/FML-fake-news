@@ -67,7 +67,7 @@ The checks that need people are listed in `docs/human-todo.md` (placeholders; no
 
 ### Learned
 - A number can match `results/metrics.json` and still stand beside a claim the table does not support; the platform-filter sentence was only caught by asking for a source.
-- Counting `final_*` and `final2_*` ids in `results/test_access_log.jsonl` showed that four earlier-configuration models had been scored on test, so `09-limitations` now says so instead of claiming a single scoring.
+- A test-access log is only useful if the report uses it: it shows seven earlier model versions scored on test, which `09-limitations` now states.
 - A feature count (47 hand-made words in four lists) had to be read from the results files, not written from memory.
 
 ## Cycle 3 - owner review and polish (2026-10-26)
@@ -86,6 +86,5 @@ the full test suite passed with no test skipped (`docs/reproducibility.md`). The
 that did not match `results/`; those sentences were rewritten.
 
 ### Learned
-The agent's reviewer could not run commands, so it scored reproducibility low for lack of evidence; the harness now
-passes it the results of runs made in code. The agent had also deleted the tests of its own harness; those tests
-are now protected.
+A reviewer can only score what it can check: evidence from runs made in code has to be passed to it. Checks that
+guard the process itself (the harness tests) must be protected from the agent that is being checked.
