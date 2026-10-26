@@ -35,7 +35,7 @@ NAME_ALLOWLIST = {
     "Congress", "Senate", "Arabia", "Arab", "Middle", "East", "Taliban", "ISIS", "UK", "EU", "NATO",
 }
 _CAP_TOKEN = re.compile(r"[A-Z][\w'’-]*")
-CHECK_COLUMNS = ["doc_id", "website", "human_stance"]     # no Claude stance: the team reads blind
+CHECK_COLUMNS = ["doc_id", "human_stance"]     # no website and no Claude stance: the team reads blind
 EXCERPT_WORDS = 29
 
 STANCE_PROMPT = (
@@ -243,18 +243,25 @@ PLAIN_LABELS = {"lr_only_wrong": "Only the logistic regression is wrong", "llm_o
                 "not_sampled": "Not coded"}
 
 
+def select_errors(df: pd.DataFrame, group: str, error_type: str) -> pd.DataFrame:
+    """Rows of one group and one error type; 'all' keeps every value."""
+    keep = (df["set"] == group) | (group == "all")
+    keep = keep & ((df["error_type"] == error_type) | (error_type == "all"))
+    return df[keep]
+
+
 def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
     """Counts by group x error type, with plain labels: all errors, coded, and the coded ones per verdict."""
     rows = []
     for s in (*SETS, "all"):
         for et in ("false positive", "false negative", "all"):
-            sel = lambda d: d[((d["set"] == s) | (s == "all")) & ((d["error_type"] == et) | (et == "all"))]  # noqa: E731
-            c = sel(coded)
+            c = select_errors(coded, s, et)
+            all_errors = select_errors(totals, s, et)
             rows.append({"Group": PLAIN_LABELS[s], "Error type": PLAIN_LABELS.get(et, "All errors"),
-                         "Errors": len(sel(totals)), "Coded": len(c),
+                         "Errors": len(all_errors), "Coded": len(c),
                          "Model wrong": int((c["verdict"] == MODEL_WRONG).sum()),
                          "Label does not describe the text": int((c["verdict"] == LABEL_PROBLEM).sum()),
-                         PLAIN_LABELS["not_sampled"]: len(sel(totals)) - len(c),
+                         PLAIN_LABELS["not_sampled"]: len(all_errors) - len(c),
                          **{PLAIN_LABELS[st]: int((c["claude_stance"] == st).sum()) for st in STANCES}})
     return pd.DataFrame(rows)
 
@@ -276,9 +283,9 @@ def check_sheet_layout() -> pd.DataFrame:
     """Plain description of the blind check sheet, one row per column (no article text, no model answer)."""
     stances = ", ".join(s.replace("_", " ") for s in STANCES)
     return pd.DataFrame({"Column": CHECK_COLUMNS,
-                         "What it holds": ["Identifier of one validation article", "The website that published it",
+                         "What it holds": ["Identifier of one validation article",
                                            f"Left empty: the reader ticks one of {stances}"],
-                         "Filled by": ["Prepared", "Prepared", "Each member, without seeing the model's answer"]})
+                         "Filled by": ["Prepared", "Each member, without seeing the website or the model's answer"]})
 
 
 def write_claude_answers(sample: pd.DataFrame, path: Path) -> None:

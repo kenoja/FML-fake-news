@@ -132,7 +132,7 @@ def test_check_sheet_is_blind_and_claude_answers_are_separate(tmp_path):
     assert errors.write_check_sample(sample, p) is True
     assert errors.write_check_sample(sample.iloc[:1], p) is False        # an existing sheet is never redrawn
     out = pd.read_csv(p, dtype=str, keep_default_na=False)
-    assert list(out.columns) == ["doc_id", "website", "human_stance"]
+    assert list(out.columns) == ["doc_id", "human_stance"]          # no website: coders judge the text only
     assert (out["human_stance"] == "").all()
     errors.write_claude_answers(sample, tmp_path / "answers.csv")
     assert list(pd.read_csv(tmp_path / "answers.csv").columns) == ["doc_id", "claude_stance", "claude_justification"]
@@ -214,3 +214,17 @@ def test_parse_stance_tolerates_reasoning_before_complete_json_only():
     assert ok["stance"] == "no_claim"
     cut = errors.parse_stance('It is news.\n\n{"stance":"no_claim","justification":"cut off')
     assert cut["stance"] == errors.UNREADABLE
+
+
+def test_public_excerpts_stay_within_the_word_limit():
+    # Why: article texts are not ours to publish; every excerpt in a public table must stay short.
+    import csv
+    from pathlib import Path
+    limit = 50
+    tables = Path(__file__).resolve().parents[1] / "results" / "tables"
+    for path in tables.glob("*.csv"):
+        with path.open(encoding="utf-8", newline="") as fh:
+            for row in csv.DictReader(fh):
+                for column, value in row.items():
+                    if column and column.lower() == "excerpt" and value:
+                        assert len(value.split()) <= limit, f"{path.name}: excerpt of {len(value.split())} words"

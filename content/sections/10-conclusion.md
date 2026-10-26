@@ -30,15 +30,9 @@ The conclusion has no analysis of its own. This function scores one final model 
 
 ## Report
 
-The study compared four methods for deciding whether a full 9/11 article comes from a conspiracy-oriented or a mainstream website. All numbers are conspiracy-class F1 scores on the 410 test articles.
+The study compared four methods for deciding whether a full 9/11 article comes from a conspiracy-oriented or a mainstream website. All three logistic regressions beat the baseline that always answers mainstream. H1 (TF-IDF beats word counts) was supported, narrowly; H2 (the three feature groups help) was not supported; H3 (the LLM beats the best logistic regression) was supported, with an F1 of 0.795 against 0.598, although it still misses one third of the conspiracy articles.
 
-H1 (TF-IDF improves on word counts) is supported, modestly: F1 0.598 against 0.567 (p = 0.029); with a stricter threshold for three tests it would not count.
-
-H2 (adding the three feature groups improves the TF-IDF model) is not supported: on test the F1 was 0.560 against 0.598, within chance (p = 0.243). Certainty words alone gave the best validation F1 (0.930), but the planned full combination did not help.
-
-H3 (the zero-shot LLM beats the best logistic regression) is supported: F1 0.795 against 0.598 (p < 0.0001). It misses one third of the conspiracy articles.
-
-In sum, only the advantage of the LLM is clear, and no method finds enough conspiracy articles to be used alone for automatic flagging. Further work should test other topics and more websites; the team's hand check of the automatic stance coding follows this report.
+The results allow a clear statement about this corpus and its website labels: a cheap language model recovered the type of website better than word statistics, possibly helped by what it already knows about websites, and hand-made features did not close the gap. They do not show that any method recognises conspiracy content, because the labels describe websites, and they rest on six conspiracy websites in the test set. No method finds enough conspiracy articles to be used alone for automatic flagging. Further work should test other topics and more websites; the results of the team's hand check of the automatic stance coding will be added once it is complete.
 
 ## Check yourself
 

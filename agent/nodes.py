@@ -225,7 +225,7 @@ def finalize(state: AgentState) -> dict:
             f"| criterion | score | evidence |\n|---|---|---|\n{table}\n\n"
             f"### Open reviewer issues\n{open_items or '- none'}\n\n"
             f"### Reviewer summary\n{state.get('review_summary', '')}\n")
-    memory.append_markdown("docs/ai-log.md", f"Cycle {state['cycle']} - agent run ({memory.now()[:10]})", body)
+    memory.append_markdown("docs/archive/agent-runs.md", f"Cycle {state['cycle']} - agent run ({memory.now()[:10]})", body)
     memory.record_cycle(state["cycle"], reached_target=reached, rounds=state.get("review_round", 0),
                         scores={k: v["score"] for k, v in scores.items()})
     if not reached:

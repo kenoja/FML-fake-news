@@ -30,7 +30,12 @@ def assign_websites(sizes: pd.Series, ratios: dict[str, float], seed: int) -> di
     filled = {name: 0.0 for name in SPLITS}
     site_split = {}
     for site, n_docs in biggest_first.items():
-        best = min(SPLITS, key=lambda name: (filled[name] + n_docs) / target[name])
+        # pick the split that would be least full (as a share of its target) after adding this website
+        best, best_share = None, None
+        for name in SPLITS:
+            share = (filled[name] + n_docs) / target[name]
+            if best is None or share < best_share:
+                best, best_share = name, share
         site_split[site] = best
         filled[best] += n_docs
     return site_split
