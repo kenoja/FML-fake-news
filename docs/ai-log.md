@@ -53,7 +53,7 @@ done by the team.
 **Produced.** Merged results and error analysis, numbered hypotheses, a methods overview, a per-website table, a
 baseline row and a rerun of the three logistic regressions with identical settings.
 
-**Checked.** The owner and a second session verified every new reference online, ran the whole analysis twice with
+**Checked.** The owner and a second session looked up each new reference on its publisher or DOI page (26 Oct 2026), ran the whole analysis twice with
 identical results and the full test suite with no test skipped (`docs/reproducibility.md`), and corrected three
 sentences whose numbers did not match the result files.
 

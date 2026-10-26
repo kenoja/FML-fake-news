@@ -42,7 +42,7 @@ The analysis function is shared, so both analyses run in exactly the same way.
 
 ## Report
 
-The second analysis keeps everything from the word-count analysis (articles, split, vocabulary, balanced class weights and the choice of C by validation F1) and replaces raw counts by TF-IDF weights (Salton and Buckley, 1988; Manning, Raghavan and Schütze, 2008). Term frequencies were damped with a logarithm, article vectors were scaled to unit length, and the inverse document frequencies were computed on the training articles only. All numbers here are validation numbers.
+The second analysis keeps everything from the word-count analysis (articles, split, vocabulary, balanced class weights and the choice of C by validation F1) and replaces raw counts by TF-IDF weights (Salton and Buckley, 1988; Manning, Raghavan and Schütze, 2008). Term frequencies were damped with a logarithm, article vectors were scaled to unit length, and the inverse document frequencies were computed on the training articles only. All numbers here are validation numbers; on validation TF-IDF scores higher than word counts, as H1 expects, but only the test decides.
 
 The value C = 10 scored best, with a precision of 0.930, a recall of 0.906 and an F1 score of 0.918. Larger C helped here: because TF-IDF vectors have a fixed length, the model can use larger weights without being dominated by long articles. The chosen value lies inside the grid, and C = 100 scored almost the same (F1 0.909).
 

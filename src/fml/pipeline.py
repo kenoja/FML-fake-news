@@ -687,6 +687,21 @@ def write_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], websites: 
     return per_website
 
 
+def validation_vs_test(metrics: dict, table: pd.DataFrame) -> pd.DataFrame:
+    """Validation F1 and test F1 of the four final models side by side."""
+    validation = {"final2_word_counts": metrics["word_counts"]["validation"]["f1"],
+                  "final2_tfidf": metrics["tfidf"]["validation"]["f1"],
+                  "final2_tfidf_features": metrics["tfidf_features"]["validation"]["f1"],
+                  "final_llm": metrics["llm"]["validation"]["f1"]}
+    rows = []
+    for record in table.to_dict("records"):
+        if record["model"] in validation:                      # the baseline has no validation run
+            rows.append({"Model": MODEL_NAMES[record["model"]],
+                         "Validation F1": f"{validation[record['model']]:.3f}",    # three decimals in every cell
+                         "Test F1": f"{record['f1']:.3f}"})
+    return pd.DataFrame(rows)
+
+
 def comparison_stage() -> dict:
     """Compare the four final models on the same test documents, from the saved prediction files only."""
     lr, llm_all = read_final_predictions()
@@ -698,6 +713,7 @@ def comparison_stage() -> dict:
     best_lr = best_final_lr(metrics)
     mcnemar = run_mcnemar_pairs(y, preds, best_lr)
     write_table("mcnemar_tests", mcnemar_table(mcnemar))
+    write_table("validation_vs_test", validation_vs_test(metrics, table))   # where the scores drop
     test_counts = {r["model"]: {k: int(r[k]) for k in ("tp", "fn", "fp", "tn")} for r in table.to_dict("records")}
     savefig(plot_validation_vs_test({"TF-IDF": metrics["tfidf"]["confusion"], "LLM": metrics["llm"]["validation"]["confusion"]},
                                     {"TF-IDF": test_counts[TFIDF_FINAL], "LLM": test_counts[LLM_ID]}),

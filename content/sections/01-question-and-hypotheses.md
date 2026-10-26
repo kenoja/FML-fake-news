@@ -43,7 +43,7 @@ This section only sets the question. The first function builds the "at a glance"
 
 ### Executive summary
 
-We asked whether the text of a full 9/11 article reveals if it comes from a conspiracy-oriented or a mainstream website, comparing three logistic regressions and one low-cost language model, Claude Haiku 5.5, on 410 held-out test articles. The language model reached the highest F1 score for the conspiracy class, 0.795 (95% confidence interval 0.723 to 0.857), against 0.567 for word counts, 0.598 for TF-IDF and 0.560 for TF-IDF with features. H1 (weighting words helps) was supported, narrowly (p = 0.029; it would not pass a correction for three tests), H2 (hand-made features help) was not supported, and H3 (the language model beats the best logistic regression) was supported. All models found fewer than seven in ten conspiracy articles, and the test results rest on only six conspiracy websites, so none is reliable enough for automatic flagging.
+We asked whether the text of a full 9/11 article reveals if it comes from a conspiracy-oriented or a mainstream website, comparing three logistic regressions and one low-cost language model, Claude Haiku 5.5, on 410 held-out test articles. The language model reached the highest conspiracy-class F1, 0.795, against 0.598 for the best logistic regression (TF-IDF). With supported meaning a difference in the predicted direction and McNemar's p < 0.05, H1 (weighting words helps) was supported, narrowly, H2 (hand-made features help) was not supported, and H3 (the language model beats the best logistic regression) was supported. All models missed at least three in ten conspiracy articles, and the test rests on six conspiracy websites.
 
 ### Introduction
 
@@ -53,7 +53,7 @@ We compare four methods that form a ladder from simple to rich: logistic regress
 
 - **H1.** TF-IDF reaches a higher conspiracy-class F1 than word counts, because distinctive words carry more information than common ones.
 - **H2.** TF-IDF plus the three feature groups reaches a higher F1 than TF-IDF alone, because these features capture how conspiracy texts argue.
-- **H3.** The LLM reaches a higher F1 than the best logistic regression, because it brings broad knowledge of how texts are written. A first idea was "roughly as well"; we chose the directional form because it can be tested.
+- **H3.** The LLM reaches a higher F1 than the best logistic regression, because it brings broad knowledge of how texts are written.
 
 What we did not do, and why:
 
@@ -83,3 +83,6 @@ A: Most articles are mainstream, so always answering "mainstream" is right most 
 
 Q: A calm news item sits on a conspiracy website. Why is it still labelled "conspiracy"?
 A: We did not read and label each article; we labelled the website. So a calm article inherits its site's label, and a model that calls it "mainstream" may be reading the text correctly. This is why some "errors" are really label problems.
+
+Q: What makes "TF-IDF reaches a higher F1 than word counts" a testable hypothesis, and "TF-IDF is better" not?
+A: The first names a measurable score and a direction, so the results can show it to be wrong. "Better" says neither what is measured nor how we would know.

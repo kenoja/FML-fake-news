@@ -52,8 +52,8 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 
 ## Report and site
 
-- **Report length.** 3,000 to 5,000 words before References. Measured on 26 Oct 2026: about 4,100 words of prose,
-  about 4,900 with every table cell counted.
+- **Report length.** 3,000 to 5,000 words before References. Measured on 26 Oct 2026: 4,086 words of prose and
+  4,974 with every table cell counted, so the report stays under 5,000 either way.
 - **Audience.** Teammates without a technical background: four-part sections, glossary links, hidden answers.
 - **No process on the site.** Plans, run records and decision history stay in `docs/`.
 
@@ -66,6 +66,10 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 ## Declined, with the reason
 
 - **More excerpts in the report.** Six examples are on the site; adding them to the report would push it past the
-  length aim.
+  length aim. The report names one label problem and one model error.
+- **A window-by-window MATTR.** Recomputing every 100-word window from scratch is easier to read but about a
+  hundred times slower over 2,554 articles; the sliding window gives the same values within the time limit.
+- **Licence in the report (R5 vs rubric).** R5 kept the licence off the site; the rubric asks for its status. Decided
+  with the owner: one neutral sentence in the data section, no further discussion.
 - **Website-level confidence intervals, more prompts, a memorisation test for the LLM.** Kept out to keep the
   analysis at the level of a fundamentals course; the limitations section names them.

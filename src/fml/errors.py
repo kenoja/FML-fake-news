@@ -243,18 +243,25 @@ PLAIN_LABELS = {"lr_only_wrong": "Only the logistic regression is wrong", "llm_o
                 "not_sampled": "Not coded"}
 
 
+def select_errors(df: pd.DataFrame, group: str, error_type: str) -> pd.DataFrame:
+    """Rows of one group and one error type; 'all' keeps every value."""
+    keep = (df["set"] == group) | (group == "all")
+    keep = keep & ((df["error_type"] == error_type) | (error_type == "all"))
+    return df[keep]
+
+
 def error_classification_table(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
     """Counts by group x error type, with plain labels: all errors, coded, and the coded ones per verdict."""
     rows = []
     for s in (*SETS, "all"):
         for et in ("false positive", "false negative", "all"):
-            sel = lambda d: d[((d["set"] == s) | (s == "all")) & ((d["error_type"] == et) | (et == "all"))]  # noqa: E731
-            c = sel(coded)
+            c = select_errors(coded, s, et)
+            all_errors = select_errors(totals, s, et)
             rows.append({"Group": PLAIN_LABELS[s], "Error type": PLAIN_LABELS.get(et, "All errors"),
-                         "Errors": len(sel(totals)), "Coded": len(c),
+                         "Errors": len(all_errors), "Coded": len(c),
                          "Model wrong": int((c["verdict"] == MODEL_WRONG).sum()),
                          "Label does not describe the text": int((c["verdict"] == LABEL_PROBLEM).sum()),
-                         PLAIN_LABELS["not_sampled"]: len(sel(totals)) - len(c),
+                         PLAIN_LABELS["not_sampled"]: len(all_errors) - len(c),
                          **{PLAIN_LABELS[st]: int((c["claude_stance"] == st).sum()) for st in STANCES}})
     return pd.DataFrame(rows)
 

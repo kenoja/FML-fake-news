@@ -89,7 +89,7 @@ All four final models were scored once on the same 410 test articles (96 from co
 
 <!-- output: results/figures/comparison_confusion.png | Confusion matrices on the test set (rows: true website type, columns: predicted) -->
 
-The LLM has the highest F1 (0.795, interval 0.723 to 0.857), followed by TF-IDF (0.598), word counts (0.567) and TF-IDF with features (0.560). The LLM is almost never wrong when it says "conspiracy" (precision 0.985) but misses a third of the conspiracy articles (recall 0.667).
+The LLM has the highest F1 (0.795, interval 0.723 to 0.857), followed by TF-IDF (0.598), word counts (0.567) and TF-IDF with features (0.560). The LLM is almost never wrong when it says "conspiracy" (precision 0.985) but misses a third of the conspiracy articles.
 
 Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1947) on the articles where only one of the two is right, as set out in the introduction.
 
@@ -101,15 +101,19 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 
 **H3: The LLM beats the best logistic regression.** Supported. F1 is 0.795 against 0.598, the intervals do not overlap, and 4 articles are right only for the best logistic regression (TF-IDF) against 37 only for the LLM (p < 0.0001).
 
-**Why the scores are lower on test than on validation.** Validation F1 was between 0.865 and 0.987. The likely reason is the websites: the test set has few and different conspiracy websites that no model saw. The table tests this reading. Each row is one conspiracy website in the test set; a recall of 0.5 means that a model found half of that website's articles.
+**Why the scores are lower on test than on validation.**
+
+<!-- output: results/tables/validation_vs_test.csv | Conspiracy-class F1 of the four final models on validation and on test -->
+
+The likely reason is the websites: the test set has few and different conspiracy websites that no model saw. The table tests this reading. Each row is one conspiracy website in the test set; a recall of 0.5 means that a model found half of that website's articles.
 
 <!-- output: results/figures/validation_vs_test_confusion.png | Confusion matrices on validation (top) and test (bottom); rows: true website type, columns: predicted -->
 
-<!-- output: results/tables/test_website_recall.csv | Recall of each model on the conspiracy articles of each test website -->
+<!-- output: results/tables/test_website_recall.csv | Recall of each model on the conspiracy articles of each test website (Website 4 holds 44 of the 96) -->
 
 One site, Website 4, supplies 44 of the 96 conspiracy test articles, and all four models find at most about a third of them (recall 0.205 to 0.318). Without those 44 articles the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for TF-IDF with features and 0.971 for the LLM. On every site with more than one article the LLM finds at least as many articles as each logistic regression.
 
-Website 4 explains most of the loss. Its articles are short pieces of partisan political news and commentary that mention 9/11, for example on politicians' remarks about the attacks. Of the articles from this site that the LLM missed, the stance coder found a conspiracy claim in none:
+Website 4 explains most of the loss. Judging by the titles of its test articles, it publishes short partisan political news and commentary that mentions 9/11, for example on politicians' remarks about the attacks. Of the articles from this site that the LLM missed, the stance coder found a conspiracy claim in none:
 
 <!-- output: results/tables/large_site_missed_stances.csv | Stance of the Website 4 articles the LLM missed -->
 

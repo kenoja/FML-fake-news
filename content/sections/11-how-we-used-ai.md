@@ -34,13 +34,13 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 ## Report
 
-**Tools and set-up.** The code, tests, tables, figures and drafts of this report and of the course website were produced with Claude Code, an AI coding assistant, running as a loop of three roles of Claude Sonnet 5.5: a planner that turned the team's written requirements into small tasks, an implementer that carried out one task at a time and ran the tests, and a reviewer that, in a fresh session, scored the result against a fixed checklist. A separate Claude session helped the project owner to set up this loop and the website. Claude Haiku 5.5 (the fourth classifier) and the stance coder are part of the study, not tools.
+**Tools and set-up.** The code, tests, tables, figures and drafts of this report and of the course website were produced with Claude Code, an AI coding assistant, running as a loop of three Claude Sonnet 5.5 roles: a planner that split the team's requirements into tasks, an implementer, and a reviewer that scored the result against a checklist in a fresh session. A separate Claude session helped the project owner to set up this loop and the website.
 
 **How the team steered the work.** The work ran in three cycles. After each cycle team members read the website, which shows the code that ran next to its output, and their comments became the next cycle's requirements. The decisions that shaped the study came from the team: full articles, the four methods, no emotion features, cleaning before any model, and a fair rerun with identical settings and the same text for all methods.
 
 **How the output was checked.** Automated tests fail when a rule is broken, for example when a model learns from more than the training articles, the split changes, the test set is used outside the final scoring, or a number in this report is missing from the result files. The whole analysis was run twice with identical results. Judgements that tests cannot make, such as whether the automatic stance coding is right, are checked by people through the hand check described in the error analysis.
 
-**What we learned.** The AI was fast and thorough, but literal: it selected features by an unplanned threshold until the team asked for the planned comparison. Tests show that numbers match files, not that they answer the right question.
+**What we learned.** The AI followed its instructions literally: it selected features by an unplanned threshold until the team asked for the planned comparison. Tests show that numbers match files, not that they answer the right question.
 
 ## Check yourself
 

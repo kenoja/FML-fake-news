@@ -9,7 +9,7 @@ scoring with its configuration hash.
 
 In the pinned environment of `requirements-lock.txt` (Python 3.11.17, numpy 2.4.6,
 scikit-learn 1.9.1), `fml run-all` was run twice on 2 CPUs (about
-106 seconds each). All 51 result files except `run_info.json` (the run's own
+106 seconds each). All 52 result files except `run_info.json` (the run's own
 timing) were byte-identical between the two runs, and `python -m pytest -q` passed with no test skipped.
 The agent harness now repeats this check after every pipeline run and fails a gate if any file differs.
 
@@ -54,6 +54,7 @@ ef8d21318fd203e04d2a8726962d2f5c8162b7c76147fcc4bb4157b7a8c3b4f2  results/tables
 33f4dfa71012304dd4b3c9646c25b561f0dcd900e6ae36eb382f878de7e678bf  results/tables/tfidf_grid.csv
 f71ce780f41a03424077f30ea3db1077dace694edf69454f63f5f60a08439e53  results/tables/tfidf_top_conspiracy_words.csv
 08f80e1da47877479f299f5463c4eaf3d54c5f3e659f9e56336cbc7b6ba3b653  results/tables/tfidf_top_mainstream_words.csv
+a63a0a332c529b78f88f47df0741ec6f75615bc1ef2b51c699f0639e8ab9e809  results/tables/validation_vs_test.csv
 8b717fb166e438fa99f78b01d0296ae959df0300ada64a7df87ccf95f5deaba2  results/tables/validation_website_recall.csv
 f02d2f31fdc83ab08628f50daa11487bbaa64c20a86ebdd6c43437b6afdbfe05  results/tables/word_counts_grid.csv
 90c217953be5d8bde71ccc4e0b3d42102118e89343c84de6c9675134baec5746  results/tables/word_counts_top_conspiracy_words.csv
