@@ -72,7 +72,7 @@ All three prompts reached almost the same validation F1 (0.987, 0.983 and 0.987)
 <!-- output: results/figures/llm_validation_confusion.png | LLM: validation confusion matrix of the chosen prompt -->
 
 
-Scoring the LLM against website labels is not a fully fair comparison with the trained models. It never saw our labels, so it cannot overfit to them, but it was never taught what they mean. The labels describe websites, not texts, so a "wrong" answer may be a correct reading. And the model may recognise a site from its style or bylines through its own training, which the logistic regressions cannot use.
+Scoring the LLM against website labels is not a fully fair comparison: it was never taught what the labels mean, a "wrong" answer may be a correct reading of a text whose label describes only its website, and the model may recognise a site through its own training, which the logistic regressions cannot do.
 
 
 ## Check yourself

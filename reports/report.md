@@ -4,20 +4,26 @@
 
 ### Executive summary
 
-We asked whether the text of a full 9/11 article reveals if it comes from a conspiracy-oriented or a mainstream website, comparing three logistic regressions and one low-cost language model, Claude Haiku 5.5, on 410 held-out test articles. The language model reached the highest F1 score for the conspiracy class, 0.795 (95% confidence interval 0.723 to 0.857), against 0.567 for word counts, 0.598 for TF-IDF and 0.560 for TF-IDF with features. H1 (weighting words helps) was supported, though narrowly, H2 (hand-made features help) was not supported, and H3 (the language model beats the best logistic regression) was supported. All models found fewer than seven in ten conspiracy articles, and the test results rest on only six conspiracy websites, so none is reliable enough for automatic flagging.
+We asked whether the text of a full 9/11 article reveals if it comes from a conspiracy-oriented or a mainstream website, comparing three logistic regressions and one low-cost language model, Claude Haiku 5.5, on 410 held-out test articles. The language model reached the highest F1 score for the conspiracy class, 0.795 (95% confidence interval 0.723 to 0.857), against 0.567 for word counts, 0.598 for TF-IDF and 0.560 for TF-IDF with features. H1 (weighting words helps) was supported, narrowly (p = 0.029; it would not pass a correction for three tests), H2 (hand-made features help) was not supported, and H3 (the language model beats the best logistic regression) was supported. All models found fewer than seven in ten conspiracy articles, and the test results rest on only six conspiracy websites, so none is reliable enough for automatic flagging.
 
 ### Introduction
 
 The attacks of 11 September 2001 are among the most persistent subjects of conspiracy theories: claims that they were an "inside job", a "controlled demolition" or a "false flag" are actively argued for online (Wood & Douglas, 2013) and have been studied as a widely held belief (Swami, Chamorro-Premuzic & Furnham, 2010). In a 2006 survey, 36 percent of Americans found it credible that federal officials helped the attacks happen or deliberately failed to stop them (Stempel, Hargrove & Stempel, 2007). Automatic detection of misleading web content is an active research field (Shu et al., 2017). This study asks whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website, using machine-learning methods for text classification.
 
-We compare four methods that form a ladder from simple to rich; the expectation for each is our hypothesis.
+We compare four methods that form a ladder from simple to rich: logistic regression on word counts, the plainest baseline; logistic regression on TF-IDF weights, the standard step beyond counting (Salton & Buckley, 1988; Manning, Raghavan & Schütze, 2008); logistic regression on TF-IDF plus three groups of hand-made features (word sequences, certainty words, style); and a low-cost LLM used without training (zero-shot). Logistic regression is simple, well understood and its weights can be read as word lists (Hastie, Tibshirani & Friedman, 2009). As a basic check, every trained model should beat always guessing "mainstream". Beyond that we test three hypotheses:
 
-1. **Word counts with logistic regression**, the plainest baseline. As a check rather than a hypothesis, we expect it to beat always guessing "mainstream", because the two kinds of website use different words.
-2. **TF-IDF with logistic regression**, the standard step beyond counting (Salton & Buckley, 1988; Manning, Raghavan & Schütze, 2008). **H1:** it reaches a higher conspiracy-class F1 than word counts, because distinctive words carry more information than common ones.
-3. **TF-IDF plus three feature groups** (word sequences, certainty words, style). **H2:** it reaches a higher F1 than TF-IDF alone, because these features capture how conspiracy texts argue.
-4. **A low-cost LLM used without training** (zero-shot). **H3:** it reaches a higher F1 than the best logistic regression, because it brings broad knowledge of how texts are written.
+- **H1.** TF-IDF reaches a higher conspiracy-class F1 than word counts, because distinctive words carry more information than common ones.
+- **H2.** TF-IDF plus the three feature groups reaches a higher F1 than TF-IDF alone, because these features capture how conspiracy texts argue.
+- **H3.** The LLM reaches a higher F1 than the best logistic regression, because it brings broad knowledge of how texts are written. A first idea was "roughly as well"; we chose the directional form because it can be tested.
 
-Logistic regression is simple, well understood and its weights can be read as word lists (Hastie, Tibshirani & Friedman, 2009); we tried no other classifiers, because the question is about the input. We did not fine-tune a language model, which needs more data and money than a small study has, and left out emotion features, because fear and anger are normal in any report on an attack. The whole pipeline, without the language model, runs on an ordinary computer (the last run: two processor cores, Python 3.11) in about two minutes, about one of which is the feature model; only the language model needs an internet connection and a paid service.
+What we did not do, and why:
+
+- *Other classifiers*: the question is about the input, so the classifier stays fixed.
+- *Fine-tuning a language model*: it needs more labelled data and money than a small study has.
+- *Emotion features*: fear and anger are normal in any report on an attack.
+- *Full texts or other language models*: all methods read the same first 3,000 words, and the course asked for one inexpensive model.
+
+The pipeline, without the language model, runs on an ordinary computer (the last run: two processor cores, Python 3.11) in about two minutes, about one of which is the feature model; only the language model needs an internet connection and a paid service.
 
 All methods are judged by precision, recall and F1 for the conspiracy class, because most articles are mainstream and accuracy would reward a model that never finds a conspiracy article. Two models are compared with McNemar's test on the articles where exactly one of them is right, the recommended test for two classifiers on the same test set (Dietterich, 1998); separate confidence intervals describe uncertainty but do not decide. A hypothesis is supported if the difference points in the predicted direction and McNemar's test gives p < 0.05, and not supported otherwise.
 
@@ -38,7 +44,7 @@ The four methods at a glance:
 
 The study uses the 9/11 subset of the LOCO corpus (Miani, Hills & Bangerter, 2022), a collection of web pages from websites rated as conspiracy-oriented or mainstream. In their own blind check of 60 documents per subcorpus, 85% of the conspiracy and 92% of the mainstream documents were correctly labelled. We use the full articles of this subset, 3,146 documents from 39 conspiracy and 79 mainstream websites. Each document carries the label of its website, so the label describes the publisher and not the single text. The texts belong to their publishers, so they are kept in a private data store and are not redistributed; this report shows only counts and short excerpts. The work used Python 3.11.17 with pandas, scikit-learn 1.9.1 (Pedregosa et al., 2011) and the Anthropic client library.
 
-A classifier takes the easiest signal that separates the classes. This shortcut learning (Geirhos et al., 2020), a form of target leakage (Kaufman et al., 2012), arises when website names, boilerplate, topic differences or copies of an article reveal the label without any property of the writing. All cleaning was therefore applied before any model was fitted. First, documents that do not mention the attacks in their title or text were removed (3,146 to 2,608), because a model could otherwise learn topics instead of kinds of websites. Second, near-duplicates were removed (2,608 to 2,554), so that no model meets a near copy of a test article during training: pairs with a cosine similarity of their TF-IDF vectors of at least 0.9 (a lower threshold would also remove different articles on the same event). The copy in the earlier set (training, then validation, then test) is kept. Third, web addresses, e-mail addresses, website names and lines repeated across many documents of one website were deleted from the texts. This step edited 2,498 texts but removed no document.
+A classifier takes the easiest signal that separates the classes; this shortcut learning (Geirhos et al., 2020), a form of target leakage (Kaufman et al., 2012), arises when site names, boilerplate, topics or copies reveal the label. All cleaning was therefore applied before any model was fitted. First, documents that do not mention the attacks in their title or text were removed (3,146 to 2,608), because a model could otherwise learn topics instead of kinds of websites. Second, near-duplicates were removed (2,608 to 2,554), so that no model meets a near copy of a test article during training: pairs with a cosine similarity of their TF-IDF vectors of at least 0.9 (a lower threshold would also remove different articles on the same event). The copy in the earlier set (training, then validation, then test) is kept. Third, web addresses, e-mail addresses, website names and lines repeated across many documents of one website were deleted from the texts. This step edited 2,498 texts but removed no document.
 
 
 
@@ -77,7 +83,7 @@ Because websites cannot be divided, the shares only approximate the targets. Aft
 
 ## Word counts
 
-The first analysis represents each article as a bag of words: a vector with the number of times each word occurs, ignoring order. Words were counted on the training articles only, and words occurring in fewer than two training articles were dropped. Logistic regression (Hastie, Tibshirani and Friedman, 2009) gives each word a weight, adds the weights of the words in an article and turns the sum into a probability that the article comes from a conspiracy website. Class weights were balanced because conspiracy articles are the smaller group, and each article was cut to its first 3,000 words, as for all methods; the full texts would have given the logistic regressions information the language model never sees. The regularisation strength C, which pulls the weights towards zero, was chosen from {0.01, 0.1, 1, 10, 100} by the validation F1 score of the conspiracy class. All numbers here are validation numbers.
+The first analysis represents each article as a bag of words: a vector with the number of times each word occurs, ignoring order. Words were counted on the training articles only, and words occurring in fewer than two training articles were dropped. Logistic regression (Hastie, Tibshirani and Friedman, 2009) gives each word a weight, adds the weights of the words in an article and turns the sum into a probability that the article comes from a conspiracy website. Class weights were balanced because conspiracy articles are the smaller group, and each article was cut to its first 3,000 words, as for all methods; the full texts would have given the logistic regressions information the language model never sees. The regularisation strength C, which pulls the weights towards zero (Hastie, Tibshirani and Friedman, 2009, ch. 4), was chosen from {0.01, 0.1, 1, 10, 100} by the validation F1 score of the conspiracy class. All numbers here are validation numbers.
 
 The smallest value, C = 0.01, scored best, with a precision of 0.828, a recall of 0.906 and an F1 score of 0.865. Larger values scored lower (F1 0.797 at C = 100), the typical sign of overfitting: with raw counts the model starts to rely on rare words that only describe the training articles. The best value lies at the lower edge of the grid; the grid was fixed before the run and was not widened afterwards, so an even more cautious model might score slightly higher. Of the 117 conspiracy articles in validation the model found 106, and of the 259 mainstream articles it called 22 conspiracy.
 
@@ -91,9 +97,9 @@ The words with the largest weights are informative, but not all are about conten
 
 ## TF-IDF
 
-The second analysis keeps everything from the word-count analysis (articles, split, vocabulary, balanced logistic regression, with its weights and the choice of C by validation F1 as explained in section 4) and replaces raw counts by TF-IDF weights (Salton and Buckley, 1988; Manning, Raghavan and Schütze, 2008). Term frequencies were damped with a logarithm, article vectors were scaled to unit length, and the inverse document frequencies were computed on the training articles only. C was again chosen from {0.01, 0.1, 1, 10, 100} by the validation F1 score of the conspiracy class. All numbers here are validation numbers.
+The second analysis keeps everything from the word-count analysis (articles, split, vocabulary, balanced class weights and the choice of C by validation F1) and replaces raw counts by TF-IDF weights (Salton and Buckley, 1988; Manning, Raghavan and Schütze, 2008). Term frequencies were damped with a logarithm, article vectors were scaled to unit length, and the inverse document frequencies were computed on the training articles only. All numbers here are validation numbers.
 
-The value C = 10 scored best, with a precision of 0.930, a recall of 0.906 and an F1 score of 0.918. The model called 8 mainstream articles conspiracy. Larger C helped here: because TF-IDF vectors have a fixed length, the model can use larger weights without being dominated by long articles. The chosen value lies inside the grid, and C = 100 scored almost the same (F1 0.909).
+The value C = 10 scored best, with a precision of 0.930, a recall of 0.906 and an F1 score of 0.918. Larger C helped here: because TF-IDF vectors have a fixed length, the model can use larger weights without being dominated by long articles. The chosen value lies inside the grid, and C = 100 scored almost the same (F1 0.909).
 
 
 
@@ -101,13 +107,11 @@ The value C = 10 scored best, with a precision of 0.930, a recall of 0.906 and a
 
 
 
-TF-IDF down-weights words that occur in nearly every article, damps repeated words, and scales each article to the same length. Everything else was kept identical to the word-count analysis so that only the weighting changes.
-
 The strongest words resemble those of the word-count model. "Posted", "truth" and "article" point to conspiracy websites; "killed", "tower" and "york" point to mainstream websites. Part of this signal reflects how websites present their articles.
 
 ## TF-IDF plus extra features
 
-The third analysis tests H2 by adding three groups of hand-made features to TF-IDF. N-grams of one to three words capture phrases such as "inside job"; word and bigram features are a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short hand-made lists: hedges (doubt words such as "perhaps"), boosters (certainty words such as "clearly"), hidden-truth phrases and debunking words, following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020; but see Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and repetition, the last measured as the share of different words in windows of 100 words (MATTR) (Horne and Adali, 2017); they generalise poorly across domains (Pérez-Rosas et al., 2018).
+The third analysis tests H2 by adding three groups of hand-made features to TF-IDF. N-grams of one to three words capture phrases such as "inside job"; word and bigram features are a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short hand-made lists: hedges (doubt words such as "perhaps"), boosters (certainty words such as "clearly"), hidden-truth phrases and debunking words, following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020; but see Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and repetition, the last measured as the share of different words in windows of 100 words (MATTR) (Horne and Adali, 2017); this evidence comes from fake-news data, not conspiracy websites, and such features generalise poorly across domains (Pérez-Rosas et al., 2018).
 
 The numeric groups were standardised with training statistics only. In an ablation, which switches one ingredient on or off, six logistic regressions with the same settings were compared on validation: TF-IDF alone, with each group, with all three (the planned final model), and with certainty words and style but without n-grams. 
 
@@ -126,7 +130,7 @@ The numeric groups were standardised with training statistics only. In an ablati
 
 
 
-The table also shows why the full combination falls below TF-IDF alone. Style lowers validation F1 on its own (0.909). Certainty words and style without n-grams reach 0.913, but all three groups only 0.896: the n-grams add 146,172 columns for 1,768 training articles, which probably makes it easy to fit single articles, and style habits such as capitals may describe single websites rather than conspiracy writing. These are likely explanations that fit the table, not tested causes: with 376 validation articles, no single group differs from TF-IDF alone by more than chance would allow, and the full combination chose the largest regularisation value in the grid. Certainty words are the only group that helps alone (0.930). The planned model is the full combination, so its result decides H2. With 376 validation articles, differences of one or two hundredths can be chance, so these are tendencies.
+The table also shows why the full combination falls below TF-IDF alone. Style lowers validation F1 on its own (0.909). Certainty words and style without n-grams reach 0.913, but all three groups only 0.896: the n-grams add 146,172 columns for 1,768 training articles, which probably makes it easy to fit single articles, and style habits such as capitals may describe single websites rather than conspiracy writing. These are likely explanations that fit the table, not tested causes: with 376 validation articles, one hundredth of F1 is about one or two of the 117 conspiracy articles, so no single group differs from TF-IDF alone by more than chance would allow, and the full combination chose the largest regularisation value in the grid. Certainty words are the only group that helps alone (0.930). The planned model is the full combination, so its result decides H2. With 376 validation articles, differences of one or two hundredths can be chance, so these are tendencies.
 
 ## The LLM classifier
 
@@ -153,7 +157,7 @@ All three prompts reached almost the same validation F1 (0.987, 0.983 and 0.987)
 
 
 
-Scoring the LLM against website labels is not a fully fair comparison with the trained models. It never saw our labels, so it cannot overfit to them, but it was never taught what they mean. The labels describe websites, not texts, so a "wrong" answer may be a correct reading. And the model may recognise a site from its style or bylines through its own training, which the logistic regressions cannot use.
+Scoring the LLM against website labels is not a fully fair comparison: it was never taught what the labels mean, a "wrong" answer may be a correct reading of a text whose label describes only its website, and the model may recognise a site through its own training, which the logistic regressions cannot do.
 
 ## Results and why they fail
 
@@ -195,7 +199,7 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 
 
 
-**H1: TF-IDF weighting beats plain word counts.** Supported: 7 articles are right only for word counts and 19 only for TF-IDF (p = 0.029). TF-IDF has the higher F1 (0.598 against 0.567), mainly through fewer false alarms (precision 0.721 against 0.607). It is the smallest of the three effects and would not pass a stricter threshold that corrects for running three tests (0.05 divided by three), so the support is modest.
+**H1: TF-IDF weighting beats plain word counts.** Supported, narrowly: 7 articles are right only for word counts and 19 only for TF-IDF (p = 0.029). TF-IDF has the higher F1 (0.598 against 0.567), mainly through fewer false alarms (precision 0.721 against 0.607). It would not pass a correction for three tests (0.05 divided by three), so the verdict is tentative.
 
 **H2: Adding the three feature groups improves the TF-IDF model.** Not supported. On validation the model with the extra features scored an F1 of 0.896 against 0.918 for TF-IDF alone, and on test it is lower again (0.560 against 0.598); 22 articles are right only for TF-IDF and 14 only with the features, a difference that chance explains (p = 0.243).
 
@@ -214,19 +218,35 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 | Website | Test articles | Recall: Word counts | Recall: TF-IDF | Recall: TF-IDF + features | Recall: LLM |
 |---|---|---|---|---|---|
 | Website 1 | 19 | 0.684 | 0.579 | 0.684 | 0.947 |
-| Website 2 | 6 | 0.833 | 0.833 | 0.833 | 1.0 |
-| Website 3 | 19 | 0.79 | 0.842 | 0.737 | 0.947 |
-| Website 4 | 44 | 0.25 | 0.204 | 0.204 | 0.318 |
-| Website 5 | 1 | 1.0 | 1.0 | 1.0 | 1.0 |
-| Website 6 | 7 | 0.857 | 1.0 | 0.714 | 1.0 |
+| Website 2 | 6 | 0.833 | 0.833 | 0.833 | 1.000 |
+| Website 3 | 19 | 0.789 | 0.842 | 0.737 | 0.947 |
+| Website 4 | 44 | 0.250 | 0.205 | 0.205 | 0.318 |
+| Website 5 | 1 | 1.000 | 1.000 | 1.000 | 1.000 |
+| Website 6 | 7 | 0.857 | 1.000 | 0.714 | 1.000 |
 
 *Recall of each model on the conspiracy articles of each test website*
 
 
 
-One site, Website 4, supplies 44 of the 96 conspiracy test articles, and all four models find at most about a third of them (recall 0.204 to 0.318). Without those 44 articles the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for TF-IDF with features and 0.971 for the LLM. On every site with more than one article the LLM finds at least as many articles as each logistic regression.
+One site, Website 4, supplies 44 of the 96 conspiracy test articles, and all four models find at most about a third of them (recall 0.205 to 0.318). Without those 44 articles the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for TF-IDF with features and 0.971 for the LLM. On every site with more than one article the LLM finds at least as many articles as each logistic regression.
 
-**Where the models fail, and why.** We examined the test articles on which the best logistic regression or the LLM disagrees with the label. A second model (Claude Sonnet 5.5) coded the stance of each towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
+Website 4 explains most of the loss. Its articles are short pieces of partisan political news and commentary that mention 9/11, for example on politicians' remarks about the attacks. Of the articles from this site that the LLM missed, the stance coder found a conspiracy claim in none:
+
+
+
+| stance | articles |
+|---|---|
+| no claim | 27 |
+| reports neutrally | 2 |
+| rejects or debunks | 1 |
+
+*Stance of the Website 4 articles the LLM missed*
+
+
+
+According to the automatic coding, their text gives no sign of the site's conspiracy rating, so every model calls them mainstream: the miss lies mostly in the label, not in the reading.
+
+**Where the models fail, and why.** For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
 
 Of the 70 wrongly classified articles, 69 have a readable coding: 49 are label problems and 20 are model errors.
 
@@ -246,31 +266,25 @@ These shares are estimates from one automatic coder. That all 28 coded articles 
 
 Two test articles show the pattern. A conspiracy-site article that both models called mainstream begins "A military judge has set the trial date for five men accused of masterminding the 9/11 attacks": a plain court report without a conspiracy claim, so this is a label problem. A mainstream article opening "Not only is there a smoking gun in the 28 pages" was called conspiracy by the logistic regression and mainstream by the LLM; the stance coder found no conspiracy claim in it, so this is a model error: the trained model reacted to wording that only sounds like conspiracy writing.
 
-The label-problem share rests on automatic coding by a model of the same family as the classifier under test, so it is an estimate. Because coder and classifier come from the same model family, they may share blind spots, which would turn some of the LLM's errors into apparent label problems. To measure how far the coding can be trusted, the team codes 40 validation articles blind, each article by two of the five members (website and automatic answer hidden; validation keeps the test set untouched); their agreement with the automatic coding will be added after the team's check.
+The label-problem share rests on automatic coding by a model of the same family as the classifier under test, so it is an estimate. Coder and classifier come from the same model family and may share blind spots (see the limitations). To measure how far the coding can be trusted, the team codes 40 validation articles blind, each article by two of the five members (website and automatic answer hidden; validation keeps the test set untouched); their agreement with the automatic coding will be added after the team's check.
 
 ## Limitations
 
-First, the label describes the publishing website, not the content, so a prediction that disagrees with it is not necessarily an error. The scores measure how well each method recovers the type of website, not whether a text contains conspiracy claims.
+**Labels.** The label describes the publishing website, not the content, so a prediction that disagrees with it is not necessarily an error. The scores measure how well each method recovers the type of website, not whether a text contains conspiracy claims.
 
-Second, the number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. The confidence intervals resample single articles as if they were independent, but articles from one website resemble each other, so the intervals are probably too narrow.
+**Few websites.** The number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. The confidence intervals resample single articles as if they were independent, but articles from one website resemble each other, so the intervals are probably too narrow.
 
-Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. The stance coder behind the label-problem share is also a Claude model and may share its blind spots: an article the LLM misreads as harmless may look harmless to the coder too, which would count a model error as a label problem. The share is therefore a rough estimate until the team's hand check. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
+**Prior knowledge of the LLM.** The LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. We could not measure this advantage; asking the LLM to name the website of each article would be a simple test for future work. The stance coder behind the label-problem share is also a Claude model and may share its blind spots: an article the LLM misreads as harmless may look harmless to the coder too, which would count a model error as a label problem. The share is therefore a rough estimate until the team's hand check. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
 
-Fourth, thresholds such as the 0.9 similarity for copies could be set differently, the certainty and doubt features ignore negation and rest on four short word lists (47 entries), and website style can still serve as a shortcut.
+**Choices and lexicon.** Thresholds such as the 0.9 similarity for copies could be set differently, the certainty and doubt features ignore negation and rest on four short word lists (47 entries), and website style can still serve as a shortcut.
 
-Finally, all results concern one topic, one corpus and one split. The test set was also used during development: seven earlier model versions, none of them reported here, were scored on it. Every final model reported here was chosen on validation alone and scored on the test set once.
+**One topic, one split.** All results concern one topic, one corpus and one split. The test set was also used during development: seven earlier model versions, none of them reported here, were scored on it. Every final model reported here was chosen on validation alone and scored on the test set once.
 
 ## Conclusion
 
-The study compared four methods for deciding whether a full 9/11 article comes from a conspiracy-oriented or a mainstream website. All numbers are conspiracy-class F1 scores on the 410 test articles.
+The study compared four methods for deciding whether a full 9/11 article comes from a conspiracy-oriented or a mainstream website. All three logistic regressions beat the baseline that always answers mainstream. H1 (TF-IDF beats word counts) was supported, narrowly; H2 (the three feature groups help) was not supported; H3 (the LLM beats the best logistic regression) was supported, with an F1 of 0.795 against 0.598, although it still misses one third of the conspiracy articles.
 
-H1 (TF-IDF improves on word counts) is supported, modestly: F1 0.598 against 0.567 (p = 0.029); with a stricter threshold for three tests it would not count.
-
-H2 (adding the three feature groups improves the TF-IDF model) is not supported: on test the F1 was 0.560 against 0.598, within chance (p = 0.243). Certainty words alone gave the best validation F1 (0.930), but the planned full combination did not help.
-
-H3 (the zero-shot LLM beats the best logistic regression) is supported: F1 0.795 against 0.598 (p < 0.0001). It misses one third of the conspiracy articles.
-
-In sum, only the advantage of the LLM is clear, and no method finds enough conspiracy articles to be used alone for automatic flagging. All three logistic regressions beat the baseline that always answers mainstream. Further work should test other topics and more websites; the results of the team's hand check of the automatic stance coding will be added once it is complete.
+The results allow a clear statement about this corpus and its website labels: a cheap language model recovers the type of website far better than word statistics, and hand-made features did not close the gap. They do not show that any method recognises conspiracy content, because the labels describe websites, and they rest on six conspiracy websites in the test set. No method finds enough conspiracy articles to be used alone for automatic flagging. Further work should test other topics and more websites; the results of the team's hand check of the automatic stance coding will be added once it is complete.
 
 ## How we used AI
 
@@ -280,7 +294,7 @@ In sum, only the advantage of the LLM is clear, and no method finds enough consp
 
 **How the output was checked.** Automated tests fail when a rule is broken, for example when a model learns from more than the training articles, the split changes, the test set is used outside the final scoring, or a number in this report is missing from the result files. The whole analysis was run twice with identical results. Judgements that tests cannot make, such as whether the automatic stance coding is right, are checked by people through the hand check described in the error analysis.
 
-**What we learned.** The AI was fast and thorough, but literal: it reported an unplanned feature selection until the team asked for the planned comparison. A test shows that a number matches a file, not that it answers the right question, so the reasoning stays with the team.
+**What we learned.** The AI was fast and thorough, but literal: it selected features by an unplanned threshold until the team asked for the planned comparison. Tests show that numbers match files, not that they answer the right question.
 
 ## References
 

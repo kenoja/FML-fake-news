@@ -440,6 +440,28 @@ def llm_scores(valid: pd.DataFrame, variant: str, pass_id: int = 1) -> dict:
             **{name: scores[name] for name in ("precision", "recall", "f1")}}
 
 
+def choose_prompt(runs: dict, variants: list) -> str:
+    """The prompt with the best validation F1; a tie keeps the earlier prompt."""
+    chosen = variants[0]
+    for variant in variants:
+        if round(runs[variant]["f1"], 4) > round(runs[chosen]["f1"], 4):
+            chosen = variant
+    return chosen
+
+
+def llm_values(cfg: dict, valid: pd.DataFrame, runs: dict, chosen: str, agreement: float) -> dict:
+    """The numbers of analysis 4 that go into metrics.json."""
+    keys = ("precision", "recall", "f1", "confusion")
+    first = runs[chosen]
+    return {"model": cfg["model"], "question": "source: conspiracy-oriented or mainstream website",
+            "max_input_words": cfg["max_input_words"], "max_output_tokens": cfg["max_output_tokens"],
+            "documents": int(len(valid)),
+            "variants": {v: {k: r[k] for k in keys} for v, r in runs.items()},
+            "chosen_prompt": chosen, "validation": {k: first[k] for k in keys},
+            "unreadable": first["unreadable"], "truncated_docs": first["truncated_docs"],
+            "repeat_agreement": agreement}
+
+
 def llm_stage() -> dict:
     """Analysis 4: try each prompt on validation, keep the best by F1, repeat it once to check stability."""
     from . import llm
@@ -451,23 +473,13 @@ def llm_stage() -> dict:
     table = pd.DataFrame([{"variant": v, "documents": len(valid), "precision": r["precision"],
                            "recall": r["recall"], "f1": r["f1"]} for v, r in runs.items()])
     write_table("llm_prompt_variants", table.round(4))
-    chosen = variants[0]
-    for variant in variants:                         # best F1 wins; a tie keeps the earlier prompt
-        if round(runs[variant]["f1"], 4) > round(runs[chosen]["f1"], 4):
-            chosen = variant
-    first, second = runs[chosen], llm_scores(valid, chosen, pass_id=2)
-    repeat_agreement = float((first["labels"] == second["labels"]).mean())     # share of equal answers
-    savefig(plot_confusion(first["confusion"], f"LLM, prompt {chosen} (validation)"), "llm_validation_confusion")
-    sites = validation_website_table(valid["website"], valid["label"], first["labels"] == "conspiracy")
+    chosen = choose_prompt(runs, variants)
+    second = llm_scores(valid, chosen, pass_id=2)                             # the same prompt once more
+    agreement = float((runs[chosen]["labels"] == second["labels"]).mean())   # share of equal answers
+    savefig(plot_confusion(runs[chosen]["confusion"], f"LLM, prompt {chosen} (validation)"), "llm_validation_confusion")
+    sites = validation_website_table(valid["website"], valid["label"], runs[chosen]["labels"] == "conspiracy")
     write_table("validation_website_recall", sites)         # shows whether validation was an easier set of websites
-    keys = ("precision", "recall", "f1", "confusion")
-    values = {"model": cfg["model"], "question": "source: conspiracy-oriented or mainstream website",
-              "max_input_words": cfg["max_input_words"], "max_output_tokens": cfg["max_output_tokens"],
-              "documents": int(len(valid)),
-              "variants": {v: {k: r[k] for k in keys} for v, r in runs.items()},
-              "chosen_prompt": chosen, "validation": {k: first[k] for k in keys},
-              "unreadable": first["unreadable"], "truncated_docs": first["truncated_docs"],
-              "repeat_agreement": repeat_agreement}
+    values = llm_values(cfg, valid, runs, chosen, agreement)
     write_metrics("llm", round_floats(values, 4))
     return values
 
@@ -667,7 +679,11 @@ def write_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], websites: 
     per_website["website"] = per_website["website"].map(website_labels(y, websites))      # hide real domains
     names = {"website": "Website", "test_articles": "Test articles"}
     names.update({f"recall_{m}": f"Recall: {MODEL_NAMES[m]}" for m in preds})      # plain column labels
-    write_table("test_website_recall", per_website.round(4).rename(columns=names))
+    shown = per_website.copy()
+    for column in shown.columns:
+        if column.startswith("recall_"):
+            shown[column] = shown[column].map("{:.3f}".format)       # three decimals in every cell
+    write_table("test_website_recall", shown.rename(columns=names))
     return per_website
 
 
@@ -717,6 +733,14 @@ def code_disagreements(sets: pd.DataFrame, frame: pd.DataFrame, cfg: dict, seed:
     coded = coded[coded["claude_stance"] != errors.UNREADABLE].reset_index(drop=True)
     coded["verdict"] = [errors.classify_error(bool(t), s) for t, s in zip(coded["true_label"], coded["claude_stance"])]
     return coded
+
+
+def large_site_stances(coded: pd.DataFrame) -> pd.DataFrame:
+    """Stances of the conspiracy-site articles the LLM missed, on the website where it missed the most."""
+    missed = coded[(coded["llm_pred"] != coded["true_label"]) & coded["true_label"].astype(bool)]
+    site = missed["website"].value_counts().idxmax()                 # the website with the most misses
+    counts = missed[missed["website"] == site]["claude_stance"].value_counts()
+    return pd.DataFrame({"stance": [s.replace("_", " ") for s in counts.index], "articles": counts.to_numpy()})
 
 
 def pick_examples(coded: pd.DataFrame, frame: pd.DataFrame, seed: int) -> pd.DataFrame:
@@ -801,6 +825,7 @@ def errors_stage() -> dict:
     sets["website"] = sets["doc_id"].map(frame["website"])
     coded = code_disagreements(sets, frame, cfg, seed)
     examples = pick_examples(coded, frame, seed)
+    write_table("large_site_missed_stances", large_site_stances(coded))   # why the large site is missed
     sample = check_sample(frame, cfg, seed)
     written = write_error_tables(coded, sets, examples, sample)
     values = errors_values(chosen, cfg, sets, coded, sample, written)

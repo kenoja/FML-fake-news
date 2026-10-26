@@ -26,7 +26,7 @@ def test_full_cycle_reaches_done_and_writes_the_run_record(sandbox):
     assert history(1) == ["load_context", "plan", "implement", "run_pipeline", "verify",
                           "build_site", "review", "finalize"]
     latest, _ = nodes.latest_requirements()  # the log names the cycle of the newest requirements file
-    assert f"Cycle {latest}" in (sandbox / "docs" / "agent-runs.md").read_text()   # run records stay out of the AI-use log
+    assert f"Cycle {latest}" in (sandbox / "docs" / "archive" / "agent-runs.md").read_text()   # run records stay out of the AI-use log
 
 
 def test_a_stopped_run_resumes_where_it_left_off(sandbox):

@@ -40,7 +40,7 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 **How the output was checked.** Automated tests fail when a rule is broken, for example when a model learns from more than the training articles, the split changes, the test set is used outside the final scoring, or a number in this report is missing from the result files. The whole analysis was run twice with identical results. Judgements that tests cannot make, such as whether the automatic stance coding is right, are checked by people through the hand check described in the error analysis.
 
-**What we learned.** The AI was fast and thorough, but literal: it reported an unplanned feature selection until the team asked for the planned comparison. A test shows that a number matches a file, not that it answers the right question, so the reasoning stays with the team.
+**What we learned.** The AI was fast and thorough, but literal: it selected features by an unplanned threshold until the team asked for the planned comparison. Tests show that numbers match files, not that they answer the right question.
 
 ## Check yourself
 

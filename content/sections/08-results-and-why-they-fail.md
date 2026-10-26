@@ -95,7 +95,7 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 
 <!-- output: results/tables/mcnemar_tests.csv | The three McNemar tests: articles where only one model is right, and the p-value -->
 
-**H1: TF-IDF weighting beats plain word counts.** Supported: 7 articles are right only for word counts and 19 only for TF-IDF (p = 0.029). TF-IDF has the higher F1 (0.598 against 0.567), mainly through fewer false alarms (precision 0.721 against 0.607). It is the smallest of the three effects and would not pass a stricter threshold that corrects for running three tests (0.05 divided by three), so the support is modest.
+**H1: TF-IDF weighting beats plain word counts.** Supported, narrowly: 7 articles are right only for word counts and 19 only for TF-IDF (p = 0.029). TF-IDF has the higher F1 (0.598 against 0.567), mainly through fewer false alarms (precision 0.721 against 0.607). It would not pass a correction for three tests (0.05 divided by three), so the verdict is tentative.
 
 **H2: Adding the three feature groups improves the TF-IDF model.** Not supported. On validation the model with the extra features scored an F1 of 0.896 against 0.918 for TF-IDF alone, and on test it is lower again (0.560 against 0.598); 22 articles are right only for TF-IDF and 14 only with the features, a difference that chance explains (p = 0.243).
 
@@ -107,9 +107,15 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 
 <!-- output: results/tables/test_website_recall.csv | Recall of each model on the conspiracy articles of each test website -->
 
-One site, Website 4, supplies 44 of the 96 conspiracy test articles, and all four models find at most about a third of them (recall 0.204 to 0.318). Without those 44 articles the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for TF-IDF with features and 0.971 for the LLM. On every site with more than one article the LLM finds at least as many articles as each logistic regression.
+One site, Website 4, supplies 44 of the 96 conspiracy test articles, and all four models find at most about a third of them (recall 0.205 to 0.318). Without those 44 articles the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for TF-IDF with features and 0.971 for the LLM. On every site with more than one article the LLM finds at least as many articles as each logistic regression.
 
-**Where the models fail, and why.** We examined the test articles on which the best logistic regression or the LLM disagrees with the label. A second model (Claude Sonnet 5.5) coded the stance of each towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
+Website 4 explains most of the loss. Its articles are short pieces of partisan political news and commentary that mention 9/11, for example on politicians' remarks about the attacks. Of the articles from this site that the LLM missed, the stance coder found a conspiracy claim in none:
+
+<!-- output: results/tables/large_site_missed_stances.csv | Stance of the Website 4 articles the LLM missed -->
+
+According to the automatic coding, their text gives no sign of the site's conspiracy rating, so every model calls them mainstream: the miss lies mostly in the label, not in the reading.
+
+**Where the models fail, and why.** For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
 
 Of the 70 wrongly classified articles, 69 have a readable coding: 49 are label problems and 20 are model errors.
 
@@ -119,7 +125,7 @@ These shares are estimates from one automatic coder. That all 28 coded articles 
 
 Two test articles show the pattern. A conspiracy-site article that both models called mainstream begins "A military judge has set the trial date for five men accused of masterminding the 9/11 attacks": a plain court report without a conspiracy claim, so this is a label problem. A mainstream article opening "Not only is there a smoking gun in the 28 pages" was called conspiracy by the logistic regression and mainstream by the LLM; the stance coder found no conspiracy claim in it, so this is a model error: the trained model reacted to wording that only sounds like conspiracy writing.
 
-The label-problem share rests on automatic coding by a model of the same family as the classifier under test, so it is an estimate. Because coder and classifier come from the same model family, they may share blind spots, which would turn some of the LLM's errors into apparent label problems. To measure how far the coding can be trusted, the team codes 40 validation articles blind, each article by two of the five members (website and automatic answer hidden; validation keeps the test set untouched); their agreement with the automatic coding will be added after the team's check.
+The label-problem share rests on automatic coding by a model of the same family as the classifier under test, so it is an estimate. Coder and classifier come from the same model family and may share blind spots (see the limitations). To measure how far the coding can be trusted, the team codes 40 validation articles blind, each article by two of the five members (website and automatic answer hidden; validation keeps the test set untouched); their agreement with the automatic coding will be added after the team's check.
 
 ## Check yourself
 Q: A model that always answers "mainstream" is right most of the time. Why do we still not use accuracy?

@@ -22,7 +22,8 @@ Python 3.11 or newer.
 ```bash
 pip install -r requirements-lock.txt && pip install -e . --no-deps
 export FML_DATA_DIR=/path/to/data-repo     # private data repo with the article texts
-export LLM_CLASSIFIER_API_KEY=...          # only needed if results/llm_cache.jsonl lacks entries
+export LLM_CLASSIFIER_API_KEY=...          # not needed for a rerun: answers come from results/llm_cache.jsonl
+                                           # and results/stance_cache.jsonl; only a missing entry needs the key
 fml run-all                                # rebuilds results/ in about two minutes (no API calls with the cache)
 python -m sitegen build                    # rebuilds reports/report.md and the site from content/
 python -m pytest -q                        # tests; those marked needs_data skip without the data repo

@@ -71,7 +71,7 @@ your choice in `docs/decisions.md`. If you cannot resolve something from the fil
 | Figures | `results/figures/*.png`, matplotlib, 150 dpi; conspiracy `#8c3b76`, mainstream `#2b7a6a` everywhere |
 | Notebook sections | `content/sections/NN-slug.md` (format below) |
 | Report | `reports/report.md` is **assembled automatically** by `python -m sitegen build` from every section's `## Report` part plus `content/references.md`. Never edit it by hand. 3,000–5,000 words before References (gate). |
-| AI-use log | `docs/ai-log.md`: factual Produced / Checked / Learned per cycle for the report (no run diary); humans add what they checked. The harness writes its own run records to `docs/agent-runs.md`. |
+| AI-use log | `docs/ai-log.md`: factual Produced / Checked / Learned per cycle for the report (no run diary); humans add what they checked. The harness writes its own run records to `docs/archive/agent-runs.md`. |
 | Decisions | `docs/decisions.md` (choices, conflicts, open questions) |
 
 Numbers in prose are copied from `results/` files, never typed from memory. When results change,

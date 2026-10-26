@@ -35,15 +35,15 @@ This section describes limits of the study, so it has no analysis of its own. Th
 
 ## Report
 
-First, the label describes the publishing website, not the content, so a prediction that disagrees with it is not necessarily an error. The scores measure how well each method recovers the type of website, not whether a text contains conspiracy claims.
+**Labels.** The label describes the publishing website, not the content, so a prediction that disagrees with it is not necessarily an error. The scores measure how well each method recovers the type of website, not whether a text contains conspiracy claims.
 
-Second, the number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. The confidence intervals resample single articles as if they were independent, but articles from one website resemble each other, so the intervals are probably too narrow.
+**Few websites.** The number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. The confidence intervals resample single articles as if they were independent, but articles from one website resemble each other, so the intervals are probably too narrow.
 
-Third, the LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. The stance coder behind the label-problem share is also a Claude model and may share its blind spots: an article the LLM misreads as harmless may look harmless to the coder too, which would count a model error as a label problem. The share is therefore a rough estimate until the team's hand check. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
+**Prior knowledge of the LLM.** The LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. We could not measure this advantage; asking the LLM to name the website of each article would be a simple test for future work. The stance coder behind the label-problem share is also a Claude model and may share its blind spots: an article the LLM misreads as harmless may look harmless to the coder too, which would count a model error as a label problem. The share is therefore a rough estimate until the team's hand check. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
 
-Fourth, thresholds such as the 0.9 similarity for copies could be set differently, the certainty and doubt features ignore negation and rest on four short word lists (47 entries), and website style can still serve as a shortcut.
+**Choices and lexicon.** Thresholds such as the 0.9 similarity for copies could be set differently, the certainty and doubt features ignore negation and rest on four short word lists (47 entries), and website style can still serve as a shortcut.
 
-Finally, all results concern one topic, one corpus and one split. The test set was also used during development: seven earlier model versions, none of them reported here, were scored on it. Every final model reported here was chosen on validation alone and scored on the test set once.
+**One topic, one split.** All results concern one topic, one corpus and one split. The test set was also used during development: seven earlier model versions, none of them reported here, were scored on it. Every final model reported here was chosen on validation alone and scored on the test set once.
 
 ## Check yourself
 

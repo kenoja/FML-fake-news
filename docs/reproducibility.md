@@ -9,7 +9,7 @@ scoring with its configuration hash.
 
 In the pinned environment of `requirements-lock.txt` (Python 3.11.17, numpy 2.4.6,
 scikit-learn 1.9.1), `fml run-all` was run twice on 2 CPUs (about
-106 seconds each). All 50 result files except `run_info.json` (the run's own
+106 seconds each). All 51 result files except `run_info.json` (the run's own
 timing) were byte-identical between the two runs, and `python -m pytest -q` passed with no test skipped.
 The agent harness now repeats this check after every pipeline run and fails a gate if any file differs.
 
@@ -34,6 +34,7 @@ ae8430c767f4fcc70bdf0739466f2f7bef54278fb129b33c4d9a3af95869d772  results/tables
 da1e6a2ecec40daaef2d5e57f43ffa85efe78c1c3d818e25e563311235fbd137  results/tables/error_examples_plain.csv
 b62e90654323db4f99328a43e4a294d517712a5c8c42626c9dfbaa85497e6172  results/tables/feature_examples.csv
 a8a3202e73f0c20cc087b6e56613f6904e1a44fb978e3f23f163756d3d7cc208  results/tables/feature_summary.csv
+007961024d5370995af3700de1ef3d419102a0bd92b9896775915e44b46d9e89  results/tables/large_site_missed_stances.csv
 c167da1729952ff530f6b29393aed4d69a75bb94a334749690511bb6fb080c38  results/tables/length_quantiles.csv
 425a56cebe245ddfb8d0aab02f5f0f12b2bba84fc909f94ab43db892d9ff49e0  results/tables/llm_prompt_variants.csv
 3f531803fa0cd8184caadb8974d5929f1ba179f9bb9c8b268ae5461cde6eb0b6  results/tables/mcnemar_tests.csv
@@ -49,7 +50,7 @@ ef8d21318fd203e04d2a8726962d2f5c8162b7c76147fcc4bb4157b7a8c3b4f2  results/tables
 829ea7877946cdf6af352a477d6318eabd5f9e5894b2eb9f853d752b06d8dac9  results/tables/stance_check_sample.csv
 8a64939f66801b72bc7204fef199c12b4f35fb6d5c8fef98db17754fcae65e2d  results/tables/stance_claude_answers.csv
 9a97acb1d2b76d3bc361476180d8ae2ca8f2ba4839afbef5deabca326a4a9f66  results/tables/test_lr.csv
-07cafb070042ca706164cb15137e9449ff34d0c34d50853f377433c755c9af43  results/tables/test_website_recall.csv
+564dcadd40513b6e562418b3485291fb2cefd74121e83a44b8d72e7f9b15fe61  results/tables/test_website_recall.csv
 33f4dfa71012304dd4b3c9646c25b561f0dcd900e6ae36eb382f878de7e678bf  results/tables/tfidf_grid.csv
 f71ce780f41a03424077f30ea3db1077dace694edf69454f63f5f60a08439e53  results/tables/tfidf_top_conspiracy_words.csv
 08f80e1da47877479f299f5463c4eaf3d54c5f3e659f9e56336cbc7b6ba3b653  results/tables/tfidf_top_mainstream_words.csv
