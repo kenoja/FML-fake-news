@@ -5,8 +5,7 @@ hypothesis: We expect plain word counts to tell the two kinds of website apart b
 ---
 ## Explained simply
 
-**The idea.** Imagine sorting letters into two piles by looking only at which words appear in them. You never read for meaning. You just notice that letters with "hurry" and "secret" mostly come from one sender. That is our first analysis. We count how often each word appears in each article and let a simple model learn which words go with which kind of website. Ignoring word order and only counting is called a **bag of words**. It is the simplest approach and our starting point. Section 01 says which model runs where; here you meet it first.
-
+**The idea.** Imagine sorting letters into two piles by looking only at which words appear in them. You never read for meaning. You just notice that letters with "hurry" and "secret" mostly come from one sender. That is our first analysis. We count how often each word appears in each article and let a simple model learn which words go with which kind of website. Ignoring word order and only counting is called a **bag of words**. It is the simplest approach and our starting point.
 **How does logistic regression learn from words?** Every word gets a **weight**, a number that starts at zero. The model reads a training article, adds up the weights of its words and turns the total into a probability that the article comes from a conspiracy website. If it guesses wrong, it nudges the weights of that article's words towards the true answer. After many rounds, words found mostly in conspiracy articles get positive weights and words found mostly in mainstream articles get negative weights. A high weight means "useful for telling these websites apart", not "proves conspiracy thinking".
 
 **Regularisation strength (C).** This setting decides how freely the model may use large weights. A small value keeps the weights small and cautious. A large value lets the model follow the training articles very closely, which can lead to **overfitting**: memorising instead of learning. Oddly, small C means strong caution. We try five values (0.01, 0.1, 1, 10, 100), the same for all three logistic regressions.
@@ -22,8 +21,9 @@ The value of C with the best F1 on the validation articles wins. The test articl
 - Only training articles build the word list, so no word from the exam shapes the model.
 - Words in at least two articles only. Words used once are mostly typos and names.
 - Class weight "balanced": there are fewer conspiracy articles, so each counts more.
+- We use no other classifier and no word order: the question is about the input, and logistic regression keeps the weights readable.
 
-**Our expectation.** Section 01 states what we expected from the four methods. This section only reports the counts on the validation articles; the methods are compared in the results section.
+**Our expectation.** Section 01 states what we expected. Here we report validation results only.
 
 ## The code
 

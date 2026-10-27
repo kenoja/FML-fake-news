@@ -19,7 +19,7 @@ hypothesis: We expect a cheap language model with no training to do roughly as w
 
 **Cost.** The LLM costs money per article and needs internet; the logistic regressions run free on a laptop. Section 01 lists the figures.
 
-**Why no training and no examples.** Fine-tuning needs many labelled articles and would end the "cheap, ready-made" idea. Solved examples (few-shot) from our websites would teach it our labels. **Our expectation** is in section 01; the comparison is in the results section.
+**Why no training and no examples.** Fine-tuning needs many labelled articles and would end the "cheap, ready-made" idea. Solved examples (few-shot) from our websites would teach it our labels. We use one cheap LLM, not several, to keep cost and the study small. **Our expectation** is in section 01; the comparison is in the results section.
 
 ## The code
 

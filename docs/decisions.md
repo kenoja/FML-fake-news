@@ -120,6 +120,16 @@ read from the data or from `results/`.
   hedges and explanations.
 - **R10.** No "so far" in the hand-check wording.
 - **Moving open items.** They stay in this file only.
+- **Approach alternatives (T11).** Each of `04`-`07` now names in Explained simply what was not done and why: no other
+  classifier or word order (04), no other weighting or word pairs (05), no emotion features and no phrases beyond three
+  words (06), no fine-tuning, few-shot examples or several LLMs (07).
+- **Report length (T11).** Assembled report: 4,892 words before References by the plain count of
+  `tests/test_gates.py` (limit 5,000, aim 4,900). Cuts: repeated detail in the Website 4 paragraph in `08`, a sentence in
+  the introduction, and the executive summary's hypothesis wording. Examples, the Website 4 finding and all verdicts kept.
+- **Declined per "Not to do".** The request for more of the licence discussion (the one neutral sentence in `02`
+  stays) and the request to show open items on the site (they stay in this file only).
+- **Other items by judgement.** Item 4: three-site concentration counted in the data stage and quoted from `results/`.
+  Item 5: 37 websites for the analysed data, 39 only for the raw subset.
 
 ## Needs a team decision
 

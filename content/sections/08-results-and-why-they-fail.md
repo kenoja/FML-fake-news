@@ -9,7 +9,7 @@ hypothesis: The LLM beats the three trained models on unseen websites, and many 
 
 **Why F1 and not accuracy.** Most articles are mainstream. A lazy "model" that always answers "mainstream" is right about three times in four, which sounds decent but finds no conspiracy article. That is the baseline row of the table: its F1 is zero.
 
-**A worked case.** The test set has 96 conspiracy articles and 314 mainstream ones. The LLM caught 64 of the 96 (recall 0.667) and wrongly flagged 1 mainstream article, so 64 of its 65 alarms were right (precision 0.985); its F1 is 0.795. The intervals are a bit too narrow, because articles from the same website are alike.
+**A worked case.** The test set has 96 conspiracy articles and 314 mainstream ones. The LLM caught 64 of the 96 (recall 0.667) and wrongly flagged 1 mainstream article, so 64 of its 65 alarms were right (precision 0.985); its F1 is 0.795. The intervals are optimistic (too narrow), because articles from the same website are alike.
 
 **Why McNemar for the comparisons.** Two judges rate the same cases. Only the cases where they disagree tell us who is better. If one judge is right in 20 of 22 disagreements, that judge is clearly better; if it is 11 against 11, it may be luck. McNemar's test counts exactly these cases for two models on the same articles.
 
@@ -132,7 +132,7 @@ The likely reason is the websites: the test set has few conspiracy websites, non
 
 One site, Website 4, supplies 44 of the 96 conspiracy test articles, and all four models find at most about a third of them (recall 0.205 to 0.318). Without those 44 articles the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for TF-IDF with features and 0.971 for the LLM.
 
-Website 4 explains most of the loss. Judging by the titles of its test articles, it publishes short partisan political news and commentary that mentions 9/11, for example on politicians' remarks about the attacks. Of the articles from this site that the LLM missed, the stance coder found a conspiracy claim in none:
+Website 4 explains most of the loss. Judging by titles, it publishes short partisan political news that mentions 9/11. In none of its articles that the LLM missed did the stance coder find a conspiracy claim:
 
 <!-- output: results/tables/large_site_missed_stances.csv | Stance of the Website 4 articles the LLM missed -->
 
@@ -140,7 +140,7 @@ Their text gives no sign of the site's rating, so every model calls them mainstr
 
 **Where the models fail, and why.** For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
 
-Of the 70 wrongly classified articles, 69 have a readable coding. The main estimate of label problems comes from the 41 coded articles that only one model got wrong: 21 of them are label problems. The upper end is 49 of 69, which also counts the 28 articles both models missed; these count partly by the rule itself. The hand check below is the cross-check.
+Of the 70 wrongly classified articles, 69 have a readable coding. The main estimate of label problems comes from the 41 coded articles that only one model got wrong: 21 of them are label problems. The upper end is 49 of 69, which also counts the 28 articles both models missed, which count partly by the rule itself. The hand check below is the cross-check.
 
 <!-- output: results/tables/error_counts_plain.csv | Test articles wrongly classified, by who is wrong, and the share that are label problems -->
 
