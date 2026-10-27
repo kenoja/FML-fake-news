@@ -2,7 +2,8 @@
   "lessons": [
     "Cycle 1 ended below target; open issues: Human stance verification has not been done: 40 blank human_stance cells, kappa ; LOCO licence is still unconfirmed because the OSF page was unreachable on three ; Requirements 2 and 7 are only partly met (see the errors and resources items). T; The test set was looked at four times, including a stale lr_words and a second w; No automated check ties every number in prose to results/*.json. Some rounding i",
     "Cycle 2 ended below target; open issues: Cohen's kappa is still explained and coded although requirement 13 removed it; d; The 09 report error table has raw column names (lr_only_wrong, stance_no_claim, ; Test-set numbers appear in the method section 06, which should show validation o; Process and technical leakage in the 03 report: 'The 7 conspiracy websites ... i; The licence status is on the site (10-limitations, report), but requirement 17 s",
-    "Cycle 3 ended below target; open issues: No evidence for cycle 3 that two consecutive `fml run-all` runs are identical; t; Report is about 4,900 words before References, not about 4,500 (R8), and the int; D8 not met: no classic method references beyond Hastie, Manning, McNemar, Efron ; `mattr` is vectorised with numpy tricks and is not beginner-readable; ablation_v; The label-problem share rests on one automatic coder and the 40-article check sa"
+    "Cycle 3 ended below target; open issues: No evidence for cycle 3 that two consecutive `fml run-all` runs are identical; t; Report is about 4,900 words before References, not about 4,500 (R8), and the int; D8 not met: no classic method references beyond Hastie, Manning, McNemar, Efron ; `mattr` is vectorised with numpy tricks and is not beginner-readable; ablation_v; The label-problem share rests on one automatic coder and the 40-article check sa",
+    "Cycle 4 ended below target; open issues: The same sentence about the repeated validation run (0.992) appears three times,; Duplicates and leftover blank structure make the report look assembled rather th; The introduction packs TF-IDF, zero-shot and n-grams into one dense paragraph be; The reason for the 0.9 near-duplicate threshold and the effect on test are brief; The switch from headlines to full articles and the course's one-LLM requirement "
   ],
   "cycles": {
     "01": {
@@ -66,13 +67,34 @@
         "privacy": 8,
         "feedback_compliance": 6
       }
+    },
+    "04": {
+      "reached_target": false,
+      "rounds": 4,
+      "scores": {
+        "question": 9,
+        "resources": 9,
+        "approach": 9,
+        "evaluation": 9,
+        "results": 8,
+        "interpretation": 9,
+        "features": 9,
+        "errors": 8,
+        "ai_use": 8,
+        "teaching": 8,
+        "code_readability": 8,
+        "reproducibility": 9,
+        "report": 8,
+        "privacy": 9,
+        "feedback_compliance": 8
+      }
     }
   },
   "runs": {
     "01": 29,
     "02": 24,
     "03": 20,
-    "04": 15
+    "04": 16
   },
   "timeouts": 0
 }
