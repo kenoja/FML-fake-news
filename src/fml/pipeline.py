@@ -29,7 +29,7 @@ from .models import (feature_matrix, fit_features, fit_logistic, split_frames, t
 from .methods_overview import write_methods_overview  # noqa: E402
 from .paths import REPO_ROOT, project_config  # noqa: E402
 from .results import CONSPIRACY_COLOUR, MAINSTREAM_COLOUR, results_dir, savefig, write_metrics, write_table  # noqa: E402
-from .data_report import plot_split_sizes  # noqa: E402
+from .data_report import plot_split_sizes, site_concentration  # noqa: E402
 from .split import SPLITS, load_split, split_path, split_summary, websites_per_split  # noqa: E402
 
 M1_FEATURES = {"ngram_range": [1, 1], "min_df": 2, "sublinear_tf": True, "numeric_columns": []}
@@ -96,6 +96,9 @@ def cleaning_stage() -> dict:
     write_metrics("split", {**split_metrics, "websites_per_split_after_cleaning": websites_per_split(summ)})
     info = {**info, "split_after_cleaning": {s: int(summ.loc[summ["split"] == s, "documents"].sum()) for s in SPLITS}}
     savefig(plot_cleaning(log), "cleaning_before_after")
+    concentration, concentration_metrics = site_concentration(frame, load_split())
+    write_table("site_concentration", concentration)
+    info = {**info, **concentration_metrics}
     write_metrics("cleaning", round_floats(info, 4))
     return info
 

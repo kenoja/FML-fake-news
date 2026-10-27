@@ -29,7 +29,7 @@ An example with three invented websites of ten articles each:
 
 **Frozen.** We made the split once, before any result existed, and saved it in a file. We never change it, because re-dividing after seeing scores would be cheating. Cleaning removes articles from the parts but never moves one to another part.
 
-**Watch out.** Validation and test hold only a few conspiracy websites, so one unusual website can move a score.
+**Watch out.** One website can supply a large part of a set's conspiracy articles, so its peculiarities can move the whole score of that set.
 
 ## The code
 

@@ -126,3 +126,20 @@ def test_near_duplicate_inside_one_split_keeps_the_lower_doc_id():
     split = pd.Series({"d1": "train", "d2": "train", "d3": "test", "d4": "test"})
     drops = clean.near_duplicate_drops(pair_table(("d2", "d1"), ("d3", "d4")), split)
     assert set(drops) == {"d2", "d4"}                           # the choice must not depend on pair order
+
+
+def test_site_concentration_counts_the_largest_conspiracy_sites():
+    """If a few big sites dominate the conspiracy class, the model may learn those sites instead of the topic."""
+    from fml.data_report import site_concentration
+
+    sizes = {"a.com": 5, "b.com": 4, "c.com": 3, "d.com": 2}
+    rows = [{"doc_id": f"{s}-{j}", "website": s, "subcorpus": "conspiracy"} for s, n in sizes.items() for j in range(n)]
+    rows += [{"doc_id": f"m-{j}", "website": "m.com", "subcorpus": "mainstream"} for j in range(9)]
+    df = pd.DataFrame(rows)
+    train_sites = ["a.com", "c.com", "m.com"]
+    split = pd.DataFrame({"doc_id": df["doc_id"], "split": ["train" if w in train_sites else "test" for w in df["website"]]})
+    table, metrics = site_concentration(df, split)
+    assert list(table["Website"]) == ["Website 1", "Website 2", "Website 3"]
+    assert metrics["top3_sites_share"] == pytest.approx(12 / 14)
+    assert metrics["top3_train_articles"] == 8                  # a.com (5) + c.com (3)
+    assert "a.com" not in table.to_string()
