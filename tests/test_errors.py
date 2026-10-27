@@ -228,3 +228,69 @@ def test_public_excerpts_stay_within_the_word_limit():
                 for column, value in row.items():
                     if column and column.lower() == "excerpt" and value:
                         assert len(value.split()) <= limit, f"{path.name}: excerpt of {len(value.split())} words"
+
+
+# ---------------------------------------------------------------- the team's hand check
+
+SAMPLE = pd.DataFrame({"doc_id": ["c1", "c2", "m1"], "label": [True, True, False],
+                       "claude_stance": ["endorses", "unreadable", "no_claim"]})
+
+
+def _write(folder, name, rows):
+    pd.DataFrame(rows, columns=["doc_id", "member", "stance"]).to_csv(folder / name, index=False)
+
+
+def test_hand_check_keeps_the_first_blind_answer_and_rejects_unknown_rows(tmp_path):
+    """A second download must not overwrite the blind answer, and a typo must stop the run, not vanish."""
+    _write(tmp_path, "stance_check_member_B.csv", [("c1", "B", "no_claim")])
+    _write(tmp_path, "stance_check_member_B_2.csv", [("c1", "B", "endorses"), ("m1", "B", "no_claim")])
+    codes = errors.read_hand_check(tmp_path, SAMPLE["doc_id"])
+    assert len(codes) == 2
+    assert codes.set_index("doc_id").loc["c1", "stance"] == "no_claim"
+    _write(tmp_path, "stance_check_member_C.csv", [("c9", "C", "no_claim")])     # not on the sheet
+    with pytest.raises(ValueError):
+        errors.read_hand_check(tmp_path, SAMPLE["doc_id"])
+
+
+def test_member_pairs_count_each_pair_once():
+    """Three readers of one article give three pairs; counting A-B and B-A would inflate agreement."""
+    codes = pd.DataFrame({"doc_id": ["c1"] * 3, "member": list("ABE"), "stance": ["no_claim"] * 3})
+    pairs = errors.member_pairs(codes)
+    assert sorted(zip(pairs["member_1"], pairs["member_2"])) == [("A", "B"), ("A", "E"), ("B", "E")]
+
+
+def test_agreement_asks_the_rules_question_and_skips_unreadable_coder_answers():
+    """Neutral vs no claim is a different stance but the same verdict, because the rule only asks about endorsing."""
+    codes = pd.DataFrame({"doc_id": ["c1", "c1", "c2", "m1"], "member": list("ABAA"),
+                          "stance": ["reports_neutrally", "no_claim", "endorses", "no_claim"]})
+    table = errors.agreement_table(codes, SAMPLE).set_index("Who is compared")
+    assert table.loc["Two members", "Same stance"] == 0
+    assert table.loc["Two members", "Same on endorses or not"] == 1
+    assert table.loc["A member and the automatic coder", "Comparisons"] == 3    # c2 has no readable coder answer
+
+
+def test_verdicts_use_the_same_rule_as_the_test_errors():
+    """A conspiracy-site article that only reports claims is a label problem, whoever reads it."""
+    codes = pd.DataFrame({"doc_id": ["c1", "m1"], "member": ["A", "A"], "stance": ["reports_neutrally", "endorses"]})
+    table = errors.verdicts_by_site_type(codes, SAMPLE).set_index("Website type")
+    assert table.loc["Conspiracy website", "Label problem by the member's answer"] == 1
+    assert table.loc["Conspiracy website", "Label problem by the coder's answer"] == 0
+    assert table.loc["Mainstream website", "Label problem by the member's answer"] == 1
+    assert table.loc["Mainstream website", "Same verdict"] == 0
+
+
+def test_hand_check_status_names_articles_still_waiting():
+    """The report must not call the check complete while an article has only one reader."""
+    codes = pd.DataFrame({"doc_id": ["c1", "c1", "m1"], "member": list("ABA"), "stance": ["no_claim"] * 3})
+    values = errors.hand_check_values(codes, SAMPLE)
+    assert values["articles_two_or_more_members"] == 1
+    assert values["status"] == "2 articles still wait for a second member"
+
+
+def test_public_hand_check_files_fit_the_sheet():
+    """The team's files are public: they may hold only sheet ids, a member letter and one of the four answers."""
+    folder = REPO_ROOT / project_config()["stance_coding"]["hand_check_dir"]
+    sheet = pd.read_csv(REPO_ROOT / "results" / "tables" / "stance_check_sample.csv", dtype=str)["doc_id"]
+    for f in folder.glob("stance_check_member_*.csv"):
+        assert list(pd.read_csv(f, nrows=0).columns) == ["doc_id", "member", "stance"], f.name
+    errors.read_hand_check(folder, sheet)            # raises on any row that does not fit

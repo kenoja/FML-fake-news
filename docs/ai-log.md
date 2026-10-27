@@ -65,3 +65,17 @@ test, which led to the finding about the large test website.
 **Learned.** The agent follows instructions literally: it chose the best feature group by a threshold until the team
 asked for the planned comparison. Evidence from runs made in code must be handed to a reviewer that cannot run code,
 and the tests that guard the agent's own process must be protected from that agent.
+
+## Hand check (25 to 27 Oct 2026)
+
+**Produced.** A Claude session built the offline hand-check file (articles shown without website or automatic answer)
+and the code that compares the members' answers with each other and with the automatic stance coder.
+
+**Checked.** Every answer file against the assignment of articles to members; the comparison code with tests that fail
+when an answer is counted twice or a row does not fit the sheet.
+
+**Changed by the team.** 16 articles per member instead of 40, every article meant for two members; the five members
+did the coding themselves.
+
+**Learned.** Members often chose different stances but mostly agreed, with each other and with the automatic coder,
+on whether an article endorses a claim, the only question the error rule uses.
