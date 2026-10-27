@@ -161,3 +161,14 @@ read from the data or from `results/`.
   environment, then `python -m sitegen build` and the full suite.
 - **Checked and fine.** Gate and sitegen tests pass (20); the report has 4,888 words before References;
   10-conclusion agrees with 08 on H1-H3 (checked by reading, nothing changed).
+
+## Cycle 4 length budget
+
+- **Baseline (T1).** After `python -m sitegen build`, the report has 4,131 words before References, counted as in
+  `agent/tools.py: gate_report_length` (code fences and table rows removed). Target: at most 4,900; every added
+  sentence is paid for by a cut. (The 4,888 quoted in the T12 note above was an earlier count.)
+- **Results unchanged.** SHA-256 hashes of `results/metrics.json` and `results/tables/*.csv` saved before the
+  edits for later comparison; no models, API calls or test runs.
+- **Privacy grep.** Searched `content/sections/*.md`, `content/references.md`, `docs/ai-log.md` and
+  `reports/report.md` for names, e-mail addresses, institution, course name, team number and GitHub links:
+  none found (the only hits were ordinary words such as "rejects" and a publisher name in a citation).

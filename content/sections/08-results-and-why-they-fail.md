@@ -15,7 +15,7 @@ hypothesis: The LLM beats the three trained models on unseen websites, and many 
 
 **Why validation scores are higher.** Models were tuned on validation articles, then scored on test articles from other websites. The per-website table shows where test scores are lost: one large test site is hard for every model.
 
-**Model errors and label problems.** The label belongs to the website, not to the article. A conspiracy site can print an ordinary news item; then the label fits the text badly. To tell the two apart, a second language model read each disputed article and recorded its **stance**, that is, what the article does with conspiracy claims: endorses them, debunks them, reports them neutrally, or makes no such claim. A conspiracy-site article without an endorsed claim, or a mainstream article that endorses one, counts as a label problem; everything else is a model error. Because a machine did the ticking, the team checked 40 other articles by hand, without seeing the website or the machine's answer. People often picked different stances but mostly agreed on what decides the verdict: does the article endorse a claim?
+**Model errors and label problems.** The label belongs to the website, not to the article. A conspiracy site can print an ordinary news item; then the label fits the text badly. To tell the two apart, a second language model read each disputed article and recorded its **stance**, that is, what the article does with conspiracy claims: endorses them, debunks them, reports them neutrally, or makes no such claim. A conspiracy-site article without an endorsed claim, or a mainstream article that endorses one, counts as a label problem; everything else is a model error. Because a machine did the ticking, the team checked 40 other articles by hand, without seeing the website or the machine's answer. Two members picked the same stance in 22 of 56 pairs, like agreeing on 2 of 5 answers. But on the one question that decides the verdict, does the article endorse a claim, they agreed in 43 of 56 pairs, like 3 of 4 answers.
 
 ## The code
 
@@ -124,7 +124,7 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 
 <!-- output: results/tables/validation_vs_test.csv | Conspiracy-class F1 of the four final models on validation and on test -->
 
-The likely reason is the websites: the test set has few conspiracy websites, none seen before.
+The likely reason is the websites: the test set has few conspiracy websites, none seen before, and one of them, with 44 articles, is missed by most models (table below).
 
 <!-- output: results/figures/validation_vs_test_confusion.png | Confusion matrices on validation (top) and test (bottom); rows: true website type, columns: predicted -->
 
@@ -132,7 +132,7 @@ The likely reason is the websites: the test set has few conspiracy websites, non
 
 One site, Website 4, supplies 44 of the 96 conspiracy test articles, and all four models find at most about a third of them (recall 0.205 to 0.318). Without those 44 articles the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for TF-IDF with features and 0.971 for the LLM.
 
-Website 4 explains most of the loss. Judging by titles, it publishes short partisan political news that mentions 9/11. In none of its articles that the LLM missed did the stance coder find a conspiracy claim:
+Website 4 explains most of the loss. The titles suggest that it publishes short partisan political news that mentions 9/11. In none of its articles that the LLM missed did the stance coder find a conspiracy claim:
 
 <!-- output: results/tables/large_site_missed_stances.csv | Stance of the Website 4 articles the LLM missed -->
 
@@ -140,13 +140,13 @@ Their text gives no sign of the site's rating, so every model calls them mainstr
 
 **Where the models fail, and why.** For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
 
-Of the 70 wrongly classified articles, 69 have a readable coding. The main estimate of label problems comes from the 41 coded articles that only one model got wrong: 21 of them are label problems. The upper end is 49 of 69, which also counts the 28 articles both models missed, which count partly by the rule itself. The hand check below is the cross-check.
+Of the 70 wrongly classified articles, 69 have a readable coding. Our main estimate of label problems comes from the 41 coded articles that only one model got wrong: 21 of them are label problems. It is the only estimate that the rule does not build in. The 49 of 69 overall is an upper bound, because the 28 articles both models missed are all conspiracy-site articles, and the rule counts many of them as label problems by definition. The coder shares a model family with the classifier, so the hand check below is the cross-check.
 
 <!-- output: results/tables/error_counts_plain.csv | Test articles wrongly classified, by who is wrong, and the share that are label problems -->
 
-Two test articles show the pattern. A conspiracy-site article that both models called mainstream begins "A military judge has set the trial date for five men accused of masterminding the 9/11 attacks": a plain court report without a conspiracy claim, so this is a label problem. A mainstream article opening "Not only is there a smoking gun in the 28 pages" was called conspiracy by the logistic regression and mainstream by the LLM; the stance coder found no conspiracy claim in it, so this is a model error: the trained model reacted to wording that only sounds like conspiracy writing.
+The site shows six such examples with short excerpts; two of them show the pattern. A conspiracy-site article that both models called mainstream begins "A military judge has set the trial date for five men accused of masterminding the 9/11 attacks": a plain court report without a conspiracy claim, so this is a label problem. A mainstream article opening "Not only is there a smoking gun in the 28 pages" was called conspiracy by the logistic regression and mainstream by the LLM; the stance coder found no conspiracy claim in it, so this is a model error: the trained model reacted to wording that only sounds like conspiracy writing.
 
-The coder belongs to the same model family as the classifier and may share its blind spots, so the team coded 40 validation articles blind (website and automatic answer hidden), each read by at least two members. Members often chose different stances (22 of 56 pairs agree), mostly "reports neutrally" against "makes no claim", which the rule treats alike. On whether an article endorses a claim, the question that decides the verdict, two members agreed in 43 of 56 pairs and a member and the coder in 74 of 84. On conspiracy-site articles the coder's answers gave more label problems than the members' (21 against 17 of 40), so the label-problem counts above are, if anything, somewhat too high; with so few articles this is a hint.
+To check the coder, the team coded 40 validation articles blind (website and automatic answer hidden), each read by at least two members. Members often chose different stances (22 of 56 pairs agree), mostly "reports neutrally" against "makes no claim", which the rule treats alike. On whether an article endorses a claim, the question that decides the verdict, two members agreed in 43 of 56 pairs and a member and the coder in 74 of 84. On conspiracy-site articles the coder's answers gave more label problems than the members' (21 against 17 of 40), so the counts above are, if anything, somewhat too high; with so few articles this is only a hint.
 
 ## Check yourself
 Q: A model that always answers "mainstream" is right most of the time. Why do we still not use accuracy?

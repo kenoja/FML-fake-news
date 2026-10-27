@@ -1,10 +1,7 @@
 """Style features: capitals, punctuation, quotes, sentence length and repetition."""
-# Why: Horne & Adali (2017) found more all-caps words, fewer quotes and more repetition in fake-news
-# bodies; Perez-Rosas et al. (2018) found such features weak across domains.
 from __future__ import annotations
 
 import re
-from collections import Counter
 
 import numpy as np
 
@@ -44,16 +41,12 @@ def mattr(tokens: list[str], window: int) -> float:
         return 0.0
     if n <= window:                              # a short text is one single window
         return len(set(lower)) / n
-    counts = Counter(lower[:window])             # word counts inside the current window
-    total = len(counts)                          # different words, summed over all windows
-    for start in range(1, n - window + 1):       # slide the window one word to the right
-        counts[lower[start - 1]] -= 1            # this word leaves the window
-        if counts[lower[start - 1]] == 0:
-            del counts[lower[start - 1]]
-        counts[lower[start + window - 1]] += 1   # this word enters the window
-        total += len(counts)
     n_windows = n - window + 1
-    return total / (n_windows * window)
+    total = 0                                    # different words, summed over all windows
+    for start in range(n_windows):               # slide the window one word to the right
+        window_words = lower[start:start + window]
+        total += len(set(window_words))
+    return total / (n_windows * window)          # average share over all windows
 
 
 def count_quotes(text: str) -> int:
