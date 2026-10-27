@@ -18,6 +18,8 @@ We compare four methods that form a ladder from simple to rich: logistic regress
 
 We did not try other classifiers (the question is about the input, so the classifier stays fixed), fine-tuning (too costly for a small study) or emotion features (fear and anger are normal in any report on an attack). Following the course feedback, we use full articles and one inexpensive language model; the JFK transfer test is left to further work. All methods read the same first 3,000 words.
 
+The pipeline, without the language model, runs on an ordinary computer in about two minutes; only the language model needs an internet connection and a paid service.
+
 The four methods at a glance:
 
 

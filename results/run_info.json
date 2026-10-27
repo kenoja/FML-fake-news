@@ -1,5 +1,5 @@
 {
-  "run_all_seconds": 140.7,
+  "run_all_seconds": 133.4,
   "python": "3.11.17",
   "machine": {
     "system": "Linux",
@@ -7,11 +7,11 @@
     "cpus": 4
   },
   "stage_seconds": {
-    "cleaning": 25.5,
-    "word_counts": 3.3,
-    "tfidf": 2.3,
-    "features": 10.0,
-    "tfidf_features": 94.5,
+    "cleaning": 24.2,
+    "word_counts": 3.1,
+    "tfidf": 1.9,
+    "features": 9.5,
+    "tfidf_features": 89.8,
     "llm": 0.4,
     "final": 0.3,
     "comparison": 1.4,
