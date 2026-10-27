@@ -71,10 +71,61 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 - **Audience.** Teammates without a technical background: four-part sections, glossary links, hidden answers.
 - **No process on the site.** Plans, run records and decision history stay in `docs/`.
 
+## Cycle 4 (final run): how each item was handled
+
+Rule for the cycle: no new models, statistics, prompts, API calls or test-set runs; new numbers are only counts
+read from the data or from `results/`.
+
+- **Item 1 (changes from the plan, `01`).** Short paragraph added from the table in `docs/PROJECT_PLAN.md` and the
+  course feedback: full articles instead of headlines, one cheap LLM, no transformer; the JFK transfer stays further
+  work. About 70 words in the report, the course is not named.
+- **Item 2 and D3 (F1 vs McNemar, `01`, `08`).** Verdict rule kept. One sentence in `01` (plain and report) says F1
+  looks at the conspiracy class and McNemar's test at both classes; a hypothesis is supported only when both point
+  the predicted way. `08` states in one clause that they agree for all three tests (`mcnemar_tests.csv`).
+- **Item 3 (search words, `02`).** The eleven topic-filter words and phrases are listed in plain words, taken from
+  `data.topic_filter_pattern`; the pattern itself is unchanged.
+- **Item 4 (Other: largest conspiracy sites).** `site_concentration` in `src/fml/data_report.py` is called from the
+  data stage of `fml run-all`. It writes `results/tables/site_concentration.csv` and the keys `top3_sites_share` and
+  `top3_train_articles` under `cleaning` in `metrics.json`. Websites are numbered, not named. "Largest" is counted in
+  all conspiracy articles; the training count is the same three sites' articles in the training split.
+- **Item 5 (Other: 39 or 37 websites).** 39 is used only for the raw corpus subset, 37 for the analysed data (25
+  train, 6 validation, 6 test). Changed in `02` and `09`.
+- **Item 6 (`03` watch out).** The risk that one website supplies a large part of a set's conspiracy articles is
+  stated without test numbers.
+- **Item 7 and D2 (`06`).** The text says the feature model was planned on 16 Oct 2026 before any result, that cycle 2
+  used a validation threshold, and that the team returned to the plan on 25 Oct after seeing validation and earlier
+  test results (`results/frozen_models.json`), so the choice was not blind. It points to `09`.
+- **Item 8 (why intervals may be too narrow, `08`).** One clause in the Report where the intervals are introduced;
+  not repeated elsewhere.
+- **D1 (hand check).** Kept as is; answer files in `data/hand_check/` untouched; no kappa.
+- **R1, R4.** The evaluation paragraph moved to a `### How we judge the methods` subsection at the end of the report
+  part of `01`; it holds the D3 sentence and states once that the three McNemar tests are not corrected for multiple
+  testing and that only H3 would pass such a correction.
+- **R2.** `08` leads with 21 of 41 as the cautious estimate of label problems and gives 49 of 69 as the upper end.
+- **R3.** One sentence in `06`: certainty words alone scored highest on validation, but switching to the best single
+  row after seeing the table would change H2 to fit the results.
+- **R5.** `llm_prompt_variants.csv` now has the headers Prompt, Articles, Precision, Recall, F1; the stray blank row in
+  the ablation block of the report was removed.
+- **R5 vs rubric (licence) and "more examples": declined** as in "Declined, with the reason" below, per the cycle's
+  "Not to do" list.
+- **R6.** `11` names which tool did what once, puts "Saving answers" before "What we learned", and the learnings are
+  factual (plans and explicit requirements steer the assistant; tests check numbers against files, not the question).
+  `docs/ai-log.md` was updated to match.
+- **R7.** `src/fml/features/style.py` has one-line docstrings and a plainer capital-letter check; the scikit-learn
+  wrapper moved to `src/fml/features/wrappers.py`, out of the cells shown on the site. The results must stay
+  byte-identical to the pre-cycle ones except for the new `site_concentration` table and keys and the renamed
+  headers of `llm_prompt_variants.csv`; see `docs/reproducibility.md` for the status of that check.
+- **R8.** The Anthropic client version from `results/run_info.json` is named in `02`.
+- **R9.** Report length is checked by `tests/test_gates.py` (limit 5,000, aim 4,900); cuts were made in repeated
+  hedges and explanations.
+- **R10.** No "so far" in the hand-check wording.
+- **Moving open items.** They stay in this file only.
+
 ## Needs a team decision
 
-- **[open] Dataset licence.** Owner: repository owner. The OSF page could not be read automatically. Record the
-  licence text and date here. Until then the safe default applies (texts private, short excerpts only).
+- **[open] Dataset licence.** Owner: repository owner. The OSF page could not be read automatically and no file in
+  the repository states the licence. Record the licence text and date here. Conservative reading until then: texts
+  stay private, excerpts of at most 50 words, and the one neutral sentence in `02`.
 
 ## Declined, with the reason
 
@@ -86,3 +137,17 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
   with the owner: one neutral sentence in the data section, no further discussion.
 - **Website-level confidence intervals, more prompts, a memorisation test for the LLM.** Kept out to keep the
   analysis at the level of a fundamentals course; the limitations section names them.
+
+## Cycle 4 final verification (T12)
+
+- **Environment problem, tests not run.** In the verification session the system Pillow was broken
+  (`cannot import name '_imaging'`), so `import matplotlib` failed. Four test files could not be collected
+  (`test_ablation.py`, `test_cell_functions.py`, `test_results.py`, `test_test_lock.py`) and four tests in other files
+  failed on the same import. They were not run and are not counted as passed.
+- **Stale results.** `results/tables/site_concentration.csv` and `metrics.json#cleaning.top3_sites_share` did not
+  exist yet, because `fml run-all` had not been run after `fml.data_report` was added. Until it is rerun, the
+  number 157 in `02-data-and-cleaning` is not in `results/`, two section/report number tests fail, the section
+  reference does not resolve, and the runtime-sentence test fails. Needed: `fml run-all` in a working
+  environment, then `python -m sitegen build` and the full suite.
+- **Checked and fine.** Gate and sitegen tests pass (20); the report has 4,888 words before References;
+  10-conclusion agrees with 08 on H1-H3 (checked by reading, nothing changed).

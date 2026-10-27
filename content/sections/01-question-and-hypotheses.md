@@ -49,23 +49,15 @@ We asked whether the text of a full 9/11 article reveals if it comes from a cons
 
 ### Introduction
 
-The attacks of 11 September 2001 are among the most persistent subjects of conspiracy theories: claims that they were an "inside job", a "controlled demolition" or a "false flag" are actively argued for online (Wood & Douglas, 2013) and have been studied as a widely held belief (Swami, Chamorro-Premuzic & Furnham, 2010). In a 2006 survey, 36 percent of Americans found it credible that federal officials helped the attacks happen or deliberately failed to stop them (Stempel, Hargrove & Stempel, 2007). Automatic detection of misleading web content is an active research field (Shu et al., 2017). This study asks whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website, using machine-learning methods for text classification.
+The attacks of 11 September 2001 are a persistent subject of conspiracy theories: claims that they were an "inside job", a "controlled demolition" or a "false flag" are actively argued for online (Wood & Douglas, 2013) and have been studied as a widely held belief (Swami, Chamorro-Premuzic & Furnham, 2010). In a 2006 survey, 36 percent of Americans found it credible that federal officials helped the attacks happen or deliberately failed to stop them (Stempel, Hargrove & Stempel, 2007). This study asks whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website, using machine-learning methods for text classification.
 
-We compare four methods that form a ladder from simple to rich: logistic regression on word counts, the plainest baseline; logistic regression on TF-IDF weights, the standard step beyond counting (Salton & Buckley, 1988; Manning, Raghavan & Schütze, 2008); logistic regression on TF-IDF plus three groups of hand-made features (word sequences, certainty words, style); and a low-cost LLM used without training (zero-shot). Logistic regression is simple, well understood and its weights can be read as word lists (Hastie, Tibshirani & Friedman, 2009). As a basic check, every trained model should beat always guessing "mainstream". Beyond that we test three hypotheses:
+We compare four methods that form a ladder from simple to rich: logistic regression on word counts, the plainest baseline; logistic regression on TF-IDF weights, the standard step beyond counting (Salton & Buckley, 1988; Manning, Raghavan & Schütze, 2008); logistic regression on TF-IDF plus three groups of hand-made features (word sequences, certainty words, style); and a low-cost LLM used without training (zero-shot). Logistic regression is simple and its weights can be read as word lists (Hastie, Tibshirani & Friedman, 2009). Every trained model should beat always guessing "mainstream". We test three hypotheses:
 
 - **H1.** TF-IDF reaches a higher conspiracy-class F1 than word counts, because distinctive words carry more information than common ones.
 - **H2.** TF-IDF plus the three feature groups reaches a higher F1 than TF-IDF alone, because these features capture how conspiracy texts argue.
 - **H3.** The LLM reaches a higher F1 than the best logistic regression, because it brings broad knowledge of how texts are written.
 
-What we did not do, and why:
-
-- *Other classifiers*: the question is about the input, so the classifier stays fixed.
-- *Fine-tuning a language model*: it needs more labelled data and money than a small study has.
-- *Emotion features*: fear and anger are normal in any report on an attack.
-
-The proposal planned to analyse headlines, to run a transfer test on JFK-assassination articles, and to compare several language models and possibly a transformer. Following the course feedback, we use full articles, one inexpensive language model and no fine-tuning or multi-model comparison; the JFK transfer test is parked as out of scope and left to further work. All methods read the same first 3,000 words.
-
-The pipeline, without the language model, runs on an ordinary computer (the last run: two processor cores, Python 3.11) in about two minutes, about one of which is the feature model; only the language model needs an internet connection and a paid service.
+We did not try other classifiers (the question is about the input, so the classifier stays fixed), fine-tuning (too costly for a small study) or emotion features (fear and anger are normal in any report on an attack). Following the course feedback, we use full articles and one inexpensive language model; the JFK transfer test is left to further work. All methods read the same first 3,000 words.
 
 The four methods at a glance:
 
@@ -73,7 +65,7 @@ The four methods at a glance:
 
 ### How we judge the methods
 
-All methods are judged by precision, recall and F1 for the conspiracy class, because most articles are mainstream and accuracy would reward a model that never finds a conspiracy article. F1 looks at the conspiracy class only. Two models are compared with McNemar's test, which counts the articles of both classes that exactly one of them gets right; it is the recommended test for two classifiers on the same test set (Dietterich, 1998), and confidence intervals describe uncertainty but do not decide. A hypothesis is supported only when both point the predicted way: the F1 is higher and p < 0.05. The three McNemar tests are not corrected for multiple testing; with a correction for three tests (0.05/3) only H3 would still pass.
+All methods are judged by precision, recall and F1 for the conspiracy class, because most articles are mainstream and accuracy would reward a model that never finds a conspiracy article. F1 looks at the conspiracy class only. Two models are compared with McNemar's test, which counts the articles that exactly one of them gets right (Dietterich, 1998). A hypothesis is supported only when both point the predicted way: the F1 is higher and p < 0.05. The three McNemar tests are not corrected for multiple testing; with a correction for three tests (0.05/3) only H3 would still pass.
 
 ## Check yourself
 

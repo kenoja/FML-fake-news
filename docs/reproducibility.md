@@ -5,7 +5,14 @@ logistic regressions (`final2_word_counts`, `final2_tfidf`, `final2_tfidf_featur
 were each scored on test once with `fml evaluate-final <model_id>`; `results/test_access_log.jsonl` lists every
 scoring with its configuration hash.
 
-## Two identical runs (26 Oct 2026)
+## Cycle 4 re-run (27 Oct 2026): not yet recorded
+
+The two-run hash comparison for cycle 4 could not be run in the session that wrote this note (running
+`fml run-all` was not permitted there), so no new hashes or timing are recorded. The check below is still to be
+done; the checksums further down are the pre-cycle ones and will differ only in the new `site_concentration`
+table, its `cleaning` keys in `metrics.json` and the renamed headers of `llm_prompt_variants.csv`.
+
+## Two identical runs (26 Oct 2026, before cycle 4)
 
 In the pinned environment of `requirements-lock.txt` (Python 3.11.17, numpy 2.4.6,
 scikit-learn 1.9.1), `fml run-all` was run twice on 2 CPUs (about
