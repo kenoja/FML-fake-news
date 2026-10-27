@@ -123,9 +123,22 @@ read from the data or from `results/`.
 - **Approach alternatives (T11).** Each of `04`-`07` now names in Explained simply what was not done and why: no other
   classifier or word order (04), no other weighting or word pairs (05), no emotion features and no phrases beyond three
   words (06), no fine-tuning, few-shot examples or several LLMs (07).
-- **Report length (T11).** Assembled report: 4,892 words before References by the plain count of
-  `tests/test_gates.py` (limit 5,000, aim 4,900). Cuts: repeated detail in the Website 4 paragraph in `08`, a sentence in
-  the introduction, and the executive summary's hypothesis wording. Examples, the Website 4 finding and all verdicts kept.
+- **Report length (T11, final).** Assembled report: 4,894 words before References by the plain count of
+  `tests/test_gates.py` (split at spaces, limit 5,000, aim 4,900); it was 5,163 before the cuts. Cuts, all in repeated
+  explanations and hedges: the introduction (one citation, the run-time sentence, the classifier remark), the
+  executive summary, `08` (repeated caveats, the Website 4 lead-in, the second-estimate remark, the table caption
+  clause), `06`, `09` and `11`. Kept: both examples, the Website 4 finding, every hypothesis verdict, the hand-check
+  numbers and conclusion. `reports/report.md` was only rebuilt by `python -m sitegen build`, never edited by hand.
+  One citation (Swami et al., 2010) is no longer cited in the report text; `content/references.md` was not changed.
+- **Choice of F1 and McNemar (D3).** Both are kept: F1 (conspiracy class) is the headline score, McNemar the test on
+  both classes; a hypothesis counts as supported only if both point the predicted way. They agree for all three tests.
+- **Placement of "intervals" (item 8).** The reason the intervals may be too narrow (articles from one website are
+  similar) is given once, in the first paragraph of the Report part of `08`, where the intervals are introduced.
+- **Search-term wording (item 3).** The topic filter is described as a plain list of words and phrases with spelling
+  variants, not as a regular expression; the filter itself is unchanged.
+- **Licence sentence.** The one neutral sentence in `02` stays (see "Declined, with the reason").
+- **Nothing new run.** No new models, prompts, API calls or test-set scoring in this cycle's text work; the frozen
+  models and `results/test_access_log.jsonl` are unchanged.
 - **Declined per "Not to do".** The request for more of the licence discussion (the one neutral sentence in `02`
   stays) and the request to show open items on the site (they stay in this file only).
 - **Other items by judgement.** Item 4: three-site concentration counted in the data stage and quoted from `results/`.
@@ -136,6 +149,10 @@ read from the data or from `results/`.
 - **[open] Dataset licence.** Owner: repository owner. The OSF page could not be read automatically and no file in
   the repository states the licence. Record the licence text and date here. Conservative reading until then: texts
   stay private, excerpts of at most 50 words, and the one neutral sentence in `02`.
+- **[open] Unused citation.** Swami et al. (2010) remains in `content/references.md` but is no longer cited in the
+  report after the length cuts. Decide whether to remove it or cite it again.
+- **[open] Reproducibility check (R7).** The byte-identical comparison of `results/` before and after the `style.py`
+  change is covered by the final verification (`fml run-all` twice); not repeated in this task.
 
 ## Declined, with the reason
 
@@ -172,3 +189,5 @@ read from the data or from `results/`.
 - **Privacy grep.** Searched `content/sections/*.md`, `content/references.md`, `docs/ai-log.md` and
   `reports/report.md` for names, e-mail addresses, institution, course name, team number and GitHub links:
   none found (the only hits were ordinary words such as "rejects" and a publisher name in a citation).
+
+- **Final verification (T12).** Two `fml run-all` runs gave identical hashes for `metrics.json` and all tables; the test log is unchanged (11 lines). Full pytest: 239 passed, 1 failed, 0 skipped (no `needs_data` test skipped); the failure was the missing run-time sentence in section 01, restored ("about three minutes"), and `tests/test_report_numbers.py` then passed (19). The full suite was not re-run after that fix. No T1 hash file could be found, so equality was checked against the committed results (git shows only `run_info.json` modified) and the older checksums in `docs/reproducibility.md`. Privacy grep (e-mail, GitHub links, names, course words) over sections, docs and report: no real hits.

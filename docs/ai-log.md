@@ -85,7 +85,10 @@ on whether an article endorses a claim, the only question the error rule uses.
 cycle's requirements; Claude Haiku 5.5 remained the classifier under test; Claude Sonnet 5.5 coded article stance.
 
 **Checked.** Automated tests for numbers, section format, word limits and privacy; a rerun of the whole analysis with
-the results compared before and after.
+the results compared before and after. No new models, statistics or API calls were added in this cycle.
+
+**Changed by the team.** The cycle's requirements came from the team's feedback on the cycle-3 site; the owner reviews
+the pull request.
 
 **Learned.** Written plans and explicit requirements steer the assistant; tests show that numbers match files, not
 that they answer the right question.

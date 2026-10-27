@@ -35,15 +35,15 @@ This section describes limits of the study, so it has no analysis of its own. Th
 
 ## Report
 
-**Labels.** The label describes the publishing website, not the content, so a prediction that disagrees with it is not necessarily an error. The scores measure how well each method recovers the type of website, not whether a text contains conspiracy claims.
+**Labels.** The label describes the publishing website, not the content, so a prediction that disagrees with it is not necessarily an error.
 
-**Few websites.** The number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. The confidence intervals resample single articles as if they were independent, but articles from one website resemble each other, so the intervals are probably too narrow.
+**Few websites.** The number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. The reading of Website 4 as partisan political news rests on article titles only, not on a reading of the full texts.
 
 **Prior knowledge of the LLM.** The LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. We could not measure this. The stance coder is also a Claude model and may share the LLM's blind spots. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
 
 **Choices and lexicon.** Thresholds such as the 0.9 similarity for copies could be set differently, the certainty and doubt features ignore negation and rest on four short word lists (47 entries), and website style can still serve as a shortcut.
 
-**One topic, one split.** All results concern one topic, one corpus and one split. The test set was also used during development: seven earlier model versions, none of them reported here, were scored on it. Every final model reported here was chosen on validation alone and scored on the test set once.
+**One topic, one split.** All results concern one topic, one corpus and one split. The test set was also used during development: seven earlier model versions, none of them reported here, were scored on it, and on 25 October the team returned to the planned all-groups feature model after seeing validation results and those earlier test runs. Every final model reported here was chosen on validation alone and scored on the test set once.
 
 ## Check yourself
 
