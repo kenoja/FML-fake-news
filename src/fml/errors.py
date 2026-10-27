@@ -294,6 +294,83 @@ def write_claude_answers(sample: pd.DataFrame, path: Path) -> None:
     sample[["doc_id", "claude_stance", "claude_justification"]].to_csv(path, index=False)
 
 
+MEMBERS = ("A", "B", "C", "D", "E")
+
+
+def read_hand_check(folder: Path, sample_ids) -> pd.DataFrame:
+    """The team's answers, one row per article and member; a repeated answer keeps the first one."""
+    files = sorted(folder.glob("stance_check_member_*.csv"))
+    if not files:
+        return pd.DataFrame(columns=["doc_id", "member", "stance"])
+    codes = pd.concat([pd.read_csv(f, dtype=str) for f in files], ignore_index=True)
+    # stop if a row names an article, member or answer that is not on the sheet
+    wrong = ~codes["doc_id"].isin(set(sample_ids)) | ~codes["member"].isin(MEMBERS) | ~codes["stance"].isin(STANCES)
+    if wrong.any():
+        raise ValueError(f"hand-check rows that do not fit the sheet: {codes[wrong].head().to_dict('records')}")
+    # a member who sends a second file: the first, blind answer counts
+    return codes.drop_duplicates(["doc_id", "member"], keep="first").reset_index(drop=True)
+
+
+def member_pairs(codes: pd.DataFrame) -> pd.DataFrame:
+    """Every pair of members who answered for the same article, with both answers."""
+    pairs = codes.merge(codes, on="doc_id", suffixes=("_1", "_2"))
+    # keep each pair once and never pair a member with themselves
+    return pairs[pairs["member_1"] < pairs["member_2"]].reset_index(drop=True)
+
+
+def same_decision(first: pd.Series, second: pd.Series) -> np.ndarray:
+    """True where both readers agree on the one question the error rule asks: does it endorse a claim?"""
+    return (first.to_numpy() == "endorses") == (second.to_numpy() == "endorses")
+
+
+def agreement_row(who: str, first: pd.Series, second: pd.Series) -> dict:
+    """Counts of the same stance and of the same 'endorses or not' decision."""
+    same_stance = int((first.to_numpy() == second.to_numpy()).sum())
+    same = int(same_decision(first, second).sum())
+    return {"Who is compared": who, "Comparisons": len(first),
+            "Same stance": same_stance, "Share same stance": round(same_stance / len(first), 3),
+            "Same on endorses or not": same, "Share same on endorses or not": round(same / len(first), 3)}
+
+
+def with_coder(codes: pd.DataFrame, sample: pd.DataFrame) -> pd.DataFrame:
+    """Each member answer next to the automatic coder's answer for the same article."""
+    both = codes.merge(sample[["doc_id", "label", "claude_stance"]], on="doc_id")
+    # skip articles the automatic coder gave no readable answer for
+    return both[both["claude_stance"].isin(STANCES)].reset_index(drop=True)
+
+
+def agreement_table(codes: pd.DataFrame, sample: pd.DataFrame) -> pd.DataFrame:
+    """Two rows: member with member, and member with the automatic coder."""
+    pairs = member_pairs(codes)
+    both = with_coder(codes, sample)
+    return pd.DataFrame([agreement_row("Two members", pairs["stance_1"], pairs["stance_2"]),
+                         agreement_row("A member and the automatic coder", both["stance"], both["claude_stance"])])
+
+
+def verdicts_by_site_type(codes: pd.DataFrame, sample: pd.DataFrame) -> pd.DataFrame:
+    """Per kind of website: how often the rule finds a label problem with a member's or the coder's answer."""
+    both = with_coder(codes, sample)
+    both["member_verdict"] = [classify_error(bool(t), s) for t, s in zip(both["label"], both["stance"])]
+    both["coder_verdict"] = [classify_error(bool(t), s) for t, s in zip(both["label"], both["claude_stance"])]
+    rows = []
+    for label, name in ((True, "Conspiracy website"), (False, "Mainstream website")):
+        part = both[both["label"] == label]
+        rows.append({"Website type": name, "Answers compared": len(part),
+                     "Label problem by the member's answer": int((part["member_verdict"] == LABEL_PROBLEM).sum()),
+                     "Label problem by the coder's answer": int((part["coder_verdict"] == LABEL_PROBLEM).sum()),
+                     "Same verdict": int((part["member_verdict"] == part["coder_verdict"]).sum())})
+    return pd.DataFrame(rows)
+
+
+def hand_check_values(codes: pd.DataFrame, sample: pd.DataFrame) -> dict:
+    """How complete the hand check is, for metrics.json."""
+    readers = codes.groupby("doc_id")["member"].nunique().reindex(sample["doc_id"], fill_value=0)
+    once = int((readers < 2).sum())
+    return {"answers": int(len(codes)), "members": int(codes["member"].nunique()),
+            "articles_two_or_more_members": int((readers >= 2).sum()), "articles_fewer_than_two": once,
+            "status": "complete" if once == 0 else f"{once} articles still wait for a second member"}
+
+
 def plain_counts(coded: pd.DataFrame, totals: pd.DataFrame) -> pd.DataFrame:
     """Three rows for the report: articles per group, how many were coded, and the label-problem share."""
     rows = []

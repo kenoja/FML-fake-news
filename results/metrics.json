@@ -664,14 +664,18 @@
     "label_problem_share": {
       "label_problems": 49,
       "of_coded": 69,
-      "source": "Claude stance coding only, not checked by people"
+      "source": "Claude stance coding; checked by the team on 40 validation articles (human_check)"
     },
     "rule": "conspiracy site + (rejects|neutral|no_claim) -> label problem; mainstream site + endorses -> label problem; else model wrong",
     "human_check": {
       "sample_file": "results/tables/stance_check_sample.csv",
       "rows": 40,
       "file_rewritten_this_run": false,
-      "status": "to be filled by the team"
+      "answers": 88,
+      "members": 5,
+      "articles_two_or_more_members": 40,
+      "articles_fewer_than_two": 0,
+      "status": "complete"
     }
   }
 }

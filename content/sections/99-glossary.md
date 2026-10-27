@@ -130,6 +130,11 @@ Also: Split by website
 
 Dividing articles so that all articles of one website land in the same part (train, validation or test). Like putting whole families, not single people, into the same team, so a model cannot recognise a site it has already met.
 
+### Hand check
+Also: Blind check, blind
+
+People read a sample of articles themselves and give the same kind of answer the machine gave, without seeing the machine's answer or the website ("blind"). Comparing the answers shows how far the machine can be trusted. Like a teacher re-marking a few exams that an assistant graded, without looking at the assistant's marks first.
+
 ### Hash
 Also: Fingerprint
 

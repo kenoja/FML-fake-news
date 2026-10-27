@@ -27,7 +27,7 @@ from .evaluate import BOOTSTRAP_SEED, N_BOOTSTRAP, bootstrap_ci, classification_
 from .models import (feature_matrix, fit_features, fit_logistic, split_frames, tfidf_vectorizer, top_words,
                      tune_on_validation, word_counts_vectorizer)  # noqa: E402
 from .methods_overview import write_methods_overview  # noqa: E402
-from .paths import project_config  # noqa: E402
+from .paths import REPO_ROOT, project_config  # noqa: E402
 from .results import CONSPIRACY_COLOUR, MAINSTREAM_COLOUR, results_dir, savefig, write_metrics, write_table  # noqa: E402
 from .data_report import plot_split_sizes  # noqa: E402
 from .split import SPLITS, load_split, split_path, split_summary, websites_per_split  # noqa: E402
@@ -814,10 +814,11 @@ def label_problem_values(coded: pd.DataFrame) -> dict:
     """How many coded articles look like label problems (Claude's stance only)."""
     return {"label_problems": int((coded["verdict"] == errors.LABEL_PROBLEM).sum()),
             "of_coded": int(len(coded)),
-            "source": "Claude stance coding only, not checked by people"}
+            "source": "Claude stance coding; checked by the team on 40 validation articles (human_check)"}
 
 
-def errors_values(chosen: str, cfg: dict, sets: pd.DataFrame, coded: pd.DataFrame, sample: pd.DataFrame, written: bool) -> dict:
+def errors_values(chosen: str, cfg: dict, sets: pd.DataFrame, coded: pd.DataFrame, sample: pd.DataFrame, written: bool,
+                  hand: dict) -> dict:
     """The numbers of the errors stage, as written to metrics.json."""
     return {"data": "TEST rows, filtered documents; predictions from evaluate_final files only",
             "lr_model": chosen, "stance_model": cfg["model"],
@@ -828,7 +829,16 @@ def errors_values(chosen: str, cfg: dict, sets: pd.DataFrame, coded: pd.DataFram
             "label_problem_share": label_problem_values(coded),
             "rule": "conspiracy site + (rejects|neutral|no_claim) -> label problem; mainstream site + endorses -> label problem; else model wrong",
             "human_check": {"sample_file": "results/tables/stance_check_sample.csv", "rows": int(len(sample)),
-                            "file_rewritten_this_run": written, "status": "to be filled by the team"}}
+                            "file_rewritten_this_run": written, **hand}}
+
+
+def hand_check_stage(sample: pd.DataFrame) -> dict:
+    """Compare the team's blind answers with each other and with the automatic coder."""
+    folder = REPO_ROOT / errors.stance_config()["hand_check_dir"]
+    codes = errors.read_hand_check(folder, sample["doc_id"])
+    write_table("hand_check_agreement", errors.agreement_table(codes, sample))
+    write_table("hand_check_verdicts", errors.verdicts_by_site_type(codes, sample))
+    return errors.hand_check_values(codes, sample)
 
 
 def errors_stage() -> dict:
@@ -844,7 +854,8 @@ def errors_stage() -> dict:
     write_table("large_site_missed_stances", large_site_stances(coded))   # why the large site is missed
     sample = check_sample(frame, cfg, seed)
     written = write_error_tables(coded, sets, examples, sample)
-    values = errors_values(chosen, cfg, sets, coded, sample, written)
+    hand = hand_check_stage(sample)                                       # the team's blind check
+    values = errors_values(chosen, cfg, sets, coded, sample, written, hand)
     write_metrics("errors", round_floats(values, 4))
     return values
 

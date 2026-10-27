@@ -44,16 +44,30 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 
 - **Stance coding.** A second model codes what each disputed test article does with conspiracy claims; a fixed rule
   turns label and stance into "label problem" or "model error". The shares are estimates from one automatic coder.
-- **Hand check.** 40 validation articles (`results/tables/stance_check_sample.csv`, ids only), each coded blind by
-  two of the five members with the offline hand-check file. Answers arrive as
-  `data/hand_check/stance_check_member_<letter>.csv`; agreement is analysed once all five are in.
+- **Hand check.** 40 validation articles (`results/tables/stance_check_sample.csv`, ids only), each meant to be coded
+  blind by two of the five members with the offline hand-check file. Answers are in
+  `data/hand_check/stance_check_member_<letter>.csv`; `fml run-all` reads every file there, and when a member sends a
+  second file, their first (blind) answer for an article counts (rule set on 27 Oct 2026, before the second file
+  arrived).
+- **Member B's first file.** It was made under letter A by mistake and holds Member B's blind answers for Member A's
+  16 articles (owner's information, 27 Oct 2026). It is stored as Member B. Member B then coded their own 16 articles
+  (`stance_check_member_B_2.csv`); for the 8 articles in both files the first answers count. Result: every one of
+  the 40 articles has at least two readers (`errors.human_check.status`: complete), and 8 have three.
+- **Member B's 8 repeated articles (not in the report).** Member B gave the same stance both times for 1 of the 8
+  and the same "endorses or not" answer for 5 of the 8. This shows that stance coding is hard even for one person; it
+  is not reported because the repeat was accidental and not planned as a test, and the report has no room left.
+- **Agreement measure (closes R1 of cycle 3).** Plain counts and shares: the same stance, and the same answer to
+  the one question the error rule asks ("does the article endorse a claim?"), between two members and between a
+  member and the automatic coder; plus the rule's verdict per website type. No kappa or other new statistic, to
+  keep to the cycle-2 rule of simple statistics. The two automatic answers that were unreadable are skipped.
 - **Examples.** The site shows six disagreement examples; the report names one label problem and one model error
   to stay near 4,500 words.
 
 ## Report and site
 
-- **Report length.** 3,000 to 5,000 words before References. Measured on 26 Oct 2026: 4,086 words of prose and
-  4,974 with every table cell counted, so the report stays under 5,000 either way.
+- **Report length.** 3,000 to 5,000 words before References. Measured on 27 Oct 2026: 4,981 words by the team's
+  plain count (split at spaces, tables included; checked by `tests/test_gates.py`) and 4,142 words of prose without
+  tables. The plain count is the binding one, so later additions must be balanced by cuts.
 - **Audience.** Teammates without a technical background: four-part sections, glossary links, hidden answers.
 - **No process on the site.** Plans, run records and decision history stay in `docs/`.
 
@@ -61,7 +75,6 @@ Agents: add an entry whenever you choose between alternatives or resolve a confl
 
 - **[open] Dataset licence.** Owner: repository owner. The OSF page could not be read automatically. Record the
   licence text and date here. Until then the safe default applies (texts private, short excerpts only).
-- **[open] Hand check.** Owner: the team. Member A's answers are in; four files are missing.
 
 ## Declined, with the reason
 

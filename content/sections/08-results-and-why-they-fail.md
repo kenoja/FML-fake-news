@@ -7,15 +7,15 @@ hypothesis: The LLM beats the three trained models on unseen websites, and many 
 
 **How to read the table.** Each of the four final models takes the final exam once, on test articles nobody used before. For each model the table shows three scores for the conspiracy class: **precision** (when it says "conspiracy", how often is it right?), **recall** (of all real conspiracy articles, how many did it find?) and **F1**, one number that is low if either of the other two is low. Next to each score is a **confidence interval**. Like a poll that says "40%, give or take 3 points", it shows how far a score may be off.
 
-**Why F1 and not accuracy.** Most of the articles are mainstream. A lazy "model" that always answers "mainstream" is right about three times in four, which sounds decent and finds no conspiracy article at all. That is the baseline row of the table: its F1 is zero.
+**Why F1 and not accuracy.** Most articles are mainstream. A lazy "model" that always answers "mainstream" is right about three times in four, which sounds decent but finds no conspiracy article. That is the baseline row of the table: its F1 is zero.
 
 **A worked case.** The test set has 96 conspiracy articles and 314 mainstream ones. The LLM caught 64 of the 96 (recall 0.667) and wrongly flagged 1 mainstream article, so 64 of its 65 alarms were right (precision 0.985); its F1 is 0.795. The intervals are a bit optimistic, that is too narrow, because articles from the same website are alike and the test set holds only six conspiracy websites.
 
-**Why McNemar for the comparisons.** Two judges rate the same cases. Where they agree, we learn nothing about who is better. Only the cases where they disagree count. If one judge is right in 20 of 22 disagreements, that judge is clearly better; if it is 11 against 11, it may be luck. McNemar's test counts exactly these cases for two models on the same articles.
+**Why McNemar for the comparisons.** Two judges rate the same cases. Only the cases where they disagree tell us who is better. If one judge is right in 20 of 22 disagreements, that judge is clearly better; if it is 11 against 11, it may be luck. McNemar's test counts exactly these cases for two models on the same articles.
 
-**Why validation scores are higher.** Models were tuned on validation articles and then scored on test articles from other websites, and there are fewer conspiracy websites in the test set. The per-website table shows where the test scores are lost: one large site in the test set is hard for every model.
+**Why validation scores are higher.** Models were tuned on validation articles, then scored on test articles from other websites, with fewer conspiracy websites. The per-website table shows where test scores are lost: one large test site is hard for every model.
 
-**Model errors and label problems.** The label belongs to the website, not to the article. A conspiracy site can print an ordinary news item, and then the label describes the text badly. To tell the two apart, a second language model read each disputed article and recorded its **stance**, that is, what the article does with conspiracy claims: endorses them, debunks them, reports them neutrally, or makes no such claim. A conspiracy-site article without an endorsed claim, or a mainstream article that endorses one, counts as a label problem; everything else is a model error. Because a machine did the ticking, the team checks 40 articles by hand.
+**Model errors and label problems.** The label belongs to the website, not to the article. A conspiracy site can print an ordinary news item; then the label fits the text badly. To tell the two apart, a second language model read each disputed article and recorded its **stance**, that is, what the article does with conspiracy claims: endorses them, debunks them, reports them neutrally, or makes no such claim. A conspiracy-site article without an endorsed claim, or a mainstream article that endorses one, counts as a label problem; everything else is a model error. Because a machine did the ticking, the team checked 40 other articles by hand, without seeing the website or the machine's answer. People often picked different stances but mostly agreed on what decides the verdict: does the article endorse a claim?
 
 ## The code
 
@@ -81,6 +81,25 @@ The examples are picked with a seeded shuffle among articles that have a clean e
 Each row is one test article with a short excerpt. The first two rows show that the two models make different mistakes: each is sometimes right where the other is wrong. The rows where both models are wrong, or where the label does not fit the text, show articles that carry little or no conspiracy claim, so the website label describes them badly.
 <!-- output: results/metrics.json#errors.label_problem_share -->
 
+Last, the team's hand check. The answer files of all members are read together; a member who sends a second file keeps their first, blind answer.
+
+<!-- cell: src/fml/errors.py#read_hand_check -->
+
+Every pair of members who read the same article is compared, each pair once.
+
+<!-- cell: src/fml/errors.py#member_pairs -->
+
+The rule only asks "does the article endorse a claim?", so agreement is counted twice: on the exact stance, and on that one question.
+
+<!-- cell: src/fml/errors.py#agreement_row -->
+<!-- output: results/tables/hand_check_agreement.csv | How often two members, or a member and the automatic coder, gave the same answer -->
+
+Finally the rule is applied to each member answer and to the coder's answer for the same article.
+
+<!-- cell: src/fml/errors.py#verdicts_by_site_type -->
+<!-- output: results/tables/hand_check_verdicts.csv | Label problems found with the members' answers and with the coder's answers, per kind of website -->
+<!-- output: results/metrics.json#errors.human_check | How complete the hand check is -->
+
 ## Report
 
 All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993), which treat articles as independent and are therefore somewhat too narrow for six conspiracy websites. The baseline row always answers "mainstream": its accuracy is 0.766, but it finds no conspiracy article, which is why accuracy is not used. All three logistic regressions clearly beat this baseline, as expected in the introduction.
@@ -125,11 +144,11 @@ Of the 70 wrongly classified articles, 69 have a readable coding: 49 are label p
 
 <!-- output: results/tables/error_counts_plain.csv | Test articles wrongly classified, by who is wrong, and the share that are label problems -->
 
-These shares are estimates from one automatic coder. That all 28 coded articles missed by both models count as label problems follows partly from the rule itself, since a conspiracy-site article without a conspiracy claim is a label problem by definition; leaving that group out, 21 of the 41 coded articles that only one model got wrong are label problems.
+That all 28 coded articles missed by both models count as label problems follows partly from the rule itself, since a conspiracy-site article without a conspiracy claim is a label problem by definition; leaving that group out, 21 of the 41 coded articles that only one model got wrong are label problems.
 
 Two test articles show the pattern. A conspiracy-site article that both models called mainstream begins "A military judge has set the trial date for five men accused of masterminding the 9/11 attacks": a plain court report without a conspiracy claim, so this is a label problem. A mainstream article opening "Not only is there a smoking gun in the 28 pages" was called conspiracy by the logistic regression and mainstream by the LLM; the stance coder found no conspiracy claim in it, so this is a model error: the trained model reacted to wording that only sounds like conspiracy writing.
 
-The label-problem share rests on automatic coding by a model of the same family as the classifier under test, so it is an estimate. Coder and classifier come from the same model family and may share blind spots (see the limitations). To measure how far the coding can be trusted, the team codes 40 validation articles blind, each article by two of the five members (website and automatic answer hidden; validation keeps the test set untouched); their agreement with the automatic coding will be added after the team's check.
+The coder is a model of the same family as the classifier and may share its blind spots. To check it, the team coded 40 validation articles blind (website and automatic answer hidden), each read by at least two members. Members often chose different stances (22 of 56 pairs agree), mostly "reports neutrally" against "makes no claim", which the rule treats alike. On whether an article endorses a claim, the question that decides the verdict, two members agreed in 43 of 56 pairs and a member and the coder in 74 of 84. On conspiracy-site articles the coder's answers gave more label problems than the members' (21 against 17 of 40), so the share above is, if anything, somewhat too high; with so few articles this is a hint.
 
 ## Check yourself
 Q: A model that always answers "mainstream" is right most of the time. Why do we still not use accuracy?
@@ -146,3 +165,6 @@ A: Those 44 articles make up almost half of all conspiracy articles, so at most 
 
 Q: Why is a conspiracy-site article with no conspiracy claim a label problem and not a model error?
 A: A model can only judge the text it is given. If the text contains no conspiracy claim, no model could tell from the text that the website is conspiracy-oriented, so blaming the model would be unfair; the label is what fits badly.
+
+Q: In the hand check, one member says an article "reports neutrally" and another says it "makes no claim". Does that change the verdict?
+A: No. The rule only asks whether the article endorses a conspiracy claim. Both answers say it does not, so both lead to the same verdict; that is why agreement is also counted on this one question.
