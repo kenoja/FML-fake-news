@@ -18,18 +18,17 @@ The **last** cycle before submission. Fix the points below and nothing else:
   as they are. New numbers may only be counts read from the data or from `results/` (items 3 and 4).
 - Every number in prose comes from `results/` (the number tests check this).
 - **Report length is the tightest limit.** `tests/test_gates.py` counts the assembled report by splitting at spaces,
-  tables included, and the limit is 5,000. It is now 4,987. Every sentence added must be paid for by cutting a
+  tables included, and the limit is 5,000. It is now 4,981. Every sentence added must be paid for by cutting a
   sentence of the same length elsewhere; aim for at most 4,900 at the end (R9). Prefer cuts in repeated explanations.
 
 ## Decisions taken with the owner (27 Oct 2026)
 
 - **D1. Hand check: keep it, update it.** The hand check is already in the pipeline (`src/fml/errors.py`,
   `hand_check_stage` in `src/fml/pipeline.py`), in `08-results-and-why-they-fail` (all four parts), `09`, `10` and
-  the glossary. Do not edit the answer files in `data/hand_check/`. If the owner has added a further file (for
-  example `stance_check_member_B_2.csv`), `fml run-all` updates `results/tables/hand_check_*.csv` and
-  `errors.human_check` in `results/metrics.json`: then update every sentence that quotes them (08 report and
-  explained part, 09, 10). When `errors.human_check.status` is "complete", say that every article has at least two
-  readers and drop "so far". Do not add an agreement statistic beyond the counts and shares (no kappa).
+  the glossary. All five members' answers are in (`errors.human_check.status`: complete; every article has at least
+  two readers) and the text already quotes the final numbers. Do not edit the answer files in `data/hand_check/`,
+  and do not add an agreement statistic beyond the counts and shares (no kappa). If the hand-check paragraph in `08`
+  is shortened for length (R9), keep its numbers and its conclusion.
 - **D2. When the feature model was fixed (item 7).** Use these facts and no others: `docs/PROJECT_PLAN.md`
   (16 Oct 2026, before any result) planned TF-IDF plus the feature groups one at a time and then all together. In
   cycle 2 (17 Oct) the agent instead kept the best group by a validation threshold, and earlier versions were scored
@@ -134,8 +133,7 @@ length budget. Points it raised that are already settled are listed under "Not t
   cycle 3 ("about 4,500"): the report now holds the hand check and the items above. Cut repeated hedges and
   explanations first (the executive summary, the introduction and `08` repeat several caveats); keep the two
   examples, the Website 4 finding and every hypothesis verdict.
-- **R10. Hand-check wording (errors).** No "so far" or other process words: state plainly how many of the 40
-  articles have two or more readers (see D1).
+- **R10. Hand-check wording (errors).** Done with the final answers (no "so far"); keep it that way.
 
 ### Not to do (already decided)
 
@@ -147,6 +145,4 @@ length budget. Points it raised that are already settled are listed under "Not t
 ## Before the final run (owner)
 
 - Merge the hand-check pull request first; this file comes with it.
-- If Member B has sent the 8 missing answers, add them as `data/hand_check/stance_check_member_B_2.csv` (columns
-  `doc_id,member,stance`, member `B`) before starting the run.
 - Then start the agent as before; it reads this file as cycle 4.
