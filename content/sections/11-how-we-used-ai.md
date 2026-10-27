@@ -16,15 +16,15 @@ The loop repeats until the reviewer is satisfied or a round limit is reached. Th
 
 **Several rounds.** After each cycle the team read the website and wrote feedback under each section; the feedback became the next cycle's requirements.
 
-**What the AI produced.** The assistant (Claude) wrote the plan, the code, the tests, the tables and figures, and drafted the text of this site and the report. Separately, Claude Haiku 5.5 is one of the four ways we sort articles: it is being tested, not a helper. Claude Sonnet 5.5 read the disputed articles for the error analysis.
+**What the AI produced.** Claude Code with Claude Sonnet 5.5 wrote the code, the tests, the tables and figures, and drafted the text of this site and the report. Claude Haiku 5.5 is one of the four ways we sort articles: it is being tested, not a helper. Claude Sonnet 5.5 also coded the stance of the disputed articles for the error analysis.
 
 **What the team did.** People set the question, the four ways of sorting, the feature groups and the rule that final models are scored on test once, and wrote the feedback. They removed emotion scores from the first plan, because emotional language is not the same as conspiracy language. They compared the article counts with those published for the corpus.
 
 **How output was checked.** The agent ran small test programs that fail when a rule is broken, for example if the split changes or a number in the report is missing from the result files. Other checks need a person, such as whether the automatic stance coding is right; the team's hand check of 40 articles does that.
 
-**What we learned.** A test can confirm that a number matches a file, but not that the number answers the right question; that judgement stays with people. Saving the language model's answers makes every figure repeatable without new cost.
-
 **Saving answers.** The language model costs money for every answer, so each answer is saved once and reused. The saved file holds only article ids and answers, never article text.
+
+**What we learned.** A written plan and explicit requirements steer the assistant well. A test can confirm that a number matches a file, but not that the number answers the right question; that judgement stays with people.
 
 ## The code
 
@@ -40,7 +40,7 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 **How the output was checked.** Automated tests fail when a rule is broken, for example when a model learns from more than the training articles, the split changes, the test set is used outside the final scoring, or a number in this report is missing from the result files. The whole analysis was run twice with identical results. Judgements that tests cannot make, such as whether the automatic stance coding is right, are checked by people through the hand check described in the error analysis.
 
-**What we learned.** The AI followed its instructions literally: it selected features by an unplanned threshold until the team asked for the planned comparison. Tests show that numbers match files, not that they answer the right question.
+**What we learned.** Written plans and explicit requirements steered the assistant reliably. Tests show that numbers match files, not that they answer the right question.
 
 ## Check yourself
 

@@ -10,7 +10,7 @@ from sklearn.preprocessing import StandardScaler
 
 from .epistemic import EpistemicMarkers
 from .ngrams import build_ngram_vectorizer
-from .style import StyleFeatures
+from .wrappers import StyleFeatures
 
 NUMERIC_GROUPS = {"epistemic": EpistemicMarkers, "style": StyleFeatures}
 

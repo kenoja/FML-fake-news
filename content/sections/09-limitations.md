@@ -7,7 +7,7 @@ hypothesis: Our results are real but narrow, because the labels describe website
 
 **The label describes the website, not the article.** An article is "conspiracy" because its website is. A calm news item on a conspiracy website still gets the label, and a mainstream article that rejects a theory is "mainstream". We measure how well a method recovers the kind of website.
 
-**Few websites, and one large one.** We have only 39 conspiracy and 79 mainstream websites. The validation and test sets hold six conspiracy websites each, and in the test set one site supplies almost half of the conspiracy articles. So every score comes with a range (a confidence interval).
+**Few websites, and one large one.** After cleaning we have only 37 conspiracy and 79 mainstream websites. The validation and test sets hold six conspiracy websites each, and in the test set one site supplies almost half of the conspiracy articles. So every score comes with a range (a confidence interval).
 
 **The language model may know too much.** The LLM was trained on a huge amount of web text. It may have seen these articles or know a website's reputation. Our own models cannot. Its very high validation score should not be taken at face value.
 

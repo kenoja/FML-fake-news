@@ -473,8 +473,8 @@ def llm_stage() -> dict:
     valid = split_frames(analysis_frame(), ("validation",))["validation"]
     variants = llm.check_variants(list(llm.PROMPTS))
     runs = {variant: llm_scores(valid, variant) for variant in variants}      # prompts are tried on validation only
-    table = pd.DataFrame([{"variant": v, "documents": len(valid), "precision": r["precision"],
-                           "recall": r["recall"], "f1": r["f1"]} for v, r in runs.items()])
+    table = pd.DataFrame([{"Prompt": v, "Articles": len(valid), "Precision": r["precision"],
+                           "Recall": r["recall"], "F1": r["f1"]} for v, r in runs.items()])
     write_table("llm_prompt_variants", table.round(4))
     chosen = choose_prompt(runs, variants)
     second = llm_scores(valid, chosen, pass_id=2)                             # the same prompt once more

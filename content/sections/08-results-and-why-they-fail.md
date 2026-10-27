@@ -102,7 +102,7 @@ Finally the rule is applied to each member answer and to the coder's answer for 
 
 ## Report
 
-All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993), which treat articles as independent and are therefore somewhat too narrow for six conspiracy websites. The baseline row always answers "mainstream": its accuracy is 0.766, but it finds no conspiracy article, which is why accuracy is not used. All three logistic regressions clearly beat this baseline, as expected in the introduction.
+All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993), which treat articles as independent; because articles from the same website are similar, the intervals can be too narrow. The baseline row always answers "mainstream": its accuracy is 0.766, but it finds no conspiracy article, which is why accuracy is not used. All three logistic regressions clearly beat this baseline, as expected in the introduction.
 
 <!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals (the baseline has no spread, so no interval) -->
 
@@ -110,11 +110,11 @@ All four final models were scored once on the same 410 test articles (96 from co
 
 The LLM has the highest F1 (0.795, interval 0.723 to 0.857), followed by TF-IDF (0.598), word counts (0.567) and TF-IDF with features (0.560). The LLM is almost never wrong when it says "conspiracy" (precision 0.985) but misses a third of the conspiracy articles.
 
-Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1947) on the articles where only one of the two is right, as set out in the introduction.
+Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1947) on the articles where only one of the two is right, as set out in the introduction. In all three tests the F1 difference and the test point the same way.
 
 <!-- output: results/tables/mcnemar_tests.csv | The three McNemar tests: articles where only one model is right, and the p-value -->
 
-**H1: TF-IDF weighting beats plain word counts.** Supported, narrowly: 7 articles are right only for word counts and 19 only for TF-IDF (p = 0.029). TF-IDF has the higher F1 (0.598 against 0.567), mainly through fewer false alarms (precision 0.721 against 0.607).
+**H1: TF-IDF weighting beats plain word counts.** Supported, narrowly: 7 articles are right only for word counts and 19 only for TF-IDF (p = 0.029), and TF-IDF has the higher F1 (0.598 against 0.567).
 
 **H2: Adding the three feature groups improves the TF-IDF model.** Not supported. On validation the model with the extra features scored an F1 of 0.896 against 0.918 for TF-IDF alone, and on test it is lower again (0.560 against 0.598); 22 articles are right only for TF-IDF and 14 only with the features, a difference that chance explains (p = 0.243).
 
@@ -140,15 +140,13 @@ According to the automatic coding, their text gives no sign of the site's conspi
 
 **Where the models fail, and why.** For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
 
-Of the 70 wrongly classified articles, 69 have a readable coding: 49 are label problems and 20 are model errors.
+Of the 70 wrongly classified articles, 69 have a readable coding. The main estimate of label problems comes from the 41 coded articles that only one model got wrong: 21 of them are label problems. This group is the fairer test, because a model that got the same article right shows the text was readable. The upper end is 49 of 69, which also counts the 28 coded articles that both models missed; these count as label problems partly by the rule itself, since a conspiracy-site article without a conspiracy claim is a label problem by definition. The hand check below is the cross-check.
 
 <!-- output: results/tables/error_counts_plain.csv | Test articles wrongly classified, by who is wrong, and the share that are label problems -->
 
-That all 28 coded articles missed by both models count as label problems follows partly from the rule itself, since a conspiracy-site article without a conspiracy claim is a label problem by definition; leaving that group out, 21 of the 41 coded articles that only one model got wrong are label problems.
-
 Two test articles show the pattern. A conspiracy-site article that both models called mainstream begins "A military judge has set the trial date for five men accused of masterminding the 9/11 attacks": a plain court report without a conspiracy claim, so this is a label problem. A mainstream article opening "Not only is there a smoking gun in the 28 pages" was called conspiracy by the logistic regression and mainstream by the LLM; the stance coder found no conspiracy claim in it, so this is a model error: the trained model reacted to wording that only sounds like conspiracy writing.
 
-The coder is a model of the same family as the classifier and may share its blind spots. To check it, the team coded 40 validation articles blind (website and automatic answer hidden), each read by at least two members. Members often chose different stances (22 of 56 pairs agree), mostly "reports neutrally" against "makes no claim", which the rule treats alike. On whether an article endorses a claim, the question that decides the verdict, two members agreed in 43 of 56 pairs and a member and the coder in 74 of 84. On conspiracy-site articles the coder's answers gave more label problems than the members' (21 against 17 of 40), so the share above is, if anything, somewhat too high; with so few articles this is a hint.
+The coder is a model of the same family as the classifier and may share its blind spots. To check it, the team coded 40 validation articles blind (website and automatic answer hidden), each read by at least two members. Members often chose different stances (22 of 56 pairs agree), mostly "reports neutrally" against "makes no claim", which the rule treats alike. On whether an article endorses a claim, the question that decides the verdict, two members agreed in 43 of 56 pairs and a member and the coder in 74 of 84. On conspiracy-site articles the coder's answers gave more label problems than the members' (21 against 17 of 40), so the label-problem counts above are, if anything, somewhat too high; with so few articles this is a hint.
 
 ## Check yourself
 Q: A model that always answers "mainstream" is right most of the time. Why do we still not use accuracy?

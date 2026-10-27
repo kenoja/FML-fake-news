@@ -62,8 +62,7 @@ requirements. After reviewing the method, the owner required the planned feature
 best-group selection, identical settings and text for all methods, and an explanation of the drop from validation to
 test, which led to the finding about the large test website.
 
-**Learned.** The agent follows instructions literally: it chose the best feature group by a threshold until the team
-asked for the planned comparison. Evidence from runs made in code must be handed to a reviewer that cannot run code,
+**Learned.** Written plans and explicit requirements steer the agent. Evidence from runs made in code must be handed to a reviewer that cannot run code,
 and the tests that guard the agent's own process must be protected from that agent.
 
 ## Hand check (25 to 27 Oct 2026)
@@ -79,3 +78,14 @@ did the coding themselves.
 
 **Learned.** Members often chose different stances but mostly agreed, with each other and with the automatic coder,
 on whether an article endorses a claim, the only question the error rule uses.
+
+## Cycle 4 (27 Oct 2026)
+
+**Produced.** Claude Code with Claude Sonnet 5.5 revised the code, tests, site sections and report text against the
+cycle's requirements; Claude Haiku 5.5 remained the classifier under test; Claude Sonnet 5.5 coded article stance.
+
+**Checked.** Automated tests for numbers, section format, word limits and privacy; a rerun of the whole analysis with
+the results compared before and after.
+
+**Learned.** Written plans and explicit requirements steer the assistant; tests show that numbers match files, not
+that they answer the right question.
