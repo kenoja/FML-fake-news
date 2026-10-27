@@ -9,11 +9,11 @@ hypothesis: The LLM beats the three trained models on unseen websites, and many 
 
 **Why F1 and not accuracy.** Most articles are mainstream. A lazy "model" that always answers "mainstream" is right about three times in four, which sounds decent but finds no conspiracy article. That is the baseline row of the table: its F1 is zero.
 
-**A worked case.** The test set has 96 conspiracy articles and 314 mainstream ones. The LLM caught 64 of the 96 (recall 0.667) and wrongly flagged 1 mainstream article, so 64 of its 65 alarms were right (precision 0.985); its F1 is 0.795. The intervals are a bit optimistic, that is too narrow, because articles from the same website are alike and the test set holds only six conspiracy websites.
+**A worked case.** The test set has 96 conspiracy articles and 314 mainstream ones. The LLM caught 64 of the 96 (recall 0.667) and wrongly flagged 1 mainstream article, so 64 of its 65 alarms were right (precision 0.985); its F1 is 0.795. The intervals are a bit too narrow, because articles from the same website are alike.
 
 **Why McNemar for the comparisons.** Two judges rate the same cases. Only the cases where they disagree tell us who is better. If one judge is right in 20 of 22 disagreements, that judge is clearly better; if it is 11 against 11, it may be luck. McNemar's test counts exactly these cases for two models on the same articles.
 
-**Why validation scores are higher.** Models were tuned on validation articles, then scored on test articles from other websites, with fewer conspiracy websites. The per-website table shows where test scores are lost: one large test site is hard for every model.
+**Why validation scores are higher.** Models were tuned on validation articles, then scored on test articles from other websites. The per-website table shows where test scores are lost: one large test site is hard for every model.
 
 **Model errors and label problems.** The label belongs to the website, not to the article. A conspiracy site can print an ordinary news item; then the label fits the text badly. To tell the two apart, a second language model read each disputed article and recorded its **stance**, that is, what the article does with conspiracy claims: endorses them, debunks them, reports them neutrally, or makes no such claim. A conspiracy-site article without an endorsed claim, or a mainstream article that endorses one, counts as a label problem; everything else is a model error. Because a machine did the ticking, the team checked 40 other articles by hand, without seeing the website or the machine's answer. People often picked different stances but mostly agreed on what decides the verdict: does the article endorse a claim?
 
@@ -102,7 +102,7 @@ Finally the rule is applied to each member answer and to the coder's answer for 
 
 ## Report
 
-All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993), which treat articles as independent and can therefore be too narrow. The baseline row always answers "mainstream": its accuracy is 0.766, but it finds no conspiracy article. All three logistic regressions clearly beat it.
+All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993), which treat articles as independent; articles from the same website are similar, so this makes results look more certain than they are. The baseline row always answers "mainstream" (accuracy 0.766) but finds no conspiracy article.
 
 <!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals (the baseline has no spread, so no interval) -->
 
@@ -110,7 +110,7 @@ All four final models were scored once on the same 410 test articles (96 from co
 
 The LLM has the highest F1 (0.795, interval 0.723 to 0.857), followed by TF-IDF (0.598), word counts (0.567) and TF-IDF with features (0.560). The LLM is almost never wrong when it says "conspiracy" (precision 0.985) but misses a third of the conspiracy articles.
 
-Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1947) on the articles where only one of the two is right.
+Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1947) on the articles where only one of the two is right; in all three tests F1 and McNemar point the same way.
 
 <!-- output: results/tables/mcnemar_tests.csv | The three McNemar tests: articles where only one model is right, and the p-value -->
 
@@ -124,7 +124,7 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 
 <!-- output: results/tables/validation_vs_test.csv | Conspiracy-class F1 of the four final models on validation and on test -->
 
-The likely reason is the websites: the test set has few and different conspiracy websites that no model saw.
+The likely reason is the websites: the test set has few conspiracy websites, none seen before.
 
 <!-- output: results/figures/validation_vs_test_confusion.png | Confusion matrices on validation (top) and test (bottom); rows: true website type, columns: predicted -->
 
@@ -140,7 +140,7 @@ Their text gives no sign of the site's rating, so every model calls them mainstr
 
 **Where the models fail, and why.** For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
 
-Of the 70 wrongly classified articles, 69 have a readable coding. The main estimate of label problems comes from the 41 coded articles that only one model got wrong: 21 of them are label problems. This group is the fairer test, because the other model got the same article right. The upper end is 49 of 69, which also counts the 28 articles both models missed; these count partly by the rule itself. The hand check below is the cross-check.
+Of the 70 wrongly classified articles, 69 have a readable coding. The main estimate of label problems comes from the 41 coded articles that only one model got wrong: 21 of them are label problems. The upper end is 49 of 69, which also counts the 28 articles both models missed; these count partly by the rule itself. The hand check below is the cross-check.
 
 <!-- output: results/tables/error_counts_plain.csv | Test articles wrongly classified, by who is wrong, and the share that are label problems -->
 
