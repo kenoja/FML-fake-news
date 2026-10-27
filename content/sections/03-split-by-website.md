@@ -11,7 +11,7 @@ hypothesis: We expect scores on whole unseen websites to be lower than on a rand
 - **Validation set (15%).** We use these to compare settings and choose the best. Think of a practice exam.
 - **Test set (15%).** We use these once, at the very end, to get an honest score. Think of the real exam.
 
-**Why by website.** Articles from one website look alike: the same typical words and topics. If some articles of a website are in training and others in the test set, the model can score well by simply recognising the website. So we keep every website in one part only. A website in the test set is a complete stranger to the model, which is the situation we care about. Scores will be lower than with a random split, but more honest.
+**Why by website.** Articles from one website look alike: the same typical words and topics. If some articles of a website are in training and others in the test set, the model can score well by simply recognising the website. So we keep every website in one part only. A website in the test set is a complete stranger to the model, which is the situation we care about. Scores will be lower, but more honest.
 
 **Team question 1: does "grouped by website" mean the model is fed one website at a time?** No. The model sees all training articles mixed together. "Grouped" only decides which articles end up in the training set at all. The rule is: a website is never in two parts.
 
@@ -23,7 +23,7 @@ An example with three invented websites of ten articles each:
 | site B | mainstream | spread over all three parts | all ten in validation |
 | site C | mainstream | spread over all three parts | all ten in test |
 
-**Keeping the shares equal.** Conspiracy articles are fewer than mainstream ones. We divide the conspiracy websites and the mainstream websites separately, so each part has about the same mix. A fixed random number keeps the result repeatable. The parts are only close to 70/15/15.
+**Keeping the shares equal.** Conspiracy articles are fewer than mainstream ones. We divide the conspiracy websites and the mainstream websites separately, so each part has about the same mix. A fixed random number keeps it repeatable. The parts are only close to 70/15/15.
 
 **Why we still remove website names.** The split keeps each website in one part, but articles often name their own or friendly sites ("read more on ..."). A model could learn "mentions this site, so conspiracy" from the training articles and use that clue on test articles that mention the same site. Removing names makes the model rely on the writing itself.
 

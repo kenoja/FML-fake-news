@@ -7,7 +7,7 @@ hypothesis: Removing articles that are not about 9/11 and articles that appear t
 
 **Where the articles come from.** We use LOCO, a collection of web pages from conspiracy-oriented and mainstream websites. LOCO is a **corpus**, which simply means a large collection of texts. It was compiled by Miani, Hills & Bangerter (2022), who rated each website as conspiracy-oriented or mainstream. We use the 9/11 part, full articles only: 3,146.
 
-**What the label means, and its risk.** Every article inherits the rating of its website, so the label describes the website, not the text. A "wrong" model answer is sometimes a sensible reading of the text.
+**What the label means, and its risk.** Every article inherits the rating of its website, so the label describes the website, not the text. A "wrong" answer is sometimes a sensible reading.
 
 **Why cleaning matters.** A model learns whatever separates the two groups most easily, not what we hope it learns. This is **shortcut learning**: a pupil who passes by recognising the teacher's handwriting on the answer key has learned nothing about the subject. If a website's name or a copied article lets the model solve the task, the score looks good and means little. So we clean once, before any model runs, and all four analyses use the same articles.
 
@@ -17,7 +17,7 @@ hypothesis: Removing articles that are not about 9/11 and articles that appear t
 
 **Step 3: remove clues that give the website away.** We delete web addresses, e-mail addresses, website names and lines a website repeats in many articles, such as menus and "share this" banners. This step changes texts but never removes an article.
 
-**Team question 5: could very short texts be impossible to classify?** The shortest article has about 100 words, and the middle one is several times longer. These are real articles, so we set no minimum length.
+**Team question 5: could very short texts be impossible to classify?** The shortest article has about 100 words, and the middle one is several times longer. These are real articles, so we set no minimum.
 
 **What to look out for.** Cleaning removes the obvious site clues, not all of them. A site's typical style can still act as a shortcut.
 

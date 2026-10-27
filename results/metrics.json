@@ -65,7 +65,9 @@
       "train": 1768,
       "validation": 376,
       "test": 410
-    }
+    },
+    "top3_sites_share": 0.2079,
+    "top3_train_articles": 157
   },
   "split": {
     "file": "data/splits/split_v1.csv",
