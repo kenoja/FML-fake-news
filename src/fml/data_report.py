@@ -89,6 +89,22 @@ def per_website_counts(df: pd.DataFrame, split: pd.DataFrame) -> pd.DataFrame:
             .sort_values(["split", "subcorpus", "documents"], ascending=[True, True, False]))
 
 
+def site_concentration(df: pd.DataFrame, split: pd.DataFrame, top: int = 3) -> tuple[pd.DataFrame, dict]:
+    """Conspiracy articles of the largest sites: how many in train, and their share of all conspiracy articles."""
+    con = df[df["subcorpus"] == "conspiracy"][["doc_id", "website"]].merge(split, on="doc_id")
+    counts = con["website"].value_counts().sort_index().sort_values(ascending=False, kind="stable")   # ties: by name
+    rows = []
+    for rank, site in enumerate(counts.index[:top], start=1):
+        mine = con[con["website"] == site]
+        rows.append({"Website": f"Website {rank}", "Articles": int(len(mine)),
+                     "Share of conspiracy articles": float(len(mine) / len(con)),
+                     "Articles in train": int((mine["split"] == "train").sum())})
+    table = pd.DataFrame(rows)
+    metrics = {"top3_sites_share": float(table["Articles"].sum() / len(con)),
+               "top3_train_articles": int(table["Articles in train"].sum())}
+    return table, metrics
+
+
 def run_data_stage() -> dict:
     """Describe lengths, create the split if it does not exist (else read it), write results."""
     df = load_corpus()

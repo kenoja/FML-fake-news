@@ -11,7 +11,7 @@ hypothesis: We expect scores on whole unseen websites to be lower than on a rand
 - **Validation set (15%).** We use these to compare settings and choose the best. Think of a practice exam.
 - **Test set (15%).** We use these once, at the very end, to get an honest score. Think of the real exam.
 
-**Why by website.** Articles from one website look alike: the same typical words and topics. If some articles of a website are in training and others in the test set, the model can score well by simply recognising the website. So we keep every website in one part only. A website in the test set is a complete stranger to the model, which is the situation we care about. Scores will be lower than with a random split, but more honest.
+**Why by website.** Articles from one website look alike: the same typical words and topics. If some articles of a website are in training and others in the test set, the model can score well by simply recognising the website. So we keep every website in one part only. A website in the test set is a complete stranger to the model, which is the situation we care about. Scores will be lower, but more honest.
 
 **Team question 1: does "grouped by website" mean the model is fed one website at a time?** No. The model sees all training articles mixed together. "Grouped" only decides which articles end up in the training set at all. The rule is: a website is never in two parts.
 
@@ -23,13 +23,13 @@ An example with three invented websites of ten articles each:
 | site B | mainstream | spread over all three parts | all ten in validation |
 | site C | mainstream | spread over all three parts | all ten in test |
 
-**Keeping the shares equal.** Conspiracy articles are fewer than mainstream ones. We divide the conspiracy websites and the mainstream websites separately, so each part has about the same mix. A fixed random number keeps the result repeatable. The parts are only close to 70/15/15.
+**Keeping the shares equal.** Conspiracy articles are fewer than mainstream ones. We divide the conspiracy websites and the mainstream websites separately, so each part has about the same mix. A fixed random number keeps it repeatable. The parts are only close to 70/15/15.
 
 **Why we still remove website names.** The split keeps each website in one part, but articles often name their own or friendly sites ("read more on ..."). A model could learn "mentions this site, so conspiracy" from the training articles and use that clue on test articles that mention the same site. Removing names makes the model rely on the writing itself.
 
 **Frozen.** We made the split once, before any result existed, and saved it in a file. We never change it, because re-dividing after seeing scores would be cheating. Cleaning removes articles from the parts but never moves one to another part.
 
-**Watch out.** Validation and test hold only a few conspiracy websites, so one unusual website can move a score.
+**Watch out.** One website can supply a large part of a set's conspiracy articles, so its peculiarities can move the whole score of that set.
 
 ## The code
 
@@ -47,9 +47,9 @@ This one builds the split file and refuses to overwrite an existing one.
 
 ## Report
 
-The documents were divided into a training set, a validation set and a test set with target shares of 70%, 15% and 15%. The division was made by website, so that no website appears in more than one set and no model is rewarded for recognising a website it has seen. The division was stratified by label: conspiracy and mainstream websites were assigned separately, from the largest to the smallest website, to the set that was furthest short of its target share, with a fixed random seed for ties. The assignment was made once and never changed.
+The documents were divided into a training set, a validation set and a test set with target shares of 70%, 15% and 15%. The division was made by website, so that no website appears in more than one set and no model is rewarded for recognising a website it has seen: articles from one website resemble each other, so a random split would let the model recognise the website instead of the stance. The division was stratified by label: conspiracy and mainstream websites were assigned separately, from the largest to the smallest website, to the set that was furthest short of its target share, with a fixed random seed for ties. The assignment was made once and never changed.
 
-<!-- output: results/tables/split_summary.csv | Websites and documents per set and class -->
+<!-- output: results/tables/split_summary.csv | Websites and documents per set and class, after cleaning -->
 
 Because websites cannot be divided, the shares only approximate the targets. After cleaning, the training, validation and test sets contain 25, 6 and 6 conspiracy websites and 54, 13 and 12 mainstream websites.
 

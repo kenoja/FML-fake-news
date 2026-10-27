@@ -167,6 +167,11 @@ Also: Data leakage, target leakage, leak
 
 When information from the test articles sneaks into training, so the scores look better than they are. Like a student who has seen the exam questions in advance.
 
+### Lexicon
+Also: Word list, Lexicons
+
+A ready-made list of words that share a meaning, such as a list of "certainty words". Counting how many of them an article contains turns that meaning into a number. Like a teacher who ticks every time a pupil says "definitely" or "obviously".
+
 ### LLM
 Also: Large language model, language model
 
@@ -190,6 +195,11 @@ A measure of how much a text repeats itself: the share of different words in a w
 ### McNemar test
 
 A test that compares two classifiers on the same articles by looking only at those where exactly one is right. It tells whether the difference is bigger than chance. Like two students answering the same exam, comparing their disagreements.
+
+### Multiple testing
+Also: Correction for multiple tests
+
+The more tests you run, the likelier one comes out "significant" by luck alone. A correction makes the bar stricter, for three tests by dividing 0.05 by 3. Like a coin: ten flips make a surprising run of heads much more likely than one flip does.
 
 ### N-gram
 Also: Bigram, trigram, N-grams
@@ -254,10 +264,25 @@ Also: Temperature, default sampling
 
 The randomness a language model uses when picking its next word. We keep the model's default settings, because it rejects a temperature setting. Like a die the model rolls, with a default weighting.
 
+### Search words
+Also: Topic filter, Search word
+
+The fixed list of words and phrases (such as "9/11" or "World Trade Center") we use to decide whether an article is about the attacks. An article with none of them is removed as off-topic. Like keeping only the library books whose title mentions your subject.
+
 ### Shortcut learning
 Also: Shortcut, Target leakage
 
 A model scoring well by using a clue that is not what we care about, such as a website's name or layout. Like a student who passes a test by recognising the handwriting of the questions' author, not by knowing the subject. It is a form of leakage of the label into the input.
+
+### Site concentration
+Also: Concentration
+
+How much of one class comes from a few websites. If three sites supply many conspiracy articles, their habits can sway what a model learns and how it scores. Like a survey where three loud people give most of the answers.
+
+### Solver
+Also: Solvers
+
+The routine that searches for the best weights of a model. It tries a set of weights, checks how well they fit the training articles and improves them step by step. Like a hiker in fog who keeps walking downhill until the ground is flat, at the lowest point of the landscape.
 
 ### Stance coding
 Also: Stance, stance code

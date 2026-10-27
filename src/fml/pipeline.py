@@ -29,7 +29,7 @@ from .models import (feature_matrix, fit_features, fit_logistic, split_frames, t
 from .methods_overview import write_methods_overview  # noqa: E402
 from .paths import REPO_ROOT, project_config  # noqa: E402
 from .results import CONSPIRACY_COLOUR, MAINSTREAM_COLOUR, results_dir, savefig, write_metrics, write_table  # noqa: E402
-from .data_report import plot_split_sizes  # noqa: E402
+from .data_report import plot_split_sizes, site_concentration  # noqa: E402
 from .split import SPLITS, load_split, split_path, split_summary, websites_per_split  # noqa: E402
 
 M1_FEATURES = {"ngram_range": [1, 1], "min_df": 2, "sublinear_tf": True, "numeric_columns": []}
@@ -96,6 +96,9 @@ def cleaning_stage() -> dict:
     write_metrics("split", {**split_metrics, "websites_per_split_after_cleaning": websites_per_split(summ)})
     info = {**info, "split_after_cleaning": {s: int(summ.loc[summ["split"] == s, "documents"].sum()) for s in SPLITS}}
     savefig(plot_cleaning(log), "cleaning_before_after")
+    concentration, concentration_metrics = site_concentration(frame, load_split())
+    write_table("site_concentration", concentration)
+    info = {**info, **concentration_metrics}
     write_metrics("cleaning", round_floats(info, 4))
     return info
 
@@ -395,7 +398,9 @@ def ablation() -> dict:
     lexicon_sizes = {category: len(terms) for category, terms in LEXICON.items()}
     lexicon_sizes["total"] = sum(lexicon_sizes.values())      # size of the hand-made word lists
     table = run_ablation(train, valid, ablation_variants(), reference=LR_WORDS_ID)
-    write_table("ablation", table.round(4))
+    shown = table.rename(columns={"model_id": "Model ID", "label": "Features", "class_weight": "Class weight",
+                                  "f1": "F1", "delta_f1": "Change in F1"})
+    write_table("ablation", shown.round(4))
     savefig(plot_ablation(table), "ablation_f1")
 
     coverage = lexicon_coverage(train).round(4)             # how much of the data the word list reaches
@@ -470,8 +475,8 @@ def llm_stage() -> dict:
     valid = split_frames(analysis_frame(), ("validation",))["validation"]
     variants = llm.check_variants(list(llm.PROMPTS))
     runs = {variant: llm_scores(valid, variant) for variant in variants}      # prompts are tried on validation only
-    table = pd.DataFrame([{"variant": v, "documents": len(valid), "precision": r["precision"],
-                           "recall": r["recall"], "f1": r["f1"]} for v, r in runs.items()])
+    table = pd.DataFrame([{"Prompt": v, "Articles": len(valid), "Precision": r["precision"],
+                           "Recall": r["recall"], "F1": r["f1"]} for v, r in runs.items()])
     write_table("llm_prompt_variants", table.round(4))
     chosen = choose_prompt(runs, variants)
     second = llm_scores(valid, chosen, pass_id=2)                             # the same prompt once more

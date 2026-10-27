@@ -151,7 +151,7 @@ ABLATION_TEXTS = ["content/sections/06-feature-engineering.md", "reports/report.
 
 def _ablation_rows() -> dict[str, tuple[float, float]]:
     with (REPO / "results" / "tables" / "ablation.csv").open(encoding="utf-8", newline="") as fh:
-        return {r["model_id"]: (float(r["f1"]), float(r["delta_f1"])) for r in csv.DictReader(fh)}
+        return {r["Model ID"]: (float(r["F1"]), float(r["Change in F1"])) for r in csv.DictReader(fh)}
 
 
 def ablation_mismatches(text: str, rows: dict[str, tuple[float, float]]) -> list[str]:

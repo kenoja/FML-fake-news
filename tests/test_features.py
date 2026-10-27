@@ -69,6 +69,19 @@ def test_mattr_window_and_repetition():
     assert mattr(["a", "b", "a", "b"], window=3) == pytest.approx(2 / 3)
 
 
+def test_allcaps_and_mattr_keep_their_earlier_values():
+    # values recorded before the code was simplified: a rewrite must not change any result
+    text = "The FBI said NASA and a UFO: WAKE up, I am A OK."
+    assert allcaps_share(words(text)) == 0.5
+    assert allcaps_share(words("no caps here at all")) == 0.0
+    assert allcaps_share([]) == 0.0
+    assert mattr(words("the cat sat on the mat and the cat ran"), 4) == pytest.approx(0.9642857142857143)
+    assert mattr(words("a a a a a b b a a"), 3) == pytest.approx(0.5238095238095238)
+    assert mattr(words("One two Two TWO three one"), 2) == pytest.approx(0.8)
+    assert mattr(words("the cat sat"), 10) == 1.0
+    assert mattr([], 5) == 0.0
+
+
 def test_lexicon_counts_on_hand_made_sentence():
     sentence = "Perhaps it was an inside job, clearly a cover-up, and the mainstream media call it a debunked myth."
     c = count_markers(sentence)

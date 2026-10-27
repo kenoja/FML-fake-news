@@ -5,8 +5,7 @@ hypothesis: We expect plain word counts to tell the two kinds of website apart b
 ---
 ## Explained simply
 
-**The idea.** Imagine sorting letters into two piles by looking only at which words appear in them. You never read for meaning. You just notice that letters with "hurry" and "secret" mostly come from one sender. That is our first analysis. We count how often each word appears in each article and let a simple model learn which words go with which kind of website. Ignoring word order and only counting is called a **bag of words**. It is the simplest approach and our starting point. Section 01 says which model runs where; here you meet it first.
-
+**The idea.** Imagine sorting letters into two piles by looking only at which words appear in them. You never read for meaning. You just notice that letters with "hurry" and "secret" mostly come from one sender. That is our first analysis. We count how often each word appears in each article and let a simple model learn which words go with which kind of website. Ignoring word order and only counting is called a **bag of words**. It is the simplest approach and our starting point.
 **How does logistic regression learn from words?** Every word gets a **weight**, a number that starts at zero. The model reads a training article, adds up the weights of its words and turns the total into a probability that the article comes from a conspiracy website. If it guesses wrong, it nudges the weights of that article's words towards the true answer. After many rounds, words found mostly in conspiracy articles get positive weights and words found mostly in mainstream articles get negative weights. A high weight means "useful for telling these websites apart", not "proves conspiracy thinking".
 
 **Regularisation strength (C).** This setting decides how freely the model may use large weights. A small value keeps the weights small and cautious. A large value lets the model follow the training articles very closely, which can lead to **overfitting**: memorising instead of learning. Oddly, small C means strong caution. We try five values (0.01, 0.1, 1, 10, 100), the same for all three logistic regressions.
@@ -22,8 +21,9 @@ The value of C with the best F1 on the validation articles wins. The test articl
 - Only training articles build the word list, so no word from the exam shapes the model.
 - Words in at least two articles only. Words used once are mostly typos and names.
 - Class weight "balanced": there are fewer conspiracy articles, so each counts more.
+- We use no other classifier and no word order: the question is about the input, and logistic regression keeps the weights readable.
 
-**Our expectation.** Section 01 states what we expected from the four methods. This section only reports the counts on the validation articles; the methods are compared in the results section.
+**Our expectation.** Section 01 states what we expected. Here we report validation results only.
 
 ## The code
 
@@ -55,13 +55,13 @@ Finally we list the words with the largest weights in each direction, in two tab
 
 ## Report
 
-The first analysis represents each article as a bag of words: a vector with the number of times each word occurs, ignoring order. Words were counted on the training articles only, and words occurring in fewer than two training articles were dropped. Logistic regression (Hastie, Tibshirani and Friedman, 2009) gives each word a weight, adds the weights of the words in an article and turns the sum into a probability that the article comes from a conspiracy website. Class weights were balanced because conspiracy articles are the smaller group, and each article was cut to its first 3,000 words, as for all methods; the full texts would have given the logistic regressions information the language model never sees. The regularisation strength C, which pulls the weights towards zero (Hastie, Tibshirani and Friedman, 2009, ch. 4), was chosen from {0.01, 0.1, 1, 10, 100} by the validation F1 score of the conspiracy class. All numbers here are validation numbers; as expected, the model clearly beats always guessing mainstream, whose F1 is zero.
+The first analysis represents each article as a bag of words: a vector with the number of times each word occurs, ignoring order. Words were counted on the training articles only, and words occurring in fewer than two training articles were dropped. Logistic regression (Hastie, Tibshirani and Friedman, 2009) gives each word a weight, adds the weights of the words in an article and turns the sum into a probability that the article comes from a conspiracy website. Class weights were balanced because conspiracy articles are the smaller group, and each article was cut to its first 3,000 words, as for all methods. The regularisation strength C, which pulls the weights towards zero (Hastie, Tibshirani and Friedman, 2009, ch. 4), was chosen from {0.01, 0.1, 1, 10, 100} by the validation F1 score of the conspiracy class.
 
-The smallest value, C = 0.01, scored best, with a precision of 0.828, a recall of 0.906 and an F1 score of 0.865. Larger values scored lower (F1 0.797 at C = 100), the typical sign of overfitting: with raw counts the model starts to rely on rare words that only describe the training articles. The best value lies at the lower edge of the grid; the grid was fixed before the run and was not widened afterwards, so an even more cautious model might score slightly higher. Of the 117 conspiracy articles in validation the model found 106, and of the 259 mainstream articles it called 22 conspiracy.
+The smallest value, C = 0.01, scored best, with a precision of 0.828, a recall of 0.906 and an F1 score of 0.865. Larger values scored lower (F1 0.797 at C = 100), the typical sign of overfitting: with raw counts the model starts to rely on rare words that only describe the training articles. The best value lies at the lower edge of the grid, which was fixed beforehand. Of the 117 conspiracy articles in validation the model found 106, and of the 259 mainstream articles it called 22 conspiracy.
 
 <!-- output: results/figures/word_counts_validation_confusion.png | Word counts: validation confusion matrix -->
 
-The words with the largest weights are informative, but not all are about content. Words such as "posted", "am" and "article" among the strongest conspiracy words look like habits of how a website presents its articles. Mainstream words such as "killed", "says" and "anniversary" fit factual news reporting. The model therefore partly recognises websites and not only arguments.
+The words with the largest weights are informative, but not all are about content. "Posted", "am" and "article" among the strongest conspiracy words look like presentation habits of websites, while "killed", "says" and "anniversary" fit factual reporting. The model therefore partly recognises websites, not only arguments.
 
 
 ## Check yourself
