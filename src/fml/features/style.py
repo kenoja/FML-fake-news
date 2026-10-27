@@ -59,11 +59,13 @@ def style_row(text: str, window: int) -> list[float]:
     """The six style numbers for one article."""
     tokens = words(text)
     n_words = len(tokens)
+    allcaps = allcaps_share(tokens)
     exclamations = per_n_words(text.count("!"), n_words)
     questions = per_n_words(text.count("?"), n_words)
     quotes = per_n_words(count_quotes(text), n_words)
-    return [allcaps_share(tokens), exclamations, questions, quotes,
-            mean_sentence_length(text, n_words), mattr(tokens, window)]
+    sentence_length = mean_sentence_length(text, n_words)
+    diversity = mattr(tokens, window)
+    return [allcaps, exclamations, questions, quotes, sentence_length, diversity]
 
 
 def style_matrix(texts, window: int) -> np.ndarray:

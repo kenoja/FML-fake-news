@@ -167,6 +167,11 @@ Also: Data leakage, target leakage, leak
 
 When information from the test articles sneaks into training, so the scores look better than they are. Like a student who has seen the exam questions in advance.
 
+### Lexicon
+Also: Word list, Lexicons
+
+A ready-made list of words that share a meaning, such as a list of "certainty words". Counting how many of them an article contains turns that meaning into a number. Like a teacher who ticks every time a pupil says "definitely" or "obviously".
+
 ### LLM
 Also: Large language model, language model
 
@@ -273,6 +278,11 @@ A model scoring well by using a clue that is not what we care about, such as a w
 Also: Concentration
 
 How much of one class comes from a few websites. If three sites supply many conspiracy articles, their habits can sway what a model learns and how it scores. Like a survey where three loud people give most of the answers.
+
+### Solver
+Also: Solvers
+
+The routine that searches for the best weights of a model. It tries a set of weights, checks how well they fit the training articles and improves them step by step. Like a hiker in fog who keeps walking downhill until the ground is flat, at the lowest point of the landscape.
 
 ### Stance coding
 Also: Stance, stance code

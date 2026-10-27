@@ -17,17 +17,24 @@ The article texts are not in this repository (private data repo; corpus: Miani, 
 
 ## How to run it
 
-Python 3.11 or newer.
+Python 3.11 or newer (`requires-python = ">=3.11"` in `pyproject.toml`). Run these commands in this order:
 
 ```bash
-pip install -r requirements-lock.txt && pip install -e . --no-deps
+pip install -r requirements-lock.txt && pip install -e . --no-deps    # 1. install the pinned versions
 export FML_DATA_DIR=/path/to/data-repo     # private data repo with the article texts
-export LLM_CLASSIFIER_API_KEY=...          # not needed for a rerun: answers come from results/llm_cache.jsonl
-                                           # and results/stance_cache.jsonl; only a missing entry needs the key
-fml run-all                                # rebuilds results/ in about two minutes (no API calls with the cache)
-python -m sitegen build                    # rebuilds reports/report.md and the site from content/
-python -m pytest -q                        # tests; those marked needs_data skip without the data repo
+export LLM_CLASSIFIER_API_KEY=...          # 2. only if results/llm_cache.jsonl or results/stance_cache.jsonl
+                                           #    is missing an entry; with the caches no key is needed
+fml run-all                                # 3. rebuilds results/ (no API calls with the caches)
+python -m pytest -q                        # 4. tests; those marked needs_data skip without the data repo
+python -m sitegen build                    # 5. rebuilds reports/report.md and the site from content/
 ```
+
+Expected runtimes: `fml run-all` must finish in under 8 minutes on a 2-CPU machine (measured: 159 seconds,
+about 2.7 minutes, on a 4-CPU machine, see `results/run_info.json`); the full test suite must finish in
+under 3 minutes.
+
+The exact package versions are pinned in `requirements-lock.txt`. How we checked that two runs give
+identical results is in [`docs/reproducibility.md`](docs/reproducibility.md).
 
 `fml evaluate-final <model_id>` is the only way to score a model on the locked test split (it is logged).
 The final models are `final2_word_counts`, `final2_tfidf`, `final2_tfidf_features` and `final_llm`.

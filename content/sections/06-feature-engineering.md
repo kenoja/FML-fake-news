@@ -19,7 +19,7 @@ hypothesis: Adding features about certainty and writing style improves the TF-ID
 
 **Why all three together do worse.** Style lowers the score even on its own; a habit such as many capital letters may belong to one website and not carry over. The phrases add very many columns (146,172 for 1,768 training articles), probably letting the model memorise articles. Certainty words are the only family that helps on its own. Small differences can be luck.
 
-**Why the final model is not the best row.** The model with all three families was planned on 16 October, before any result. Later versions kept the best family by a validation rule and were scored on the test set. On 25 October the team returned to the planned model (final2_tfidf_features, chosen on validation), so the choice was not made blind; the limitations section gives the honest sentence. Certainty words alone scored highest on validation, but our question is about adding all three families, as planned. Switching to the best row now would change the question to fit the results.
+**Why the final model is not the best row.** The model with all three families was planned on 16 October, before any result. Later versions kept the best family by a validation rule and were scored on the test set. On 25 October the team returned to the planned model (chosen on validation), so the choice was not made blind; the limitations section gives the honest sentence. Certainty words alone scored highest on validation, but our question is about adding all three families, as planned. Switching to the best row now would change the question to fit the results.
 
 ## The code
 
@@ -30,6 +30,12 @@ The six models differ only in which feature families are switched on.
 Phrases come from a TF-IDF step that reads word runs of length one to three.
 
 <!-- cell: src/fml/features/ngrams.py#build_ngram_vectorizer -->
+
+Words are found after curly apostrophes are made straight.
+
+<!-- cell: src/fml/features/_text.py#normalise_quotes -->
+
+<!-- cell: src/fml/features/_text.py#words -->
 
 Counts become counts per 1,000 words, so length does not matter.
 

@@ -162,7 +162,7 @@ Scoring against website labels is not fully fair to the LLM: a "wrong" answer ma
 
 ## Results and why they fail
 
-All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993), which treat articles as independent; articles from one website are similar, so the intervals understate the uncertainty. The baseline row always answers "mainstream" (accuracy 0.766).
+All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993), which treat articles as independent. Articles from one website are similar, so such intervals are too narrow; the intervals are therefore lower bounds on the real uncertainty. The baseline row always answers "mainstream" (accuracy 0.766).
 
 
 
@@ -202,7 +202,7 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 
 **H1: TF-IDF weighting beats plain word counts.** Supported, narrowly: 7 articles are right only for word counts and 19 only for TF-IDF (p = 0.029), and TF-IDF has the higher F1 (0.598 against 0.567).
 
-**H2: Adding the three feature groups improves the TF-IDF model.** Not supported. On validation the model with the extra features scored an F1 of 0.896 against 0.918 for TF-IDF alone, and on test it is lower again (0.560 against 0.598); 22 articles are right only for TF-IDF and 14 only with the features, a difference that chance explains (p = 0.243).
+**H2: Adding the three feature groups improves the TF-IDF model.** Not supported. On validation the model with the extra features scored an F1 of 0.896 against 0.918 for TF-IDF alone, and on test it is lower again (0.560 against 0.598); 22 articles are right only for TF-IDF and 14 only with the features, a difference that chance explains (p = 0.243). For all three tests F1 and McNemar point the same way.
 
 **H3: The LLM beats the best logistic regression.** Supported. F1 is 0.795 against 0.598, the intervals do not overlap, and 4 articles are right only for the best logistic regression (TF-IDF) against 37 only for the LLM (p < 0.0001).
 
@@ -221,7 +221,13 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 
 
 
-The likely reason is the websites: the test set has few conspiracy websites, none seen before.
+The likely reason is the websites: the test set has few conspiracy websites, none seen before. For the LLM there may be a second reason: it may know some of these sites, so its 0.987 validation F1 may partly be site recognition. A repeated validation run gave the same answer for 0.992 of the articles.
+
+
+
+**Share of validation articles with the same LLM answer in a repeated run:** 0.992
+
+
 
 
 
@@ -246,7 +252,7 @@ The likely reason is the websites: the test set has few conspiracy websites, non
 
 One site, Website 4, supplies 44 of the 96 conspiracy test articles: all four models find at most a third of them (recall 0.205 to 0.318). Without those 44 articles the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for TF-IDF with features and 0.971 for the LLM.
 
-The titles suggest that Website 4 publishes short partisan political news that mentions 9/11. In none of its articles that the LLM missed did the stance coder find a conspiracy claim:
+Our reading of Website 4 is tentative: it rests on 30 articles, read by title only, coded by one Claude coder and cross-checked by the five-member hand check. The titles suggest short partisan political news that mentions 9/11. In none of its articles that the LLM missed did the stance coder find a conspiracy claim:
 
 
 
@@ -260,11 +266,11 @@ The titles suggest that Website 4 publishes short partisan political news that m
 
 
 
-Their text gives no sign of the site's rating: the miss is mostly a label problem.
+Their text gives no sign of the site's rating, so the miss may be mostly a label problem.
 
-**Where the models fail, and why.** For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
+**Where the models fail, and why.** For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims about 9/11, without being told the website. The rule has three steps: read the website label, read the stance, and call it a label problem if the two do not fit (a conspiracy-site article without an endorsed claim, a mainstream one with one); otherwise it is a model error.
 
-Of the 70 wrongly classified articles, 69 have a readable coding. Our main estimate of label problems comes from the 41 coded articles that only one model got wrong: 21 of them are label problems. The 49 of 69 overall is an upper bound, because the 28 articles both models missed are all conspiracy-site articles, and the rule counts many of them as label problems by definition. The coder shares a model family with the classifier, so a hand check follows.
+Of the 70 wrongly classified articles, 69 have a readable coding. Our main estimate of label problems is 21 of the 41 coded articles that only one model got wrong. The upper end is 49 of 69 overall, because the 28 articles both models missed are all conspiracy-site articles, and the rule counts them as label problems whenever no claim is endorsed. The coder shares a model family with the classifier, so a hand check follows.
 
 
 
@@ -308,7 +314,7 @@ The results allow a clear statement about this corpus and its website labels: a 
 
 **How the output was checked.** Automated tests fail when a rule is broken, for example when a model learns from more than the training articles, the split changes, the test set is used outside the final scoring, or a number in this report is missing from the result files. Judgements that tests cannot make, such as whether the automatic stance coding is right, are checked by people through the hand check described in the error analysis.
 
-**What the team changed.** The team rejected the first draft of the sections as too technical, and after reviewing the method it required identical settings and the same text for all methods. A review also caught a claim that the language model beat every other model, which was corrected to what the table shows.
+**What the team changed.** The team rejected the first draft of the sections as too technical, and after reviewing the method it required identical settings and the same text for all methods.
 
 **What we learned.** Written plans and explicit requirements steered the assistant reliably. Tests show that numbers match files, not that they answer the right question.
 

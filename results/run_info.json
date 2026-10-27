@@ -1,5 +1,5 @@
 {
-  "run_all_seconds": 159.3,
+  "run_all_seconds": 162.7,
   "python": "3.11.17",
   "machine": {
     "system": "Linux",
@@ -7,15 +7,15 @@
     "cpus": 4
   },
   "stage_seconds": {
-    "cleaning": 25.5,
-    "word_counts": 3.7,
+    "cleaning": 24.9,
+    "word_counts": 3.2,
     "tfidf": 2.3,
-    "features": 14.7,
-    "tfidf_features": 107.9,
-    "llm": 0.4,
-    "final": 0.3,
-    "comparison": 1.4,
-    "errors": 0.3
+    "features": 15.1,
+    "tfidf_features": 111.8,
+    "llm": 0.5,
+    "final": 0.4,
+    "comparison": 1.6,
+    "errors": 0.4
   },
   "packages": {
     "numpy": "2.4.6",

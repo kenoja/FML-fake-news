@@ -5,17 +5,17 @@ hypothesis: The LLM beats the three trained models on unseen websites, and many 
 ---
 ## Explained simply
 
-**How to read the table.** Each of the four final models takes the final exam once, on test articles nobody used before. For each model the table shows three scores for the conspiracy class: **precision** (when it says "conspiracy", how often is it right?), **recall** (of all real conspiracy articles, how many did it find?) and **F1**, one number that is low if either of the other two is low. Each score has a **confidence interval**. Like a poll that says "40%, give or take 3 points", it shows how far a score may be off.
+**How to read the table.** Each final model takes the exam once, on unseen test articles. The table shows three scores for the conspiracy class: **precision** (when it says "conspiracy", how often is it right?), **recall** (of all real conspiracy articles, how many did it find?) and **F1**, one number that is low if either of the other two is low. Each score has a **confidence interval**. Like a poll's "give or take 3 points", it shows how far a score may be off.
 
-**Why F1 and not accuracy.** Most articles are mainstream. A lazy "model" that always answers "mainstream" is right about three times in four, yet finds no conspiracy article. That is the baseline row of the table: its F1 is zero.
+**Why F1 and not accuracy.** Most articles are mainstream. A lazy "model" that always answers "mainstream" is right three times in four yet finds no conspiracy article: the baseline row, with F1 zero.
 
-**A worked case.** The test set has 96 conspiracy articles and 314 mainstream ones. The LLM caught 64 of the 96 (recall 0.667) and wrongly flagged 1 mainstream article, so 64 of its 65 alarms were right (precision 0.985); its F1 is 0.795. The intervals are optimistic (too narrow), because articles from the same website are alike.
+**A worked case.** The test set has 96 conspiracy articles and 314 mainstream ones. The LLM caught 64 of the 96 (recall 0.667) and wrongly flagged 1 mainstream article, so 64 of its 65 alarms were right (precision 0.985); its F1 is 0.795. The intervals are optimistic: articles from one website are alike.
 
-**Why McNemar for the comparisons.** Think of two judges rating the same cases: only disagreements show who is better. If one is right in 20 of 22, that judge is better; if it is 11 against 11, it may be luck. McNemar's test counts exactly these cases for two models on the same articles.
+**Why McNemar.** Two judges rate the same cases: only disagreements show who is better. Right in 20 of 22 disagreements: better. 11 against 11: maybe luck. McNemar's test counts exactly these cases.
 
-**Why validation scores are higher.** Models were tuned on validation articles, then scored on test articles from other websites. The per-website table shows where test scores are lost: one large test site is hard for every model.
+**Why validation scores are higher.** Models were tuned on validation articles, then scored on test articles from other websites. The per-website table shows the loss: one large test site is hard for every model.
 
-**Model errors and label problems.** The label belongs to the website, not to the article. A conspiracy site can print an ordinary news item; then the label fits the text badly. To tell the two apart, a second language model read each disputed article and recorded its **stance**, that is, what the article does with conspiracy claims: endorses them, debunks them, reports them neutrally, or makes no such claim. A conspiracy-site article without an endorsed claim, or a mainstream article that endorses one, counts as a label problem; everything else is a model error. Because a machine did the ticking, we checked 40 other articles by hand, without seeing the website or the machine's answer. Two members picked the same stance in 22 of 56 pairs, like agreeing on 2 of 5 answers. But on the one question that decides the verdict, does the article endorse a claim, they agreed in 43 of 56 pairs, like 3 of 4 answers.
+**Model errors and label problems.** The label belongs to the website, not to the article. A conspiracy site can print an ordinary news item; then the label fits the text badly. To tell the two apart, a second language model read each disputed article and recorded its **stance**, that is, what the article does with conspiracy claims: endorses them, debunks them, reports them neutrally, or makes no such claim. The rule has three steps. (1) Look at the website label. (2) Look at the stance. (3) If the label does not fit the stance, it is a label problem; otherwise the model erred. Example (invented): a conspiracy site prints "A judge set the trial date for five men." The stance is "reports neutrally", which does not fit "conspiracy site", so a model that calls it mainstream is not really wrong. The main error type is this: a conspiracy-site article called mainstream. Because a machine did the ticking, we checked 40 other articles by hand, blind to the website and the machine's answer. Two members picked the same stance in 22 of 56 pairs (2 of 5 answers); on the one question that decides the verdict, does the article endorse a claim, they agreed in 43 of 56 pairs (3 of 4).
 
 ## The code
 
@@ -102,7 +102,7 @@ Finally the rule is applied to each member answer and to the coder's answer for 
 
 ## Report
 
-All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993), which treat articles as independent; articles from one website are similar, so the intervals understate the uncertainty. The baseline row always answers "mainstream" (accuracy 0.766).
+All four final models were scored once on the same 410 test articles (96 from conspiracy-oriented websites). The table gives precision, recall and F1 for the conspiracy class with 95% bootstrap confidence intervals (Efron and Tibshirani, 1993), which treat articles as independent. Articles from one website are similar, so such intervals are too narrow; the intervals are therefore lower bounds on the real uncertainty. The baseline row always answers "mainstream" (accuracy 0.766).
 
 <!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals -->
 
@@ -116,7 +116,7 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 
 **H1: TF-IDF weighting beats plain word counts.** Supported, narrowly: 7 articles are right only for word counts and 19 only for TF-IDF (p = 0.029), and TF-IDF has the higher F1 (0.598 against 0.567).
 
-**H2: Adding the three feature groups improves the TF-IDF model.** Not supported. On validation the model with the extra features scored an F1 of 0.896 against 0.918 for TF-IDF alone, and on test it is lower again (0.560 against 0.598); 22 articles are right only for TF-IDF and 14 only with the features, a difference that chance explains (p = 0.243).
+**H2: Adding the three feature groups improves the TF-IDF model.** Not supported. On validation the model with the extra features scored an F1 of 0.896 against 0.918 for TF-IDF alone, and on test it is lower again (0.560 against 0.598); 22 articles are right only for TF-IDF and 14 only with the features, a difference that chance explains (p = 0.243). For all three tests F1 and McNemar point the same way.
 
 **H3: The LLM beats the best logistic regression.** Supported. F1 is 0.795 against 0.598, the intervals do not overlap, and 4 articles are right only for the best logistic regression (TF-IDF) against 37 only for the LLM (p < 0.0001).
 
@@ -124,7 +124,9 @@ Each pair of models is compared with an exact two-sided McNemar test (McNemar, 1
 
 <!-- output: results/tables/validation_vs_test.csv | Conspiracy-class F1 of the four final models on validation and on test -->
 
-The likely reason is the websites: the test set has few conspiracy websites, none seen before.
+The likely reason is the websites: the test set has few conspiracy websites, none seen before. For the LLM there may be a second reason: it may know some of these sites, so its 0.987 validation F1 may partly be site recognition. A repeated validation run gave the same answer for 0.992 of the articles.
+
+<!-- output: results/metrics.json#llm.repeat_agreement | Share of validation articles with the same LLM answer in a repeated run -->
 
 <!-- output: results/figures/validation_vs_test_confusion.png | Confusion matrices on validation (top) and test (bottom); rows: true website type, columns: predicted -->
 
@@ -132,15 +134,15 @@ The likely reason is the websites: the test set has few conspiracy websites, non
 
 One site, Website 4, supplies 44 of the 96 conspiracy test articles: all four models find at most a third of them (recall 0.205 to 0.318). Without those 44 articles the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for TF-IDF with features and 0.971 for the LLM.
 
-The titles suggest that Website 4 publishes short partisan political news that mentions 9/11. In none of its articles that the LLM missed did the stance coder find a conspiracy claim:
+Our reading of Website 4 is tentative: it rests on 30 articles, read by title only, coded by one Claude coder and cross-checked by the five-member hand check. The titles suggest short partisan political news that mentions 9/11. In none of its articles that the LLM missed did the stance coder find a conspiracy claim:
 
 <!-- output: results/tables/large_site_missed_stances.csv | Stance of the Website 4 articles the LLM missed -->
 
-Their text gives no sign of the site's rating: the miss is mostly a label problem.
+Their text gives no sign of the site's rating, so the miss may be mostly a label problem.
 
-**Where the models fail, and why.** For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims about 9/11, without being told the website. A fixed rule counts a conspiracy-site article without an endorsed claim, or a mainstream article with one, as a label problem; the rest are model errors.
+**Where the models fail, and why.** For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims about 9/11, without being told the website. The rule has three steps: read the website label, read the stance, and call it a label problem if the two do not fit (a conspiracy-site article without an endorsed claim, a mainstream one with one); otherwise it is a model error.
 
-Of the 70 wrongly classified articles, 69 have a readable coding. Our main estimate of label problems comes from the 41 coded articles that only one model got wrong: 21 of them are label problems. The 49 of 69 overall is an upper bound, because the 28 articles both models missed are all conspiracy-site articles, and the rule counts many of them as label problems by definition. The coder shares a model family with the classifier, so a hand check follows.
+Of the 70 wrongly classified articles, 69 have a readable coding. Our main estimate of label problems is 21 of the 41 coded articles that only one model got wrong. The upper end is 49 of 69 overall, because the 28 articles both models missed are all conspiracy-site articles, and the rule counts them as label problems whenever no claim is endorsed. The coder shares a model family with the classifier, so a hand check follows.
 
 <!-- output: results/tables/error_counts_plain.csv | Test articles wrongly classified, by who is wrong, and the share that are label problems -->
 

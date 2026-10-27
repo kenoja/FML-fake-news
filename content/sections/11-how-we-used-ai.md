@@ -20,7 +20,7 @@ The loop repeats until the reviewer is satisfied or a round limit is reached. Th
 
 **What the team did.** People set the question, the four ways of sorting, the feature groups and the rule that final models are scored on test once, and wrote the feedback. They removed emotion scores from the first plan, because emotional language is not the same as conspiracy language. They compared the article counts with those published for the corpus.
 
-**How output was checked.** The agent ran small test programs that fail when a rule is broken, for example if the split changes or a number in the report is missing from the result files. Other checks need a person, such as whether the automatic stance coding is right; the team's hand check of 40 articles does that.
+**How output was checked.** The agent ran small test programs that fail when a rule is broken, for example if the split changes or a number in the report is missing from the result files. Other checks need a person, such as whether the automatic stance coding is right; the team's hand check does that.
 
 **Saving answers.** The language model costs money for every answer, so each answer is saved once and reused. The saved file holds only article ids and answers, never article text.
 
@@ -40,7 +40,7 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 **How the output was checked.** Automated tests fail when a rule is broken, for example when a model learns from more than the training articles, the split changes, the test set is used outside the final scoring, or a number in this report is missing from the result files. Judgements that tests cannot make, such as whether the automatic stance coding is right, are checked by people through the hand check described in the error analysis.
 
-**What the team changed.** The team rejected the first draft of the sections as too technical, and after reviewing the method it required identical settings and the same text for all methods. A review also caught a claim that the language model beat every other model, which was corrected to what the table shows.
+**What the team changed.** The team rejected the first draft of the sections as too technical, and after reviewing the method it required identical settings and the same text for all methods.
 
 **What we learned.** Written plans and explicit requirements steered the assistant reliably. Tests show that numbers match files, not that they answer the right question.
 
