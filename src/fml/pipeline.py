@@ -398,7 +398,9 @@ def ablation() -> dict:
     lexicon_sizes = {category: len(terms) for category, terms in LEXICON.items()}
     lexicon_sizes["total"] = sum(lexicon_sizes.values())      # size of the hand-made word lists
     table = run_ablation(train, valid, ablation_variants(), reference=LR_WORDS_ID)
-    write_table("ablation", table.round(4))
+    shown = table.rename(columns={"model_id": "Model ID", "label": "Features", "class_weight": "Class weight",
+                                  "f1": "F1", "delta_f1": "Change in F1"})
+    write_table("ablation", shown.round(4))
     savefig(plot_ablation(table), "ablation_f1")
 
     coverage = lexicon_coverage(train).round(4)             # how much of the data the word list reaches

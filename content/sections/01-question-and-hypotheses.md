@@ -45,7 +45,7 @@ This section only sets the question. The first function builds the "at a glance"
 
 ### Executive summary
 
-We asked whether the text of a full 9/11 article reveals if it comes from a conspiracy-oriented or a mainstream website, comparing three logistic regressions and one low-cost language model, Claude Haiku 5.5, on 410 test articles kept aside until the end. The language model reached the highest conspiracy-class F1 (F1, a score for how well the conspiracy articles are found), 0.795, against 0.598 for the best logistic regression, which used TF-IDF, a word-weighting scheme. H1 (TF-IDF beats counts) was supported, narrowly, H2 (features help) was not, and H3 (the language model wins) was supported. All models missed at least three in ten conspiracy articles, on only six test conspiracy websites.
+We asked whether the text of a full 9/11 article reveals if it comes from a conspiracy-oriented or a mainstream website, comparing three logistic regressions and one low-cost language model, Claude Haiku 5.5, on 410 test articles kept aside until the end. The language model scored best on the share of conspiracy articles a method finds and gets right (0.795, against 0.598 for the best logistic regression, which used word weights: counts that give rare, telling words more weight). Word weights beat plain counts, narrowly (H1 supported); the extra hand-made features did not help (H2 not supported); the language model won (H3 supported). Every model missed at least three in ten conspiracy articles, and the test set holds only six conspiracy websites.
 
 ### Introduction
 
@@ -57,7 +57,7 @@ We compare four methods that form a ladder from simple to rich: logistic regress
 - **H2.** TF-IDF plus the three feature groups reaches a higher F1 than TF-IDF alone, because these features capture how conspiracy texts argue.
 - **H3.** The LLM reaches a higher F1 than the best logistic regression, because it brings broad knowledge of how texts are written.
 
-We did not try other classifiers (the question is about the input, so the classifier stays fixed), fine-tuning or emotion features. Fine-tuning would have needed labelled training data, computing power and a second model to compare against. We use full articles and one inexpensive language model, as the course feedback advised; the JFK transfer test is left to further work. All methods read the same first 3,000 words, so long articles were shortened and anything after that point went unseen.
+We did not try other classifiers: the question is about the input, and more classifiers would multiply the comparisons. We did not fine-tune a transformer, because the course feedback asked for one inexpensive language model and no second trained model. We did not add emotion features: they were not in the plan and would add many untested choices. The JFK transfer test was parked by the team as out of scope and stays further work. All methods read the same first 3,000 words, so long articles were shortened and anything after that point went unseen.
 
 The pipeline, without the language model, runs on an ordinary computer in about three minutes; only the language model needs an internet connection and a paid service.
 

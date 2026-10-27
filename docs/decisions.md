@@ -181,9 +181,17 @@ read from the data or from `results/`.
 
 ## Cycle 4 length budget
 
-- **Baseline (T1).** After `python -m sitegen build`, the report has 4,131 words before References, counted as in
-  `agent/tools.py: gate_report_length` (code fences and table rows removed). Target: at most 4,900; every added
-  sentence is paid for by a cut. (The 4,888 quoted in the T12 note above was an earlier count.)
+- **Baseline (T1).** After `python -m sitegen build`, counted as `tests/test_gates.py` does (split at spaces, tables
+  included): **5,401 words** in the whole `reports/report.md`, **4,921 words before `## References`**. The gate
+  (limit 5,000) passes, but only with 79 words to spare. Target: at most 4,900 words before References, so every
+  added sentence is paid for by a cut. (The older count of 4,131 used `agent/tools.py` rules, which drop table rows
+  and code fences; it is not the gate's count.)
+- **Words per `## Report` part** (raw text of the part, output markers not expanded): 01 573, 02 422, 03 166, 04 348,
+  05 193, 06 508, 07 312, 08 905, 09 265, 10 194, 11 290 (sum 4,176; the rest of the 4,921 is headings, tables
+  and figure captions pulled in by the output markers). Cuts come mainly from the hedges in 04-08.
+- **Open point, declined.** The reviewer's "cluster bootstrap" suggestion is declined because cycle-04 bars new
+  statistics; the confidence intervals are instead described as lower bounds on the uncertainty (see T6).
+- **Raw-header and blank-row checks (R5)** were run.
 - **Results unchanged.** SHA-256 hashes of `results/metrics.json` and `results/tables/*.csv` saved before the
   edits for later comparison; no models, API calls or test runs.
 - **Privacy grep.** Searched `content/sections/*.md`, `content/references.md`, `docs/ai-log.md` and
@@ -191,3 +199,5 @@ read from the data or from `results/`.
   none found (the only hits were ordinary words such as "rejects" and a publisher name in a citation).
 
 - **Final verification (T12).** Two `fml run-all` runs gave identical hashes for `metrics.json` and all tables; the test log is unchanged (11 lines). Full pytest: 239 passed, 1 failed, 0 skipped (no `needs_data` test skipped); the failure was the missing run-time sentence in section 01, restored ("about three minutes"), and `tests/test_report_numbers.py` then passed (19). The full suite was not re-run after that fix. No T1 hash file could be found, so equality was checked against the committed results (git shows only `run_info.json` modified) and the older checksums in `docs/reproducibility.md`. Privacy grep (e-mail, GitHub links, names, course words) over sections, docs and report: no real hits.
+
+- **T2 hedge cuts.** Repeated caveats removed from the `## Report` parts of 04–08 ("all numbers here are validation numbers", repeated grid/website/cost wording, shortened fairness note in 07 and the "when the model was fixed" paragraph in 06). All numbers, verdicts, the two examples, the Website 4 finding and the hand-check numbers kept. Report body (before References, gate count) went from 4,921 to 4,558 words, leaving 342 words of room under the 4,900 target for T3–T9; re-check in T12.
