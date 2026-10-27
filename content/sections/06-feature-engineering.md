@@ -5,7 +5,7 @@ hypothesis: Adding features about certainty and writing style improves the TF-ID
 ---
 ## Explained simply
 
-**The idea.** TF-IDF only sees single words. Do a few hand-made clues help on top? A clue is a **feature**: one number that describes an article. We tried three families from earlier research.
+**The idea.** TF-IDF only sees single words. Do a few hand-made clues help on top? A clue is a **feature**: one number that describes an article. We tried three families.
 
 1. **Phrases (n-grams of one to three words).** "Inside job" or "no evidence of" mean more than their single words (Wang and Manning, 2012).
 2. **Certainty and doubt words.** Words show how sure a writer is: "I know" against "I guess". Our short lists hold doubt words, called hedges ("perhaps"), certainty words, called boosters ("clearly"), hidden-truth words ("cover-up") and debunking words ("no evidence").
@@ -17,9 +17,9 @@ hypothesis: Adding features about certainty and writing style improves the TF-ID
 
 **The comparison table (an "ablation").** An ablation means switching one ingredient on or off and watching the score, like baking a cake with and without sugar. We compare six models on the same split: TF-IDF alone, plus each family, plus all three, and plus certainty words and style without phrases. Each row has its own best regularisation strength (C). The last column is the change in validation F1 against TF-IDF alone.
 
-**Why all three together do worse.** Style lowers the score even on its own; a habit such as many capital letters may belong to one website and not carry over. The phrases add very many columns (146,172 for 1,768 training articles), probably letting the model memorise articles. Certainty words are the only family that helps on its own. Small differences can be luck. We left out emotion features (fear and anger are normal in reports on an attack) and longer phrases (more columns).
+**Why all three together do worse.** Style lowers the score even on its own; a habit such as many capital letters may belong to one website and not carry over. The phrases add very many columns (146,172 for 1,768 training articles), probably letting the model memorise articles. Certainty words are the only family that helps on its own. Small differences can be luck. We skipped emotion features (fear and anger are normal in reports on an attack) and longer phrases (more columns).
 
-**Why the final model is not the best row.** The model with all three families was planned on 16 October, before any result. Later versions kept the best family by a validation rule and were scored on the test set. On 25 October the team returned to the planned model (final2_tfidf_features, chosen on validation), so the choice was not made blind; the limitations section says the same. Certainty words alone scored highest on validation, but our question is about adding all three families, as planned. Switching to the best row now would change the question to fit the results.
+**Why the final model is not the best row.** The model with all three families was planned on 16 October, before any result. Later versions kept the best family by a validation rule and were scored on the test set. On 25 October the team returned to the planned model (final2_tfidf_features, chosen on validation), so the choice was not made blind; the limitations section says the same. Certainty words alone scored highest on validation, but our question is about adding all three families, as planned. Switching now would change the question to fit the results.
 
 ## The code
 
