@@ -1,10 +1,24 @@
 % Pandoc template for the PDF report (XeLaTeX). The colours match reports/latex/figures.py.
 \documentclass[11pt,a4paper]{article}
 
-\usepackage{fontspec}
-\setmainfont{TeX Gyre Pagella}
-\setsansfont{Inter}[UprightFont = *, BoldFont = * SemiBold, ItalicFont = * Italic]
-\newfontfamily\displayfont{Inter Display}[UprightFont = * SemiBold, BoldFont = * Bold]
+% Fonts: Pagella and Inter with XeLaTeX or LuaLaTeX (as intended); Palatino and Helvetica with pdfLaTeX.
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \IfFileExists{tgpagella.sty}{\usepackage{tgpagella}}{\usepackage{mathpazo}}
+  \IfFileExists{tgheros.sty}{\usepackage[scale=0.92]{tgheros}}{\usepackage[scaled=0.92]{helvet}}
+  \newcommand{\displayfont}{\sffamily\bfseries}
+\else
+  \usepackage{fontspec}
+  \setmainfont{TeX Gyre Pagella}
+  \IfFontExistsTF{Inter}
+    {\setsansfont{Inter}[UprightFont = *, BoldFont = * SemiBold, ItalicFont = * Italic]}
+    {\setsansfont{TeX Gyre Heros}[Scale = 0.92]}
+  \IfFontExistsTF{Inter Display}
+    {\newfontfamily\displayfont{Inter Display}[UprightFont = * SemiBold, BoldFont = * Bold]}
+    {\newcommand{\displayfont}{\sffamily\bfseries}}
+\fi
 \usepackage[a4paper, left=27mm, right=27mm, top=28mm, bottom=30mm, headsep=10mm]{geometry}
 \usepackage{microtype}
 \usepackage{xcolor}
