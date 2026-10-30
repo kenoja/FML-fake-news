@@ -144,6 +144,24 @@ read from the data or from `results/`.
 - **Other items by judgement.** Item 4: three-site concentration counted in the data stage and quoted from `results/`.
   Item 5: 37 websites for the analysed data, 39 only for the raw subset.
 
+## Cycle 5 (final report, 30 Oct 2026)
+
+- **N-gram threshold (O1).** Phrases keep the minimum of 3 training articles, single words 2. Checked on validation
+  only (`tfidf_features.ngram_threshold_check`): with a minimum of 2 the planned model fills the 200,000-column cap
+  and its validation F1 falls from 0.896 to 0.891. Decided with the owner: no new test run, the report explains the
+  difference.
+- **Narrative (O3-O6).** Every report chapter now uses the same pattern: method chapters Idea / Setup / Validation
+  result / What it learned; data, split, limitations and conclusion use short labelled paragraphs. The test drop is
+  attributed to Website 4 as the main single cause: it explains almost all of the LLM's drop (0.971 without it,
+  0.987 on validation), and the largest part, not all, of the logistic regressions' drop.
+- **Overview table.** The "Reads" column was removed: it was the same in every row and the text says it once.
+- **Environment.** The unchosen word-count setting C = 100 gives a validation F1 of 0.791 on the 2-CPU machine used
+  for this run and 0.797 in the agent's 4-CPU environment. Reported numbers come from the committed run; no chosen
+  setting or test result changes.
+- **Report length.** 4,853 words by the plain count (limit 5,000, aim 4,900).
+- **Drop chart.** A new figure (`f1_validation_test.png`) shows validation F1, test F1 and test F1 without Website 4;
+  in the report it replaces the validation-vs-test table, which gained a column for the score without Website 4.
+
 ## Needs a team decision
 
 - **[open] Dataset licence.** Owner: repository owner. The OSF page could not be read automatically and no file in

@@ -53,3 +53,17 @@ is counted twice. No new models, statistics or API calls were added.
 **Learned.** Written plans and explicit requirements steer the assistant; tests show that numbers match files, not
 that they answer the right question. Members often chose different stances but mostly agreed on whether an article
 endorses a claim, the only question the error rule uses.
+
+## Cycle 5: final report (30 Oct 2026)
+
+**Produced.** A Claude session working with the project owner restructured the report into one narrative with the
+same pattern in every chapter, added a validation-only check of the n-gram threshold, and built the LaTeX version.
+
+**Checked.** All tests and gates, two identical runs of the analysis, and a fresh reviewer session.
+
+**Changed by the team.** The owner set the narrative (Website 4 as the main cause of the test drop, the split by
+website as standard practice, the gap between validation and test as the main lesson) and kept the n-gram threshold
+of 3 instead of a new test run.
+
+**Learned.** An honest test can make the headline weaker and the study more useful.
+

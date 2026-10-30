@@ -93,3 +93,25 @@ def test_test_log_has_one_entry_per_model(tmp_path, monkeypatch):
         assert list(out["predictions"].columns) == ["model_id", "doc_id", "label", "pred", "proba"]
         assert set(out["predictions"]["doc_id"]) <= set(split.loc[split["split"] == "test", "doc_id"])
     assert [e["model_id"] for e in pipeline.read_access_log(log)] == ["lr_words", "lr_extended"]
+
+
+def test_ngram_threshold_check_changes_only_the_phrase_threshold(monkeypatch):
+    """The check must differ from the planned model in one setting only, or it cannot explain the choice of 3."""
+    import pandas as pd
+    from fml import ablation as ab, pipeline
+
+    seen = {}
+
+    def fake_run(train, valid, variants, reference, c_grid=None):
+        seen.update(variants)
+        table = pd.DataFrame({"model_id": ["lr_extended_min2"], "f1": [0.5]})
+        table.attrs["n_columns"] = {"lr_extended_min2": 7}
+        return table
+
+    monkeypatch.setattr(ab, "run_ablation", fake_run)
+    out = pipeline.ngram_threshold_check(None, None)
+    planned = pipeline.ablation_variants()[pipeline.LR_EXTENDED_ID]["features"]
+    checked = seen["lr_extended_min2"]["features"]
+    assert checked["min_df"] == 2 and planned["min_df"] != 2
+    assert {k: v for k, v in checked.items() if k != "min_df"} == {k: v for k, v in planned.items() if k != "min_df"}
+    assert out["columns"] == 7 and out["validation_f1"] == 0.5

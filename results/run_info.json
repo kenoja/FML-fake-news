@@ -1,29 +1,29 @@
 {
-  "run_all_seconds": 157.3,
+  "run_all_seconds": 225.1,
   "python": "3.11.17",
   "machine": {
     "system": "Linux",
     "processor": "x86_64",
-    "cpus": 4
+    "cpus": 2
   },
   "stage_seconds": {
-    "cleaning": 25.2,
-    "word_counts": 3.3,
-    "tfidf": 2.0,
-    "features": 14.5,
-    "tfidf_features": 107.2,
-    "llm": 0.5,
-    "final": 0.4,
-    "comparison": 1.4,
-    "errors": 0.3
+    "cleaning": 30.6,
+    "word_counts": 3.4,
+    "tfidf": 2.3,
+    "features": 18.8,
+    "tfidf_features": 164.4,
+    "llm": 0.4,
+    "final": 0.3,
+    "comparison": 1.7,
+    "errors": 0.4
   },
   "packages": {
     "numpy": "2.4.6",
-    "pandas": "3.1.0",
+    "pandas": "3.0.6",
     "scipy": "1.17.1",
     "scikit-learn": "1.9.1",
     "matplotlib": "3.11.2",
-    "anthropic": "1.17.0",
+    "anthropic": "1.15.0",
     "pyyaml": "6.0.1"
   }
 }

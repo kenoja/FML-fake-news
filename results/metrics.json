@@ -170,9 +170,9 @@
       },
       {
         "C": 100.0,
-        "precision": 0.807,
-        "recall": 0.786,
-        "f1": 0.797
+        "precision": 0.805,
+        "recall": 0.778,
+        "f1": 0.791
       }
     ]
   },
@@ -359,6 +359,12 @@
       "hidden_truth": 11,
       "debunking": 11,
       "total": 47
+    },
+    "ngram_threshold_check": {
+      "ngram_min_df": 2,
+      "columns": 200010,
+      "validation_f1": 0.8909,
+      "column_cap": 200000
     }
   },
   "llm": {

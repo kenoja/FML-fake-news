@@ -42,13 +42,15 @@ The analysis function is shared, so both analyses run in exactly the same way.
 
 ## Report
 
-The second analysis keeps everything from the word-count analysis (articles, split, vocabulary, balanced class weights and the choice of C by validation F1) and replaces raw counts by TF-IDF weights (Salton and Buckley, 1988; Manning, Raghavan and Schütze, 2008). Term frequencies were damped with a logarithm, article vectors were scaled to unit length, and the inverse document frequencies were computed on the training articles only. On validation TF-IDF scores higher than word counts, as H1 expects.
+**Idea.** TF-IDF keeps the bag of words but weights each count by how rare the word is across the training articles (Salton and Buckley, 1988; Manning, Raghavan and Schütze, 2008): everyday words such as "said" count little, rare and telling words count more. H1 expects this to beat plain counts.
 
-The value C = 10 scored best, with a precision of 0.930, a recall of 0.906 and an F1 score of 0.918. Larger C helped here: because TF-IDF vectors have a fixed length, the model can use larger weights without being dominated by long articles.
+**Setup.** As for word counts. In addition, counts are damped with a logarithm, each article vector is scaled to unit length, and the rarity weights are computed on the training articles only.
+
+**Validation result.** C = 10 scored best: precision 0.930, recall 0.906 and F1 0.918. The model found the same 106 of 117 conspiracy articles as word counts but raised only 8 false alarms instead of 22, so the whole gain is in precision. A larger C suits TF-IDF because its values are small numbers that need larger weights.
 
 <!-- output: results/figures/tfidf_validation_confusion.png | TF-IDF: validation confusion matrix -->
 
-The strongest words resemble those of the word-count model. "Posted", "truth" and "article" point to conspiracy websites; "killed", "tower" and "york" point to mainstream websites.
+**What it learned.** The strongest words barely change: "posted", "truth" and "article" point to conspiracy websites, "killed", "tower" and "york" to mainstream ones. TF-IDF reduces noise rather than finding new signals.
 
 ## Check yourself
 

@@ -61,19 +61,17 @@ The analysis: try the three prompts, keep the best by F1, repeat it once.
 
 ## Report
 
-The fourth analysis uses a language model instead of a trained classifier. Claude Haiku 5.5 is the lowest-cost model of Anthropic's Claude 5.5 family, chosen because one inexpensive model was asked for; it was called through Anthropic's API in October 2026, one request per article, and had to answer in a fixed short format (label, confidence, one-line reason) of at most 1,000 tokens. The cost was about $0.26 per 1,000 articles at list prices ($0.10 and $0.50 per million input and output tokens). Each call sent the article text and the question "conspiracy-oriented or mainstream website?" and received one label, stored in results/llm_cache.jsonl so that reruns make no new calls; there were no examples (zero-shot), and the answers are scored against the same labels.
+**Idea.** The fourth method trains nothing. Claude Haiku 5.5, the lowest-cost model of Anthropic's Claude 5.5 family, receives each article with one question, whether it would have been published on a conspiracy-oriented or a mainstream website, and no examples (zero-shot). H3 expects it to beat the best logistic regression, because it brings broad knowledge of how texts are written.
 
-Articles were cut to their first 3,000 words, as for the other methods; the model has no temperature setting, so default sampling was used. Three prompts were tried on validation only: the bare question (v1), the question with short definitions of both website types (v2), and a step-by-step version that warns against judging by topic (v3).
+**Setup.** One request per article went through Anthropic's API in October 2026 with the first 3,000 words as for all methods, default sampling (the model has no temperature setting) and a fixed short answer (label, confidence, one-line reason) of at most 1,000 tokens. The cost was about $0.26 per 1,000 articles. Answers are stored in results/llm_cache.jsonl, so reruns make no new calls. Three prompts were tried on validation only: the bare question (v1), the question with definitions of both website types (v2), and a step-by-step version that warns against judging by topic (v3).
 
 <!-- output: results/tables/llm_prompt_variants.csv -->
 
-All three prompts reached almost the same validation F1 (0.987, 0.983 and 0.987); with a tie, the first prompt, v1, was kept. The chosen prompt reached a precision of 1.000 and a recall of 0.974: it missed 3 of the 117 conspiracy articles. There were no unreadable answers. A repeated validation run gave the same answer for 0.992 of the articles.
+**Validation result.** The three prompts differ by one article (F1 0.987, 0.983 and 0.987); with a tie, the first prompt, v1, was kept. It reached a precision of 1.000 and a recall of 0.974: it found 114 of the 117 conspiracy articles and raised no false alarm. A repeated run gave the same answer for 0.992 of the articles.
 
 <!-- output: results/figures/llm_validation_confusion.png | LLM: validation confusion matrix of the chosen prompt -->
 
-
-Scoring against website labels is not fully fair to the LLM: a "wrong" answer may be a correct reading of a text whose label describes only its website. It may also recognise a site from its own training, which the logistic regressions cannot.
-
+**What it learned.** Nothing from our data, which is its strength and its risk. It is scored against website labels, so a "wrong" answer may be a correct reading of a text whose website label does not fit it; and it may recognise websites from its own training, which the logistic regressions cannot. The test shows how much of its lead survives on new websites.
 
 ## Check yourself
 

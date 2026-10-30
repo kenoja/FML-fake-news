@@ -1,5 +1,5 @@
-Model,Validation F1,Test F1
-Word counts,0.865,0.567
-TF-IDF,0.918,0.598
-TF-IDF + features,0.896,0.560
-LLM,0.987,0.795
+Model,Validation F1,Test F1,Test F1 without Website 4
+Word counts,0.865,0.567,0.640
+TF-IDF,0.918,0.598,0.721
+TF-IDF + features,0.896,0.560,0.661
+LLM,0.987,0.795,0.971

@@ -40,7 +40,8 @@ features:
   groups: [ngrams, epistemic, style]    # G4 emotion dropped by team decision
   per_n_words: 1000
   ngram_range: [1, 3]                   # words, bigrams, trigrams ("inside job", "no evidence of")
-  ngram_min_df: 3                       # an n-gram must occur in at least 3 training documents
+  ngram_min_df: 3                       # an n-gram must occur in at least 3 training documents (words: 2); with 2 the
+                                        # phrases fill the 200,000-column cap and validation F1 drops (metrics: ngram_threshold_check)
   ngram_max_features: 200000            # vocabulary cap (most frequent n-grams in train)
   mattr_window: 100                     # moving-average type-token ratio window, in words
 
