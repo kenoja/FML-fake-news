@@ -1,0 +1,118 @@
+% Pandoc template for the PDF report (XeLaTeX). The colours match reports/latex/figures.py.
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Pagella}
+\setsansfont{Inter}[UprightFont = *, BoldFont = * SemiBold, ItalicFont = * Italic]
+\newfontfamily\displayfont{Inter Display}[UprightFont = * SemiBold, BoldFont = * Bold]
+\usepackage[a4paper, left=27mm, right=27mm, top=28mm, bottom=30mm, headsep=10mm]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\definecolor{navy}{HTML}{1B2A41}
+\definecolor{conspiracy}{HTML}{8C3B76}
+\definecolor{mainstream}{HTML}{2B7A6A}
+\definecolor{gold}{HTML}{C08A2B}
+\definecolor{slate}{HTML}{5B6470}
+\definecolor{rule}{HTML}{E3E6EA}
+\definecolor{ink}{HTML}{1F2328}
+\color{ink}
+
+\usepackage{graphicx}
+\setkeys{Gin}{keepaspectratio}
+\usepackage{float}
+\usepackage{longtable, booktabs, array, calc}
+\usepackage{needspace}
+\usepackage{caption}
+\captionsetup{font={small,sf}, labelfont={bf,color=navy}, labelsep=period, justification=raggedright,
+  singlelinecheck=false, skip=6pt}
+\captionsetup[table]{position=top}
+\usepackage{etoolbox}
+\AtBeginEnvironment{longtable}{\small\sffamily}
+\setlength{\LTpre}{8pt}\setlength{\LTpost}{10pt}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\aboverulesep}{0pt}\setlength{\belowrulesep}{0pt}
+\usepackage{colortbl}
+\arrayrulecolor{slate}
+
+\usepackage{titlesec}
+\titleformat{\section}{\displayfont\Large\color{navy}}{\thesection}{0.8em}{}[{\color{conspiracy}\titlerule[1.2pt]}]
+\titleformat{\subsection}{\sffamily\large\bfseries\color{navy}}{\thesubsection}{0.7em}{}
+\titlespacing*{\section}{0pt}{20pt}{10pt}
+\titlespacing*{\subsection}{0pt}{14pt}{6pt}
+\pretocmd{\section}{\needspace{10\baselineskip}}{}{}
+\pretocmd{\subsection}{\needspace{6\baselineskip}}{}{}
+\newcommand{\runin}[1]{{\sffamily\bfseries\color{navy}#1}}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\footnotesize\color{slate}$short-title$}
+\fancyhead[R]{\sffamily\footnotesize\color{slate}\nouppercase{\leftmark}}
+\fancyfoot[R]{\sffamily\footnotesize\color{navy}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{{\color{rule}\hrule width\headwidth height\headrulewidth}}
+\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=4pt}
+\setlist[itemize]{label={\color{conspiracy}\textbullet}}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\usepackage{tikz}
+\usepackage{csquotes}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{colorlinks=true, linkcolor=navy, urlcolor=mainstream, citecolor=navy}
+\usepackage{xurl}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt}
+\providecommand{\tightlist}{\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}}
+\def\pandocbounded#1{#1}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\makeatother
+
+\begin{document}
+
+% ---------------------------------------------------------------- title page
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[navy] (current page.north west) rectangle ([yshift=-118mm]current page.north east);
+  \fill[conspiracy] ([yshift=-118mm]current page.north west) rectangle ([yshift=-120mm]current page.north east);
+\end{tikzpicture}
+\vspace*{8mm}
+{\sffamily\small\color{white!75!navy} $kicker$\par}
+\vspace{10mm}
+{\displayfont\fontsize{30}{36}\selectfont\color{white} $title$\par}
+\vspace{6mm}
+{\sffamily\Large\color{white!85!navy} $subtitle$\par}
+\vspace{40mm}
+\begin{center}
+\includegraphics[width=\textwidth]{$title-visual$}
+\end{center}
+\vspace{1mm}
+{\sffamily\footnotesize\color{slate} Each dot is one article, stacked by website and grouped into the training, validation and
+test sets: {\color{conspiracy}\textbf{conspiracy websites}}, {\color{mainstream}\textbf{mainstream websites}} and
+{\color{gold}\textbf{Website 4}}, which supplies $w4-articles$ of the $test-conspiracy$ conspiracy test articles.\par}
+\vfill
+{\sffamily\color{navy}\large $author$\par}
+\vspace{2mm}
+{\sffamily\color{slate} $date$\par}
+\end{titlepage}
+
+% ---------------------------------------------------------------- summary and contents
+\begin{tcolorbox}[enhanced, colback=rule!35, colframe=rule!35, borderline west={3pt}{0pt}{conspiracy},
+  arc=0pt, left=10pt, right=10pt, top=8pt, bottom=8pt]
+{\sffamily\bfseries\color{navy} Executive summary}\par\smallskip
+$summary$
+\end{tcolorbox}
+\vspace{6mm}
+{\sffamily\small
+\renewcommand{\contentsname}{\sffamily\large\bfseries\color{navy}Contents}
+\setcounter{tocdepth}{1}
+\tableofcontents}
+\clearpage
+
+$body$
+
+\end{document}

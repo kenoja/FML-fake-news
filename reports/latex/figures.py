@@ -141,7 +141,7 @@ def website_skyline(sizes: pd.DataFrame, path: Path, large_site: tuple[str, bool
             if (split, bool(row["label"]), int(row["articles"])) == large_site:
                 colour = GOLD                                    # Website 4
             n = int(row["articles"])
-            ax.scatter(np.full(n, x), np.arange(n), s=1.6, color=colour, linewidths=0)
+            ax.scatter(np.full(n, x), np.arange(n), s=2.6 if colour == GOLD else 1.8, color=colour, linewidths=0)
             x += 1
         centres[split] = (start + x - 1) / 2
         x += 5                                                   # gap between the sets
@@ -150,7 +150,9 @@ def website_skyline(sizes: pd.DataFrame, path: Path, large_site: tuple[str, bool
     ax.set_xlim(-2, x - 3)
     ax.set_ylim(-12, sizes["articles"].max() + 2)
     ax.axis("off")
-    save(fig, path)
+    fig.patch.set_alpha(0)                                       # no white box on the title page
+    fig.savefig(path, bbox_inches="tight", pad_inches=0.02, transparent=True)
+    plt.close(fig)
 
 
 def build_all(repo: Path, out: Path, sizes: pd.DataFrame | None) -> None:
