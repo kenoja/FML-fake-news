@@ -158,7 +158,11 @@ read from the data or from `results/`.
 - **Environment.** The unchosen word-count setting C = 100 gives a validation F1 of 0.791 on the 2-CPU machine used
   for this run and 0.797 in the agent's 4-CPU environment. Reported numbers come from the committed run; no chosen
   setting or test result changes.
-- **Report length.** 4,853 words by the plain count (limit 5,000, aim 4,900).
+- **Report length.** 4,889 words by the plain count (limit 5,000, aim 4,900).
+- **Review (cycle 5).** A fresh reviewer session scored 8 to 10 on every criterion. Implemented: separate paragraph
+  for what was left out, dates only in the limitations, compact ablation table, plain error headline, uncited
+  references (Shu et al., Swami et al.) removed, distinct lesson per cycle in the AI-use log. Not changed: the licence
+  stays open until the owner confirms it; README and code were not part of this change.
 - **Drop chart.** A new figure (`f1_validation_test.png`) shows validation F1, test F1 and test F1 without Website 4;
   in the report it replaces the validation-vs-test table, which gained a column for the score without Website 4.
 

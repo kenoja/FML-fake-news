@@ -43,7 +43,7 @@ This section describes limits of the study, so it has no analysis of its own. Th
 
 **The language model.** The LLM may know the articles or the reputation of their websites from its training, which the trained models cannot use; we could not measure this. Its answers are reproducible only through the stored answers (0.992 alike in a repeated run). The stance coder is also a Claude model and may share its blind spots.
 
-**Use of the test set.** Seven earlier model versions, none reported here, were scored on the test set during development, and the team returned to the planned feature model after seeing validation results and those test runs. Every reported model was chosen on validation alone and scored on test once.
+**Use of the test set.** Seven earlier model versions, none reported here, were scored on the test set during development, and on 25 October the team returned to the feature model planned on 16 October after seeing validation results and those test runs. Every reported model was chosen on validation alone and scored on test once.
 
 **Scope.** One topic, one English corpus, the first 3,000 words of each article (30 validation articles were cut), and one kind of trained classifier.
 

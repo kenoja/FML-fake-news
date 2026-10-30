@@ -10,13 +10,15 @@ We asked whether the text of a full 9/11 article reveals whether it was publishe
 
 The attacks of 11 September 2001 are a persistent subject of conspiracy theories: claims that they were an "inside job", a "controlled demolition" or a "false flag" are actively argued for online (Wood & Douglas, 2013). In a 2006 survey, 36 percent of Americans found it credible that federal officials helped the attacks happen or deliberately failed to stop them (Stempel, Hargrove & Stempel, 2007). This study asks whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website, using machine-learning methods for text classification.
 
-We compare four methods that form a ladder from simple to rich: logistic regression on word counts, the plainest baseline; logistic regression on TF-IDF weights, the standard step beyond counting (Salton & Buckley, 1988; Manning, Raghavan & Schütze, 2008); logistic regression on TF-IDF plus three groups of hand-made features; and a low-cost LLM used without training (zero-shot). Each chapter on a method follows the same pattern: the idea and what we expected, the setup, the result on validation, and what the model learned. We test three hypotheses:
+We compare four methods that form a ladder from simple to rich: logistic regression on word counts, the plainest baseline; logistic regression on TF-IDF weights, the standard step beyond counting (Salton & Buckley, 1988; Manning, Raghavan & Schütze, 2008); logistic regression on TF-IDF plus three groups of hand-made features; and a low-cost LLM used without training (zero-shot). The four method chapters follow the same pattern: the idea and what we expected, the setup, the result on validation, and what the model learned. We test three hypotheses:
 
 - **H1.** TF-IDF reaches a higher F1 than word counts, because distinctive words carry more information than common ones.
 - **H2.** TF-IDF plus the three feature groups reaches a higher F1 than TF-IDF alone, because these features capture how conspiracy texts argue.
 - **H3.** The LLM reaches a higher F1 than the best logistic regression, because it brings broad knowledge of how texts are written.
 
-Compared with the original proposal, we classify full articles instead of headlines, because a headline may mention a conspiracy without showing whether the article supports it, and we use one inexpensive language model without fine-tuning, as the course feedback advised. We did not try other classifiers, because the question is about the input; we left out emotion features, because fear and anger are normal in any report on an attack; and a transfer test on other topics stays further work. All methods read the same first 3,000 words of each article, and everything except the language model runs on an ordinary computer in about four minutes.
+Compared with the original proposal, we classify full articles instead of headlines, because a headline may mention a conspiracy without showing whether the article supports it, and we use one inexpensive language model without fine-tuning, as the course feedback advised. All methods read the same first 3,000 words of each article, and everything except the language model runs on an ordinary computer in about four minutes.
+
+What we left out, and why: other classifiers, because the question is about the input; emotion features, because fear and anger are normal in any report on an attack; and a transfer test on other topics, to keep one topic.
 
 
 
@@ -112,9 +114,18 @@ Most articles are mainstream, so accuracy would reward a model that never finds 
 
 ## TF-IDF plus extra features
 
-**Idea.** The third method tests H2: whether hand-made features add what single words miss. Three groups were planned on 16 October, before any result. N-grams are phrases of one to three words such as "no evidence of", a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short lists of doubt, certainty, hidden-truth and debunking words, following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020; but see Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and word variety (MATTR), which separated fake from real news in earlier work (Horne and Adali, 2017) but transfer poorly across domains (Pérez-Rosas et al., 2018).
+**Idea.** The third method tests H2: whether hand-made features add what single words miss. Three groups were planned before any result. N-grams are phrases of one to three words such as "no evidence of", a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short lists of doubt, certainty, hidden-truth and debunking words, following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020; but see Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and word variety (MATTR), which separated fake from real news in earlier work (Horne and Adali, 2017) but transfer poorly across domains (Pérez-Rosas et al., 2018).
 
 **Setup.** As for TF-IDF; the numeric groups are standardised with training statistics only. Phrases must occur in at least three training articles, single words in at least two, because phrases are far more numerous: with two, the planned model fills the cap of 200,000 phrase columns and its validation F1 falls to 0.891. To explain the result, an ablation compares six models on validation: TF-IDF alone, with each group, with all three, and with certainty words and style but no n-grams.
+
+| Model | Validation F1 |
+|---|---|
+| TF-IDF alone | 0.918 |
+| + n-grams (1-3) | 0.920 |
+| + certainty words | 0.930 |
+| + style | 0.909 |
+| + all three groups | 0.896 |
+| + certainty words and style (no n-grams) | 0.913 |
 
 
 
@@ -122,7 +133,7 @@ Most articles are mainstream, so accuracy would reward a model that never finds 
 
 
 
-**Validation result.** The planned model with all three groups scored 0.896, below TF-IDF alone (0.918); certainty words alone scored highest (0.930). A difference of one or two hundredths is one or two of the 117 conspiracy articles. H2 concerns the planned combination, and switching to the best single row after seeing the table would bend the hypothesis to the results, so the planned model was kept. This return to the plan was made on 25 October, after validation results and earlier test runs were known (see the limitations).
+**Validation result.** The planned model with all three groups scored 0.896, below TF-IDF alone (0.918); certainty words alone scored highest (0.930). A difference of one or two hundredths is one or two of the 117 conspiracy articles. H2 concerns the planned combination, and switching to the best single row after seeing the table would bend the hypothesis to the results, so the planned model was kept.
 
 **What it learned: why the features could work, and why they did not.** The features do separate the classes in the training data: hidden-truth phrases such as *cover-up* appear in 44% of conspiracy and 3% of mainstream articles. Four likely reasons, not tested causes, explain why they added nothing. First, too many variables for too few examples: the full model has 146,172 columns for 1,768 training articles, so it can fit single articles, and it chose the weakest regularisation in the grid (C = 100). Second, overlap: TF-IDF already holds most list words, and "truth" is its second-strongest conspiracy word. Third, style habits such as capitals may describe single websites rather than conspiracy writing, and do not carry over to new websites. Fourth, word lists ignore context: debunking words appear in 26% of conspiracy and 10% of mainstream articles, because conspiracy texts argue against debunkers.
 
@@ -233,7 +244,7 @@ Without Website 4 the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for T
 
 ### Why the models fail: label problems
 
-For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims without seeing the website. A fixed rule calls an error a label problem when label and stance do not fit (a conspiracy-site article without an endorsed claim, or a mainstream article with one); otherwise it is a model error. Of the 70 wrongly classified articles, 69 have a readable coding. The main estimate is 21 of the 41 coded articles that only one model got wrong; the upper end is 49 of 69, because the 28 articles that both models missed are conspiracy-site articles that the rule counts as label problems whenever no claim is endorsed.
+For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims without seeing the website. A fixed rule calls an error a label problem when label and stance do not fit (a conspiracy-site article without an endorsed claim, or a mainstream article with one); otherwise it is a model error. Of the 70 wrongly classified articles, 69 have a readable coding. In short, about half of the errors that only one model makes are label problems (21 of 41, our main estimate); the upper end is 49 of 69, because the 28 articles both models missed are conspiracy-site articles that the rule counts as label problems whenever no claim is endorsed.
 
 
 
@@ -261,7 +272,7 @@ To check the coder, the team coded 40 validation articles blind, each read by at
 
 **The language model.** The LLM may know the articles or the reputation of their websites from its training, which the trained models cannot use; we could not measure this. Its answers are reproducible only through the stored answers (0.992 alike in a repeated run). The stance coder is also a Claude model and may share its blind spots.
 
-**Use of the test set.** Seven earlier model versions, none reported here, were scored on the test set during development, and the team returned to the planned feature model after seeing validation results and those test runs. Every reported model was chosen on validation alone and scored on test once.
+**Use of the test set.** Seven earlier model versions, none reported here, were scored on the test set during development, and on 25 October the team returned to the feature model planned on 16 October after seeing validation results and those test runs. Every reported model was chosen on validation alone and scored on test once.
 
 **Scope.** One topic, one English corpus, the first 3,000 words of each article (30 validation articles were cut), and one kind of trained classifier.
 
@@ -304,8 +315,6 @@ To check the coder, the team coded 40 validation articles blind, each read by at
 - Pedregosa, F., et al. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research, 12*, 2825–2830.
 - Pérez-Rosas, V., Kleinberg, B., Lefevre, A., & Mihalcea, R. (2018). Automatic detection of fake news. *COLING*. https://arxiv.org/abs/1708.07104
 - Salton, G., & Buckley, C. (1988). Term-weighting approaches in automatic text retrieval. *Information Processing & Management, 24*(5), 513–523.
-- Shu, K., Sliva, A., Wang, S., Tang, J., & Liu, H. (2017). Fake news detection on social media: A data mining perspective. *ACM SIGKDD Explorations Newsletter, 19*(1), 22–36. https://arxiv.org/abs/1708.01967
 - Stempel, C., Hargrove, T., & Stempel, G. H., III (2007). Media use, social structure, and belief in 9/11 conspiracy theories. *Journalism & Mass Communication Quarterly, 84*(2). https://doi.org/10.1177/107769900708400210
-- Swami, V., Chamorro-Premuzic, T., & Furnham, A. (2010). Unanswered questions: A preliminary investigation of personality and individual difference predictors of 9/11 conspiracist beliefs. *Applied Cognitive Psychology, 24*(6), 749–761. https://doi.org/10.1002/acp.1583
 - Wang, S., & Manning, C. (2012). Baselines and bigrams: Simple, good sentiment and topic classification. *ACL*. https://aclanthology.org/P12-2018
 - Wood, M. J., & Douglas, K. M. (2013). "What about building 7?" A social psychological study of online discussion of 9/11 conspiracy theories. *Frontiers in Psychology, 4*, 409. https://doi.org/10.3389/fpsyg.2013.00409

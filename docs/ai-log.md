@@ -50,9 +50,8 @@ tables before and after code edits, to show that the results did not change. The
 themselves, 16 articles each, every article read by two members; the comparison code has tests that fail when an answer
 is counted twice. No new models, statistics or API calls were added.
 
-**Learned.** Written plans and explicit requirements steer the assistant; tests show that numbers match files, not
-that they answer the right question. Members often chose different stances but mostly agreed on whether an article
-endorses a claim, the only question the error rule uses.
+**Learned.** Human judgement is noisy too: members often chose different stances but mostly agreed on whether an
+article endorses a claim, the only question the error rule uses.
 
 ## Cycle 5: final report (30 Oct 2026)
 
