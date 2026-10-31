@@ -30,9 +30,13 @@ The conclusion has no analysis of its own. This function scores one final model 
 
 ## Report
 
-The study compared four methods for deciding whether a full 9/11 article comes from a conspiracy-oriented or a mainstream website. All three logistic regressions beat the baseline that always answers mainstream. H1 (TF-IDF beats word counts) was supported, narrowly; H2 (the three feature groups help) was not supported; H3 (the LLM beats the best logistic regression) was supported, with an F1 of 0.795 against 0.598, although it still misses one third of the conspiracy articles.
+**Answers.** All three logistic regressions beat the baseline that always answers mainstream. H1 (TF-IDF beats word counts) was supported, narrowly; H2 (the three feature groups help) was not supported; H3 (the LLM beats the best logistic regression) was supported, with an F1 of 0.795 against 0.598, although the LLM still misses a third of the conspiracy articles.
 
-The results allow a clear statement about this corpus and its website labels: a cheap language model recovered the type of website better than word statistics, possibly helped by what it already knows about websites, and hand-made features did not close the gap. They do not show that any method recognises conspiracy content, because the labels describe websites, and they rest on six conspiracy websites in the test set. No method finds enough conspiracy articles to be used alone for automatic flagging. Further work should test other topics and more websites. The team's hand check supports the automatic stance coding on the question that matters, whether an article endorses a conspiracy claim, but people often disagree on finer stances.
+**Main lesson.** We kept the split by website, the standard way to test generalisation, although it was demanding for a data set with only 37 conspiracy websites; it showed that one website whose texts read like ordinary news can pull every model down. Low test scores make a weaker headline but are the study's most useful result: evaluated honestly, classifying texts by website labels is limited first by the labels and the number of websites, and only then by the method.
+
+**Implication.** A cheap language model recovered the type of website best, possibly helped by what it already knows about websites, and hand-made features did not close the gap. No method finds enough conspiracy articles to flag them automatically; classification can support human review, not replace it.
+
+**Further work.** More websites and topics, labels for single articles instead of websites, results repeated over several splits, and a test of what the language model already knows about the websites.
 
 ## Check yourself
 

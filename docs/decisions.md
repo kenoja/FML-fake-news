@@ -144,7 +144,56 @@ read from the data or from `results/`.
 - **Other items by judgement.** Item 4: three-site concentration counted in the data stage and quoted from `results/`.
   Item 5: 37 websites for the analysed data, 39 only for the raw subset.
 
+## Cycle 5 (final report, 30 Oct 2026)
+
+- **N-gram threshold (O1).** Phrases keep the minimum of 3 training articles, single words 2. Checked on validation
+  only (`tfidf_features.ngram_threshold_check`): with a minimum of 2 the planned model fills the 200,000-column cap
+  and its validation F1 falls from 0.896 to 0.891. Decided with the owner: no new test run, the report explains the
+  difference.
+- **Narrative (O3-O6).** Every report chapter now uses the same pattern: method chapters Idea / Setup / Validation
+  result / What it learned; data, split, limitations and conclusion use short labelled paragraphs. The test drop is
+  attributed to Website 4 as the main single cause: it explains almost all of the LLM's drop (0.971 without it,
+  0.987 on validation), and the largest part, not all, of the logistic regressions' drop.
+- **Overview table.** The "Reads" column was removed: it was the same in every row and the text says it once.
+- **Environment.** The unchosen word-count setting C = 100 gives a validation F1 of 0.791 on the 2-CPU machine used
+  for this run and 0.797 in the agent's 4-CPU environment. Reported numbers come from the committed run; no chosen
+  setting or test result changes.
+- **Report length.** 4,889 words by the plain count (limit 5,000, aim 4,900).
+- **Review (cycle 5).** A fresh reviewer session scored 8 to 10 on every criterion. Implemented: separate paragraph
+  for what was left out, dates only in the limitations, compact ablation table, plain error headline, uncited
+  references (Shu et al., Swami et al.) removed, distinct lesson per cycle in the AI-use log. Not changed: the licence
+  stays open until the owner confirms it; README and code were not part of this change.
+- **Drop chart.** A new figure (`f1_validation_test.png`) shows validation F1, test F1 and test F1 without Website 4;
+  in the report it replaces the validation-vs-test table, which gained a column for the score without Website 4.
+
+- **Numbers (31 Oct).** Every score column in `results/tables/` is written with exactly three decimals by
+  `results.three_decimals` (0.480, 1.000); p-values use three decimals too (`p < 0.001` replaces `< 0.0001`). The PDF
+  follows APA 7 (owner's choice): `build_pdf.apa_numbers` drops the leading zero of values that cannot exceed 1
+  (.721, p = .029); C settings and amounts keep it. The website keeps 0.721, which beginners read more easily. The
+  existing tables and `metrics.json` were rewritten with the same code instead of a full rerun, because a rerun in
+  this container also redraws the figures with other fonts; the values are unchanged (checked with `git diff`).
+- **Website 4 (31 Oct).** The corpus authors flag a conspiracy article as typical when its wording is unusually
+  similar to the rest of the conspiracy corpus (more than one standard deviation above the mean). New in
+  `pipeline.typical_articles`: none of Website 4's 44 test articles is flagged, against 0.214 of the training
+  conspiracy articles, and every model finds all 12 flagged test articles. This supports, but is itself word-based
+  and so does not prove, that Website 4's texts read as mainstream. A spot check of five of its articles by the owner
+  against the stance coder is open (see below).
+- **Limitations (31 Oct).** Stated explicitly: articles are treated as independent although articles from one website
+  are alike (intervals too narrow, p-values too small); the corpus authors' own check (15% of conspiracy and 8% of
+  mainstream documents did not fit their label); the LLM probably saw the public corpus and websites in training,
+  which cannot be checked because the training data are not published. A probe (asking the model to name an
+  article's website) was not run: it would need API calls outside the three allowed prompt variants.
+- **Tables in the PDF.** Tables no longer break across pages (a `[H]` table instead of a longtable, which repeated its
+  header at a page break), and columns get a minimum width so that headers wrap at most once.
+- **Report length.** 4,897 words after the additions; repeated sentences were cut in Introduction, Test scores,
+  Hypotheses, the LLM chapter and the Conclusion.
+
 ## Needs a team decision
+
+- **Website 4 spot check (owner, done 31 Oct; resolved).** Five Website 4 articles that the LLM missed, read in full against the
+  stance coder. Same verdict on "endorses a claim, yes or no" in 4 of 5; the owner judged one article (C0623c) to
+  endorse a claim where the coder said it reports one neutrally. Stated in the report's limitations: Website 4's share
+  of label problems may be slightly overstated.
 
 - **[open] Dataset licence.** Owner: repository owner. The OSF page could not be read automatically and no file in
   the repository states the licence. Record the licence text and date here. Conservative reading until then: texts

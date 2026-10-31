@@ -9,3 +9,4 @@ data/raw/
 # built site is published by the Pages workflow, not committed
 site/
 results/cache/
+reports/latex/build/

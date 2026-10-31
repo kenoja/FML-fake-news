@@ -34,9 +34,9 @@ One short piece of code shows how saved answers stay trustworthy. The key joins 
 
 ## Report
 
-**Tools and set-up.** The code, tests, tables, figures and drafts of this report and of the course website were produced with Claude Code, an AI coding assistant, running as a loop of three Claude Sonnet 5.5 roles: a planner that split the team's requirements into tasks, an implementer, and a reviewer that scored the result against a checklist in a fresh session. Claude Haiku 5.5 was the classifier under test, and Claude Sonnet 5.5 coded the stance of disputed articles.
+**Tools and set-up.** The code, tests, tables, figures and drafts of this report and of the course website were produced with Claude Code (Anthropic, 2026a), an AI coding assistant, running as a loop of three Claude Sonnet 5.5 roles: a planner that split the team's requirements into tasks, an implementer, and a reviewer that scored the result against a checklist in a fresh session. Claude Haiku 5.5 was the classifier under test, and Claude Sonnet 5.5 coded the stance of disputed articles.
 
-**How the team steered the work.** The work ran in four cycles. After each cycle team members read the website, which shows the code that ran next to its output, and their comments became the next cycle's requirements. The team decided the full articles, the four methods, no emotion features and cleaning before any model.
+**How the team steered the work.** The work ran in five cycles. After each cycle team members read the website, which shows the code that ran next to its output, and their comments became the next cycle's requirements; the last cycle, on the report's structure, was done with a separate Claude session (Claude Opus 5.5; Anthropic, 2026c) working with the project owner. The team decided the full articles, the four methods, no emotion features and cleaning before any model, and coded the hand check itself.
 
 **How the output was checked.** Automated tests fail when a rule is broken, for example when a model learns from more than the training articles, the split changes, the test set is used outside the final scoring, or a number in this report is missing from the result files. Judgements that tests cannot make, such as whether the automatic stance coding is right, are checked by people through the hand check described in the error analysis.
 

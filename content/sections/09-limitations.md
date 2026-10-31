@@ -35,15 +35,17 @@ This section describes limits of the study, so it has no analysis of its own. Th
 
 ## Report
 
-**Labels.** The label describes the publishing website, not the content, so a prediction that disagrees with it is not necessarily an error.
+**Labels describe websites.** Every article inherits its website's rating, and in the corpus authors' blind check of 60 documents per class, 15% of the conspiracy and 8% of the mainstream documents did not fit their label (Miani et al., 2022). Our scores therefore measure how well a method recovers the type of website, not whether a text contains conspiracy claims; the error analysis and the hand check estimate how many errors are label problems but cannot remove them.
 
-**Few websites.** The number of websites is small. The validation and test sets each contain only six conspiracy websites, and in the test set one of them supplies 44 of the 96 conspiracy articles. The reading of Website 4 as partisan political news rests on article titles only, not on a reading of the full texts.
+**Few websites, and articles that are not independent.** After cleaning there are 37 conspiracy websites, only 6 each in validation and test. The bootstrap intervals and McNemar's test treat every article as an independent observation, but articles from one website are alike, so the intervals are too narrow and the p-values too small: H1 (p = 0.029) is fragile, while the gap behind H3 is large enough to stand. All results rest on one split.
 
-**Prior knowledge of the LLM.** The LLM was trained on large amounts of web text and may know the articles or the reputation of their websites, which the trained models cannot use. We could not measure this. The stance coder is also a Claude model and may share the LLM's blind spots. All four methods read only the first 3,000 words of each article, and 30 validation articles were longer and were cut.
+**The data set and its cleaning.** The corpus was collected by keyword search: the topic filter and the 0.9 copy threshold are judgement calls, habits such as "posted" survive the removal of site clues, and publication dates were not checked. About 30% of our articles are conspiracy articles; where they are rarer, as on most of the web, the same models would raise more false alarms per correct flag. Our reading of Website 4 rests on article titles and on the stance coder, not on a full reading of its texts.
 
-**Choices and lexicon.** Thresholds such as the 0.9 similarity for copies could be set differently, the certainty and doubt features ignore negation and rest on four short word lists (47 entries), and website style can still serve as a shortcut.
+**The language model.** Anthropic does not publish its training data, so we cannot check whether the LLM saw these articles or knows the reputation of their websites; because the corpus and the websites are public and older than the model, it probably did. That it missed 30 of the 44 articles of Website 4, a conspiracy-rated website, suggests that it judged the text rather than recalling the source. Its answers are reproducible only through the stored answers (0.992 alike in a repeated run). The stance coder is also a Claude model and may share its blind spots.
 
-**One topic, one split.** All results concern one topic, one corpus and one split. The test set was also used during development: seven earlier model versions, none of them reported here, were scored on it, and on 25 October the team returned to the planned all-groups feature model after seeing validation results and those earlier test runs. Every final model reported here was chosen on validation alone and scored on the test set once.
+**Use of the test set.** Seven earlier model versions, none reported here, were scored on the test set during development, and on 25 October the team returned to the feature model planned on 16 October after seeing validation results and those test runs. Every reported model was chosen on validation alone and scored on test once.
+
+**Scope.** One topic, one English corpus, the first 3,000 words of each article (30 validation articles were cut), and one kind of trained classifier.
 
 ## Check yourself
 

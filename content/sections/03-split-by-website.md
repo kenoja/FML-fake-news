@@ -47,11 +47,13 @@ This one builds the split file and refuses to overwrite an existing one.
 
 ## Report
 
-The documents were divided into a training set, a validation set and a test set with target shares of 70%, 15% and 15%. The division was made by website, so that no website appears in more than one set and no model is rewarded for recognising a website it has seen: articles from one website resemble each other, so a random split would let the model recognise the website instead of the stance. The division was stratified by label: conspiracy and mainstream websites were assigned separately, from the largest to the smallest website, to the set that was furthest short of its target share, with a fixed random seed for ties. The assignment was made once and never changed.
+**Why by website.** Articles from one website resemble each other in topics, phrasing and layout. If a website appeared in both the training and the test set, a model could score well by recognising the website instead of the kind of text, a form of leakage (Kaufman et al., 2012); features that look strong within known sources often transfer poorly to new ones (Pérez-Rosas et al., 2018). Holding out whole sources is the standard way to test whether a classifier generalises, so we kept this demanding design throughout, even where it cost us scores.
+
+**How.** The documents were divided into training, validation and test sets with target shares of 70%, 15% and 15%, so that no website appears in more than one set. The division was stratified by label: conspiracy and mainstream websites were assigned separately, from the largest to the smallest website, to the set furthest short of its target share, with a fixed random seed for ties. The assignment was made once and never changed.
 
 <!-- output: results/tables/split_summary.csv | Websites and documents per set and class, after cleaning -->
 
-Because websites cannot be divided, the shares only approximate the targets. After cleaning, the training, validation and test sets contain 25, 6 and 6 conspiracy websites and 54, 13 and 12 mainstream websites.
+**Consequence.** The sets are small in websites rather than in articles: validation and test contain only 6 conspiracy websites each. A single large website can therefore shape a whole score, which is exactly what happens in the test set.
 
 ## Check yourself
 

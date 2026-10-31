@@ -44,7 +44,6 @@ def rough_time(seconds: float) -> str:
 def methods_table(info: dict, metrics: dict, usage: dict, cfg: dict, lr_cfg: dict) -> pd.DataFrame:
     """One row per method, filled from run_info.json, metrics.json and the answer cache."""
     seconds = info["stage_seconds"]
-    reads = f"first {cfg['max_input_words']:,} words of each article"
     lr_settings = (f"C from {lr_cfg['c_grid']}, class weight {lr_cfg['class_weight']}, "
                    f"chosen on validation")
     lr_cost = "free (runs locally)"
@@ -61,7 +60,6 @@ def methods_table(info: dict, metrics: dict, usage: dict, cfg: dict, lr_cfg: dic
          f"about ${llm_cost_per_1000(usage, cfg):.2f} per 1,000 articles"),
     ]
     table = pd.DataFrame(rows, columns=["Method", "Input", "Trained on our data", "Settings", "Runtime", "Cost"])
-    table.insert(2, "Reads", reads)
     return table
 
 

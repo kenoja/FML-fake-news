@@ -328,6 +328,18 @@ def ablation_variants():
             "lr_nongram_both": variant("+ certainty words and style (no n-grams)", dict(plain, dense_groups=["epistemic", "style"]))}
 
 
+def ngram_threshold_check(train: pd.DataFrame, valid: pd.DataFrame) -> dict:
+    """The all-groups model once more, with phrases kept from 2 training articles instead of 3 (validation only)."""
+    from .ablation import run_ablation
+
+    planned = ablation_variants()[LR_EXTENDED_ID]
+    looser = variant("+ all three, phrases from 2 articles", dict(planned["features"], min_df=2))
+    table = run_ablation(train, valid, {"lr_extended_min2": looser}, reference="lr_extended_min2")
+    return {"ngram_min_df": 2, "columns": table.attrs["n_columns"]["lr_extended_min2"],
+            "validation_f1": float(table["f1"].iloc[0]),
+            "column_cap": project_config()["features"]["ngram_max_features"]}
+
+
 def variant(label, features):
     """One model to compare: a name for the table and its feature settings."""
     return {"label": label, "features": features}
@@ -413,7 +425,8 @@ def ablation() -> dict:
               "final_model": LR_EXTENDED_ID, "n_columns_full": table.attrs["n_columns"][LR_EXTENDED_ID],
               "validation": models[LR_EXTENDED_ID], "models": models,
               "coverage": coverage.to_dict("records"),
-              "lexicon_sizes": lexicon_sizes}
+              "lexicon_sizes": lexicon_sizes,
+              "ngram_threshold_check": ngram_threshold_check(train, valid)}   # why phrases need 3 articles
     write_metrics("tfidf_features", round_floats(values, 4))
     return values
 
@@ -692,8 +705,22 @@ def write_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], websites: 
     return per_website
 
 
-def validation_vs_test(metrics: dict, table: pd.DataFrame) -> pd.DataFrame:
-    """Validation F1 and test F1 of the four final models side by side."""
+def typical_articles(y: np.ndarray, preds: dict[str, np.ndarray], websites: np.ndarray, doc_ids: pd.Series) -> dict:
+    """Conspiracy articles that the corpus authors flag as typical in wording, and how many of those each model finds."""
+    frame = analysis_frame().merge(load_split()[["doc_id", "split"]], on="doc_id")
+    conspiracy = frame[frame["label"]]
+    typical = conspiracy["conspiracy_representative"].astype(bool)            # the corpus authors' own flag
+    in_site = (conspiracy["website"] == large_site(y, websites)).to_numpy()    # the largest test website
+    flag = doc_ids.map(frame.set_index("doc_id")["conspiracy_representative"]).astype(bool).to_numpy()
+    test_typical = y & flag                                                   # typical conspiracy test articles
+    return {"train_share": float(typical[conspiracy["split"].to_numpy() == "train"].mean()),
+            "large_site_typical": int(typical[in_site].sum()), "large_site_articles": int(in_site.sum()),
+            "test_typical": int(test_typical.sum()),
+            "test_typical_found": {m: int((preds[m] & test_typical).sum()) for m in preds}}
+
+
+def validation_vs_test(metrics: dict, table: pd.DataFrame, without: dict) -> pd.DataFrame:
+    """Validation F1, test F1 and test F1 without the largest conspiracy website, for the four final models."""
     validation = {"final2_word_counts": metrics["word_counts"]["validation"]["f1"],
                   "final2_tfidf": metrics["tfidf"]["validation"]["f1"],
                   "final2_tfidf_features": metrics["tfidf_features"]["validation"]["f1"],
@@ -703,8 +730,31 @@ def validation_vs_test(metrics: dict, table: pd.DataFrame) -> pd.DataFrame:
         if record["model"] in validation:                      # the baseline has no validation run
             rows.append({"Model": MODEL_NAMES[record["model"]],
                          "Validation F1": f"{validation[record['model']]:.3f}",    # three decimals in every cell
-                         "Test F1": f"{record['f1']:.3f}"})
+                         "Test F1": f"{record['f1']:.3f}",
+                         f"Test F1 without {without['site']}": f"{without[record['model']]:.3f}"})
     return pd.DataFrame(rows)
+
+
+def plot_f1_drop(drop: pd.DataFrame):
+    """One row per model: F1 on validation, on test, and on test without the largest conspiracy website."""
+    without_column = drop.columns[3]                          # "Test F1 without Website 4"
+    rows = drop.iloc[::-1].reset_index(drop=True)             # first model on top
+    fig, ax = plt.subplots(figsize=(8, 3.6))
+    for i, row in rows.iterrows():
+        valid, test, without = float(row["Validation F1"]), float(row["Test F1"]), float(row[without_column])
+        ax.plot([test, valid], [i, i], color="#d9d9d9", linewidth=4, zorder=1)                  # the drop
+        ax.scatter(valid, i, marker="D", s=60, color="#8a8a8a", zorder=2, label="Validation" if i == 0 else None)
+        ax.scatter(without, i, s=80, facecolors="none", edgecolors="#3b5b8c", linewidths=2, zorder=3,
+                   label=without_column if i == 0 else None)
+        ax.scatter(test, i, s=60, color="#222222", zorder=4, label="Test" if i == 0 else None)
+    ax.set_yticks(rows.index, rows["Model"])
+    ax.set_xlim(0.5, 1.0)
+    ax.set_xlabel("F1 for the conspiracy class (axis starts at 0.5)")
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3, frameon=False)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    fig.tight_layout()
+    return fig
 
 
 def comparison_stage() -> dict:
@@ -718,7 +768,10 @@ def comparison_stage() -> dict:
     best_lr = best_final_lr(metrics)
     mcnemar = run_mcnemar_pairs(y, preds, best_lr)
     write_table("mcnemar_tests", mcnemar_table(mcnemar))
-    write_table("validation_vs_test", validation_vs_test(metrics, table))   # where the scores drop
+    without = f1_without_site(y, preds, websites, large_site(y, websites))
+    drop = validation_vs_test(metrics, table, without)                        # where the scores drop
+    write_table("validation_vs_test", drop)
+    savefig(plot_f1_drop(drop), "f1_validation_test")
     test_counts = {r["model"]: {k: int(r[k]) for k in ("tp", "fn", "fp", "tn")} for r in table.to_dict("records")}
     savefig(plot_validation_vs_test({"TF-IDF": metrics["tfidf"]["confusion"], "LLM": metrics["llm"]["validation"]["confusion"]},
                                     {"TF-IDF": test_counts[TFIDF_FINAL], "LLM": test_counts[LLM_ID]}),
@@ -727,7 +780,8 @@ def comparison_stage() -> dict:
               "bootstrap": {"resamples": N_BOOTSTRAP, "seed": BOOTSTRAP_SEED, "level": 0.95},
               "baseline": {"model": BASELINE_ID, "accuracy": float((~y).mean())},
               "per_website": per_website.to_dict("records"),
-              "f1_without_large_site": f1_without_site(y, preds, websites, large_site(y, websites)),
+              "f1_without_large_site": without,
+              "typical_articles": typical_articles(y, preds, websites, llm_all[llm_all["pass"] == 1]["doc_id"]),
               "table": table.to_dict("records"), "mcnemar": mcnemar,
               "llm_stability": metrics["llm"]["repeat_agreement"]}
     write_metrics("comparison", round_floats(values, 4))

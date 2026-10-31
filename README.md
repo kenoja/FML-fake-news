@@ -27,10 +27,11 @@ export LLM_CLASSIFIER_API_KEY=...          # 2. only if results/llm_cache.jsonl 
 fml run-all                                # 3. rebuilds results/ (no API calls with the caches)
 python -m pytest -q                        # 4. tests; those marked needs_data skip without the data repo
 python -m sitegen build                    # 5. rebuilds reports/report.md and the site from content/
+PYTHONPATH=src python reports/latex/build_pdf.py   # 6. reports/report.pdf (needs XeLaTeX, pandoc, the Inter font)
 ```
 
-Expected runtimes: `fml run-all` must finish in under 8 minutes on a 2-CPU machine (measured: 159 seconds,
-about 2.7 minutes, on a 4-CPU machine, see `results/run_info.json`); the full test suite must finish in
+Expected runtimes: `fml run-all` must finish in under 8 minutes on a 2-CPU machine (measured: about
+3.5 to 4 minutes on a 2-CPU machine, see `results/run_info.json`); the full test suite must finish in
 under 3 minutes.
 
 The exact package versions are pinned in `requirements-lock.txt`. How we checked that two runs give
