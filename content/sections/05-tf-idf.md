@@ -42,7 +42,7 @@ The analysis function is shared, so both analyses run in exactly the same way.
 
 ## Report
 
-**Idea.** TF-IDF keeps the bag of words but weights each count by how rare the word is across the training articles (Salton and Buckley, 1988; Manning, Raghavan and Schütze, 2008): everyday words such as "said" count little, rare and telling words count more. H1 expects this to beat plain counts.
+**Idea.** TF-IDF keeps the bag of words but weights each count by how rare the word is across the training articles (Manning et al., 2008; Salton & Buckley, 1988): everyday words such as "said" count little, rare and telling words count more. H1 expects this to beat plain counts.
 
 **Setup.** As for word counts. In addition, counts are damped with a logarithm, each article vector is scaled to unit length, and the rarity weights are computed on the training articles only.
 

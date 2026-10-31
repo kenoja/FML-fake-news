@@ -108,7 +108,7 @@ def figure_links(md: str) -> str:
 
 
 def pandoc(md: str) -> str:
-    result = subprocess.run(["pandoc", "-f", "markdown", "-t", "latex", "--shift-heading-level-by=-1", "--wrap=none"],
+    result = subprocess.run(["pandoc", "-f", "markdown+autolink_bare_uris", "-t", "latex", "--shift-heading-level-by=-1", "--wrap=none"],
                             input=md, capture_output=True, text=True, check=True)
     return result.stdout
 

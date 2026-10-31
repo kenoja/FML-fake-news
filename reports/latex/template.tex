@@ -60,12 +60,8 @@
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\sffamily\footnotesize\color{slate}$short-title$}
-\fancyhead[R]{\sffamily\footnotesize\color{slate}\nouppercase{\leftmark}}
 \fancyfoot[R]{\sffamily\footnotesize\color{navy}\thepage}
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\headrule}{{\color{rule}\hrule width\headwidth height\headrulewidth}}
-\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+\renewcommand{\headrulewidth}{0pt}
 
 \usepackage{enumitem}
 \setlist{itemsep=2pt, topsep=4pt}
@@ -77,6 +73,7 @@
 \usepackage[hidelinks]{hyperref}
 \hypersetup{colorlinks=true, linkcolor=navy, urlcolor=mainstream, citecolor=navy}
 \usepackage{xurl}
+\urlstyle{same}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt plus 2pt}
 \providecommand{\tightlist}{\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}}

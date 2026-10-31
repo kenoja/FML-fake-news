@@ -105,7 +105,7 @@ Finally the rule is applied to each member answer and to the coder's answer for 
 
 ### Test scores
 
-All four final models were scored once on the same 410 test articles (96 conspiracy) from websites that no model had seen. The 95% bootstrap intervals (Efron and Tibshirani, 1993) treat articles as independent, although articles from one website are alike, so the real uncertainty is larger. Always answering "mainstream" reaches an accuracy of 0.766 and finds no conspiracy article.
+All four final models were scored once on the same 410 test articles (96 conspiracy) from websites that no model had seen. The 95% bootstrap intervals (Efron & Tibshirani, 1993) treat articles as independent, although articles from one website are alike, so the real uncertainty is larger. Always answering "mainstream" reaches an accuracy of 0.766 and finds no conspiracy article.
 
 <!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals -->
 

@@ -8,9 +8,9 @@ We asked whether the text of a full 9/11 article reveals whether it was publishe
 
 ### Introduction
 
-The attacks of 11 September 2001 are a persistent subject of conspiracy theories: claims that they were an "inside job", a "controlled demolition" or a "false flag" are actively argued for online (Wood & Douglas, 2013). In a 2006 survey, 36 percent of Americans found it credible that federal officials helped the attacks happen or deliberately failed to stop them (Stempel, Hargrove & Stempel, 2007). This study asks whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website, using machine-learning methods for text classification.
+The attacks of 11 September 2001 are a persistent subject of conspiracy theories: claims that they were an "inside job", a "controlled demolition" or a "false flag" are actively argued for online (Wood & Douglas, 2013). In a 2006 survey, 36 percent of Americans found it credible that federal officials helped the attacks happen or deliberately failed to stop them (Stempel et al., 2007). This study asks whether the text of a full 9/11 article reveals if it was published on a conspiracy-oriented or a mainstream website, using machine-learning methods for text classification.
 
-We compare four methods that form a ladder from simple to rich: logistic regression on word counts, the plainest baseline; logistic regression on TF-IDF weights, the standard step beyond counting (Salton & Buckley, 1988; Manning, Raghavan & Schütze, 2008); logistic regression on TF-IDF plus three groups of hand-made features; and a low-cost LLM used without training (zero-shot). The four method chapters follow the same pattern: the idea and what we expected, the setup, the result on validation, and what the model learned. We test three hypotheses:
+We compare four methods that form a ladder from simple to rich: logistic regression on word counts, the plainest baseline; logistic regression on TF-IDF weights, the standard step beyond counting (Manning et al., 2008; Salton & Buckley, 1988); logistic regression on TF-IDF plus three groups of hand-made features; and a low-cost LLM used without training (zero-shot). The four method chapters follow the same pattern: the idea and what we expected, the setup, the result on validation, and what the model learned. We test three hypotheses:
 
 - **H1.** TF-IDF reaches a higher F1 than word counts, because distinctive words carry more information than common ones.
 - **H2.** TF-IDF plus the three feature groups reaches a higher F1 than TF-IDF alone, because these features capture how conspiracy texts argue.
@@ -39,7 +39,7 @@ Most articles are mainstream, so accuracy would reward a model that never finds 
 
 ## Data and cleaning
 
-**Source.** The study uses the 9/11 subset of the LOCO corpus (Miani, Hills & Bangerter, 2022), a collection of web pages from websites rated as conspiracy-oriented or mainstream: 3,146 documents from 39 conspiracy and 79 mainstream websites. Each document carries the label of its website, so the label describes the publisher and not the single text; in the corpus authors' own blind check of 60 documents per subcorpus, 85% of the conspiracy and 92% of the mainstream documents fitted their label. The texts belong to their publishers and no licence terms could be confirmed, so the data stay in a private repository and this report shows only counts and short excerpts. The work used Python 3.11.17 with pandas, scikit-learn 1.9.1 (Pedregosa et al., 2011) and the Anthropic client library 1.15.0.
+**Source.** The study uses the 9/11 subset of the LOCO corpus (Miani et al., 2022), a collection of web pages from websites rated as conspiracy-oriented or mainstream: 3,146 documents from 39 conspiracy and 79 mainstream websites. Each document carries the label of its website, so the label describes the publisher and not the single text; in the corpus authors' own blind check of 60 documents per subcorpus, 85% of the conspiracy and 92% of the mainstream documents fitted their label. The texts belong to their publishers and no licence terms could be confirmed, so the data stay in a private repository and this report shows only counts and short excerpts. The work used Python 3.11.17 with pandas, scikit-learn 1.9.1 (Pedregosa et al., 2011) and the Anthropic client library 1.15.0.
 
 **Cleaning.** A classifier takes the easiest signal that separates the classes; this shortcut learning (Geirhos et al., 2020), a form of target leakage (Kaufman et al., 2012), arises when site names, boilerplate, topics or copies reveal the label. All cleaning therefore came before any model. First, documents were kept only if their title or text contains at least one of ten search terms or a spelling variant (9/11, nine eleven, September 11, Twin Towers, World Trade Center, WTC, Pentagon, al-Qaeda, bin Laden, Ground Zero): 538 documents were removed, because a model could otherwise learn topics instead of kinds of websites. Second, near-duplicates (a cosine similarity of their TF-IDF vectors of at least 0.9) were removed, so that no model meets a copy of a test article in training; the copy in the earlier set (training, then validation, then test) was kept. Third, web addresses, e-mail addresses, website names and lines repeated across one website's documents were deleted; this edited 2,498 texts and removed none.
 
@@ -82,9 +82,9 @@ Most articles are mainstream, so accuracy would reward a model that never finds 
 
 ## Word counts
 
-**Idea.** The first method is the plainest baseline. Each article becomes a bag of words: the number of times each word occurs, ignoring order. Logistic regression (Hastie, Tibshirani and Friedman, 2009) gives each word a weight, adds the weights of an article's words and turns the sum into a probability that the article comes from a conspiracy website; above 0.5 it predicts conspiracy. We expected it to beat always guessing mainstream, because the two kinds of website use different words.
+**Idea.** The first method is the plainest baseline. Each article becomes a bag of words: the number of times each word occurs, ignoring order. Logistic regression (Hastie et al., 2009) gives each word a weight, adds the weights of an article's words and turns the sum into a probability that the article comes from a conspiracy website; above 0.5 it predicts conspiracy. We expected it to beat always guessing mainstream, because the two kinds of website use different words.
 
-**Setup.** The same setup holds for all three logistic regressions. The vocabulary and every other learned quantity come from the training articles only, and a word must occur in at least two of them (23,635 words). Class weights are balanced, because conspiracy articles are the smaller group. The regularisation strength C, which pulls the weights towards zero and so keeps the model from memorising single articles (Hastie, Tibshirani and Friedman, 2009, ch. 4), was chosen from {0.01, 0.1, 1, 10, 100} by validation F1.
+**Setup.** The same setup holds for all three logistic regressions. The vocabulary and every other learned quantity come from the training articles only, and a word must occur in at least two of them (23,635 words). Class weights are balanced, because conspiracy articles are the smaller group. The regularisation strength C, which pulls the weights towards zero and so keeps the model from memorising single articles (Hastie et al., 2009, Chapter 4), was chosen from {0.01, 0.1, 1, 10, 100} by validation F1.
 
 **Validation result.** The strongest regularisation, C = 0.01, scored best: precision 0.828, recall 0.906 and F1 0.865. The model found 106 of the 117 conspiracy articles and called 22 of the 259 mainstream articles conspiracy. Weaker regularisation scored lower (F1 0.791 at C = 100), the typical sign of overfitting.
 
@@ -98,7 +98,7 @@ Most articles are mainstream, so accuracy would reward a model that never finds 
 
 ## TF-IDF
 
-**Idea.** TF-IDF keeps the bag of words but weights each count by how rare the word is across the training articles (Salton and Buckley, 1988; Manning, Raghavan and Schütze, 2008): everyday words such as "said" count little, rare and telling words count more. H1 expects this to beat plain counts.
+**Idea.** TF-IDF keeps the bag of words but weights each count by how rare the word is across the training articles (Manning et al., 2008; Salton & Buckley, 1988): everyday words such as "said" count little, rare and telling words count more. H1 expects this to beat plain counts.
 
 **Setup.** As for word counts. In addition, counts are damped with a logarithm, each article vector is scaled to unit length, and the rarity weights are computed on the training articles only.
 
@@ -114,7 +114,7 @@ Most articles are mainstream, so accuracy would reward a model that never finds 
 
 ## TF-IDF plus extra features
 
-**Idea.** The third method tests H2: whether hand-made features add what single words miss. Three groups were planned before any result. N-grams are phrases of one to three words such as "no evidence of", a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short lists of doubt, certainty, hidden-truth and debunking words, following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020; but see Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and word variety (MATTR), which separated fake from real news in earlier work (Horne and Adali, 2017) but transfer poorly across domains (Pérez-Rosas et al., 2018).
+**Idea.** The third method tests H2: whether hand-made features add what single words miss. Three groups were planned before any result. N-grams are phrases of one to three words such as "no evidence of", a strong baseline for text classification (Wang & Manning, 2012). Epistemic markers are counts per 1,000 words of four short lists of doubt, certainty, hidden-truth and debunking words, following work that ties conspiracy discourse to certainty and concealment (Islam et al., 2020; Marini & Jezek, 2024; but see Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and word variety (MATTR), which separated fake from real news in earlier work (Horne & Adalı, 2017) but transfer poorly across domains (Pérez-Rosas et al., 2018).
 
 **Setup.** As for TF-IDF; the numeric groups are standardised with training statistics only. Phrases must occur in at least three training articles, single words in at least two, because phrases are far more numerous: with two, the planned model fills the cap of 200,000 phrase columns and its validation F1 falls to 0.891. To explain the result, an ablation compares six models on validation: TF-IDF alone, with each group, with all three, and with certainty words and style but no n-grams.
 
@@ -167,7 +167,7 @@ Most articles are mainstream, so accuracy would reward a model that never finds 
 
 ### Test scores
 
-All four final models were scored once on the same 410 test articles (96 conspiracy) from websites that no model had seen. The 95% bootstrap intervals (Efron and Tibshirani, 1993) treat articles as independent, although articles from one website are alike, so the real uncertainty is larger. Always answering "mainstream" reaches an accuracy of 0.766 and finds no conspiracy article.
+All four final models were scored once on the same 410 test articles (96 conspiracy) from websites that no model had seen. The 95% bootstrap intervals (Efron & Tibshirani, 1993) treat articles as independent, although articles from one website are alike, so the real uncertainty is larger. Always answering "mainstream" reaches an accuracy of 0.766 and finds no conspiracy article.
 
 
 
@@ -300,21 +300,21 @@ To check the coder, the team coded 40 validation articles blind, each read by at
 
 ## References
 
-- Dietterich, T. G. (1998). Approximate statistical tests for comparing supervised classification learning algorithms. *Neural Computation, 10*(7), 1895–1923.
+- Dietterich, T. G. (1998). Approximate statistical tests for comparing supervised classification learning algorithms. *Neural Computation*, *10*(7), 1895–1923. https://doi.org/10.1162/089976698300017197
 - Efron, B., & Tibshirani, R. J. (1993). *An introduction to the bootstrap*. Chapman & Hall.
-- Fong, A., Roozenbeek, J., Goldwert, D., Rathje, S., & van der Linden, S. (2021). The language of conspiracy: A psychological analysis of speech used by conspiracy theorists and their followers on Twitter. *Group Processes & Intergroup Relations, 24*(4). https://journals.sagepub.com/doi/10.1177/1368430220987596
-- Geirhos, R., Jacobsen, J.-H., Michaelis, C., Zemel, R., Brendel, W., Bethge, M., & Wichmann, F. A. (2020). Shortcut learning in deep neural networks. *Nature Machine Intelligence, 2*, 665–673.
-- Hastie, T., Tibshirani, R., & Friedman, J. (2009). *The elements of statistical learning* (2nd ed.). Springer.
-- Horne, B., & Adalı, S. (2017). This just in: Fake news packs a lot in title, uses simpler, repetitive content in text body, more similar to satire than real news. *ICWSM workshops*. https://arxiv.org/abs/1703.09398
-- Islam, J., Xiao, L., & Mercer, R. (2020). A lexicon-based approach for detecting hedges in informal text. *LREC*. https://aclanthology.org/2020.lrec-1.380
-- Kaufman, S., Rosset, S., Perlich, C., & Stitelman, O. (2012). Leakage in data mining: Formulation, detection, and avoidance. *ACM Transactions on Knowledge Discovery from Data, 6*(4). https://doi.org/10.1145/2382577.2382579
-- Manning, C. D., Raghavan, P., & Schütze, H. (2008). *Introduction to information retrieval*. Cambridge University Press.
-- Marini, C., & Jezek, E. (2024). What to annotate: Retrieving lexical markers of conspiracy discourse from an Italian-English corpus of Telegram data. *ISA-20 Workshop*. https://aclanthology.org/2024.isa-1.6
-- McNemar, Q. (1947). Note on the sampling error of the difference between correlated proportions or percentages. *Psychometrika, 12*(2), 153–157.
-- Miani, A., Hills, T., & Bangerter, A. (2022). LOCO: The 88-million-word language of conspiracy corpus. *Behavior Research Methods, 54*, 1794–1817. https://doi.org/10.3758/s13428-021-01698-z
-- Pedregosa, F., et al. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research, 12*, 2825–2830.
-- Pérez-Rosas, V., Kleinberg, B., Lefevre, A., & Mihalcea, R. (2018). Automatic detection of fake news. *COLING*. https://arxiv.org/abs/1708.07104
-- Salton, G., & Buckley, C. (1988). Term-weighting approaches in automatic text retrieval. *Information Processing & Management, 24*(5), 513–523.
-- Stempel, C., Hargrove, T., & Stempel, G. H., III (2007). Media use, social structure, and belief in 9/11 conspiracy theories. *Journalism & Mass Communication Quarterly, 84*(2). https://doi.org/10.1177/107769900708400210
-- Wang, S., & Manning, C. (2012). Baselines and bigrams: Simple, good sentiment and topic classification. *ACL*. https://aclanthology.org/P12-2018
-- Wood, M. J., & Douglas, K. M. (2013). "What about building 7?" A social psychological study of online discussion of 9/11 conspiracy theories. *Frontiers in Psychology, 4*, 409. https://doi.org/10.3389/fpsyg.2013.00409
+- Fong, A., Roozenbeek, J., Goldwert, D., Rathje, S., & van der Linden, S. (2021). The language of conspiracy: A psychological analysis of speech used by conspiracy theorists and their followers on Twitter. *Group Processes & Intergroup Relations*, *24*(4), 606–623. https://doi.org/10.1177/1368430220987596
+- Geirhos, R., Jacobsen, J.-H., Michaelis, C., Zemel, R., Brendel, W., Bethge, M., & Wichmann, F. A. (2020). Shortcut learning in deep neural networks. *Nature Machine Intelligence*, *2*(11), 665–673. https://doi.org/10.1038/s42256-020-00257-z
+- Hastie, T., Tibshirani, R., & Friedman, J. (2009). *The elements of statistical learning: Data mining, inference, and prediction* (2nd ed.). Springer. https://doi.org/10.1007/978-0-387-84858-7
+- Horne, B. D., & Adalı, S. (2017). *This just in: Fake news packs a lot in title, uses simpler, repetitive content in text body, more similar to satire than real news* [Preprint]. arXiv. https://doi.org/10.48550/arXiv.1703.09398
+- Islam, J., Xiao, L., & Mercer, R. E. (2020). A lexicon-based approach for detecting hedges in informal text. In *Proceedings of the Twelfth Language Resources and Evaluation Conference* (pp. 3109–3113). European Language Resources Association. https://aclanthology.org/2020.lrec-1.380
+- Kaufman, S., Rosset, S., Perlich, C., & Stitelman, O. (2012). Leakage in data mining: Formulation, detection, and avoidance. *ACM Transactions on Knowledge Discovery from Data*, *6*(4), Article 15. https://doi.org/10.1145/2382577.2382579
+- Manning, C. D., Raghavan, P., & Schütze, H. (2008). *Introduction to information retrieval*. Cambridge University Press. https://doi.org/10.1017/CBO9780511809071
+- Marini, C., & Jezek, E. (2024). What to annotate: Retrieving lexical markers of conspiracy discourse from an Italian-English corpus of Telegram data. In H. Bunt, N. Ide, K. Lee, V. Petukhova, J. Pustejovsky, & L. Romary (Eds.), *Proceedings of the 20th Joint ACL–ISO Workshop on Interoperable Semantic Annotation @ LREC-COLING 2024* (pp. 47–52). ELRA and ICCL. https://aclanthology.org/2024.isa-1.6
+- McNemar, Q. (1947). Note on the sampling error of the difference between correlated proportions or percentages. *Psychometrika*, *12*(2), 153–157. https://doi.org/10.1007/BF02295996
+- Miani, A., Hills, T., & Bangerter, A. (2022). LOCO: The 88-million-word language of conspiracy corpus. *Behavior Research Methods*, *54*(4), 1794–1817. https://doi.org/10.3758/s13428-021-01698-z
+- Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., & Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research*, *12*, 2825–2830. https://jmlr.org/papers/v12/pedregosa11a.html
+- Pérez-Rosas, V., Kleinberg, B., Lefevre, A., & Mihalcea, R. (2018). Automatic detection of fake news. In *Proceedings of the 27th International Conference on Computational Linguistics* (pp. 3391–3401). Association for Computational Linguistics. https://aclanthology.org/C18-1287
+- Salton, G., & Buckley, C. (1988). Term-weighting approaches in automatic text retrieval. *Information Processing & Management*, *24*(5), 513–523. https://doi.org/10.1016/0306-4573(88)90021-0
+- Stempel, C., Hargrove, T., & Stempel, G. H., III. (2007). Media use, social structure, and belief in 9/11 conspiracy theories. *Journalism & Mass Communication Quarterly*, *84*(2), 353–372. https://doi.org/10.1177/107769900708400210
+- Wang, S., & Manning, C. D. (2012). Baselines and bigrams: Simple, good sentiment and topic classification. In *Proceedings of the 50th Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers)* (pp. 90–94). Association for Computational Linguistics. https://aclanthology.org/P12-2018
+- Wood, M. J., & Douglas, K. M. (2013). "What about building 7?" A social psychological study of online discussion of 9/11 conspiracy theories. *Frontiers in Psychology*, *4*, Article 409. https://doi.org/10.3389/fpsyg.2013.00409

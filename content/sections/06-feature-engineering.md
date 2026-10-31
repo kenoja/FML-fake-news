@@ -7,9 +7,9 @@ hypothesis: Adding features about certainty and writing style improves the TF-ID
 
 **The idea.** TF-IDF only sees single words. Do a few hand-made clues help on top? A clue is a **feature**: one number that describes an article. We tried three families.
 
-1. **Phrases (n-grams of one to three words).** "Inside job" or "no evidence of" mean more than their single words (Wang and Manning, 2012).
+1. **Phrases (n-grams of one to three words).** "Inside job" or "no evidence of" mean more than their single words (Wang & Manning, 2012).
 2. **Certainty and doubt words.** Words show how sure a writer is: "I know" against "I guess". Our short lists hold doubt words, called hedges ("perhaps"), certainty words, called boosters ("clearly"), hidden-truth words ("cover-up") and debunking words ("no evidence").
-3. **Style.** Share of CAPITAL words, exclamation and question marks, quotation marks, sentence length and repetition (Horne and Adali, 2017; Pérez-Rosas et al., 2018).
+3. **Style.** Share of CAPITAL words, exclamation and question marks, quotation marks, sentence length and repetition (Horne & Adalı, 2017; Pérez-Rosas et al., 2018).
 
 **Counting per 1,000 words.** A long text does not look more certain just because it is long: 3 certainty words in 100 words score 30, in 200 words 15. Every number is then put on one common scale, learned on training articles only.
 
@@ -65,7 +65,7 @@ Each model is tuned on validation, then the rows are compared with plain TF-IDF.
 
 ## Report
 
-**Idea.** The third method tests H2: whether hand-made features add what single words miss. Three groups were planned before any result. N-grams are phrases of one to three words such as "no evidence of", a strong baseline for text classification (Wang and Manning, 2012). Epistemic markers are counts per 1,000 words of four short lists of doubt, certainty, hidden-truth and debunking words, following work that ties conspiracy discourse to certainty and concealment (Marini and Jezek, 2024; Islam et al., 2020; but see Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and word variety (MATTR), which separated fake from real news in earlier work (Horne and Adali, 2017) but transfer poorly across domains (Pérez-Rosas et al., 2018).
+**Idea.** The third method tests H2: whether hand-made features add what single words miss. Three groups were planned before any result. N-grams are phrases of one to three words such as "no evidence of", a strong baseline for text classification (Wang & Manning, 2012). Epistemic markers are counts per 1,000 words of four short lists of doubt, certainty, hidden-truth and debunking words, following work that ties conspiracy discourse to certainty and concealment (Islam et al., 2020; Marini & Jezek, 2024; but see Fong et al., 2021). Style features are capitals, punctuation, quotation marks, sentence length and word variety (MATTR), which separated fake from real news in earlier work (Horne & Adalı, 2017) but transfer poorly across domains (Pérez-Rosas et al., 2018).
 
 **Setup.** As for TF-IDF; the numeric groups are standardised with training statistics only. Phrases must occur in at least three training articles, single words in at least two, because phrases are far more numerous: with two, the planned model fills the cap of 200,000 phrase columns and its validation F1 falls to 0.891. To explain the result, an ablation compares six models on validation: TF-IDF alone, with each group, with all three, and with certainty words and style but no n-grams.
 
