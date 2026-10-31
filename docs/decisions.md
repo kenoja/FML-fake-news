@@ -190,9 +190,10 @@ read from the data or from `results/`.
 
 ## Needs a team decision
 
-- **Website 4 spot check (owner).** Five Website 4 articles that the LLM missed, read against the stance
-  coder's answer. If they agree, the limitation sentence "Our reading of Website 4 rests on article titles and on the
-  stance coder" can add "and a spot check of five articles".
+- **Website 4 spot check (owner, done 31 Oct; resolved).** Five Website 4 articles that the LLM missed, read in full against the
+  stance coder. Same verdict on "endorses a claim, yes or no" in 4 of 5; the owner judged one article (C0623c) to
+  endorse a claim where the coder said it reports one neutrally. Stated in the report's limitations: Website 4's share
+  of label problems may be slightly overstated.
 
 - **[open] Dataset licence.** Owner: repository owner. The OSF page could not be read automatically and no file in
   the repository states the licence. Record the licence text and date here. Conservative reading until then: texts
