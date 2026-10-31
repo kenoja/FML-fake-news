@@ -1,6 +1,6 @@
 Set,Class,Websites,Documents,Share of documents
 train,conspiracy,25,542,0.212
-train,mainstream,54,1226,0.48
+train,mainstream,54,1226,0.480
 validation,conspiracy,6,117,0.046
 validation,mainstream,13,259,0.101
 test,conspiracy,6,96,0.038

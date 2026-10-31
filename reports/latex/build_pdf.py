@@ -76,6 +76,40 @@ def interval_dashes(md: str) -> str:
     return re.sub(r"\((\d\.\d{3}) to (\d\.\d{3})\)", "(\\1–\\2)", md)
 
 
+def apa_numbers(md: str) -> str:
+    """APA style in the PDF: no leading zero for values that cannot exceed 1 (F1 .721, p = .029, p < .001).
+
+    Kept as they are: amounts ($0.26), the C settings (C = 0.01 and the list {0.01, 0.1, ...}), since C can exceed 1.
+    """
+    def drop_zero(match):
+        before = md[max(0, match.start() - 4):match.start()]
+        line_start = md.rfind("\n", 0, match.start()) + 1
+        line = md[line_start:match.start()]
+        in_list = line.count("[") > line.count("]") or line.count("{") > line.count("}")   # the C grid
+        if before.endswith("C = ") or in_list:
+            return match.group(0)
+        return match.group(0)[1:]
+    return re.sub(r"(?<![\w.$/-])0\.\d+", drop_zero, md)
+
+
+LINE_CHARS = 72          # characters of small sans-serif table text across the page
+
+
+def widths(header: list[str], body: list[list[str]]) -> list[int]:
+    """Column widths in characters: every column first gets what its short entries need, long columns share the rest."""
+    need, wish = [], []
+    for c, title in enumerate(header):
+        cells = [row[c] for row in body if c < len(row)]
+        words = [len(word) for cell in cells + [title] for word in cell.split()] or [1]
+        short = [len(cell) for cell in cells if len(cell) <= 12]           # "Website 1", "0.607": keep on one line
+        need.append(2 + max(max(words), min((len(title) + 1) // 2, 12), max(short, default=0)))  # 2 for the gap between columns
+        wish.append(min(max([len(cell) for cell in cells] + [len(title)]), 40))
+    spare = max(0, LINE_CHARS - sum(need))
+    extra = [max(0, w - n) for w, n in zip(wish, need)]
+    share = [spare * e / sum(extra) if sum(extra) else 0 for e in extra]
+    return [round(n + s) for n, s in zip(need, share)]
+
+
 def column_widths(md: str) -> str:
     """Give each table column a width that fits its content (pandoc reads widths from the dash line)."""
     lines = md.split("\n")
@@ -87,11 +121,8 @@ def column_widths(md: str) -> str:
                 j += 1
             rows = [[cell.strip() for cell in line.strip().strip("|").split("|")] for k, line in enumerate(lines[i:j]) if k != 1]
             body = rows[1:] or rows
-            longest = [max(len(row[c]) for row in body if c < len(row)) for c in range(len(rows[0]))]
-            header = [max(len(word) for word in cell.split()) if cell else 0 for cell in rows[0]]  # headers wrap at spaces
-            weights = [min(max(n, h, 6), 40) for n, h in zip(longest, header)]
-            lines[i + 1] = "|" + "|".join("-" * w for w in weights) + "|"
-            lines[i] = lines[i] + " " * max(0, sum(weights) + len(weights) + 1 - len(lines[i]) + 80)  # force relative widths
+            lines[i + 1] = "|" + "|".join("-" * w for w in widths(rows[0], body)) + "|"
+            lines[i] = lines[i] + " " * (LINE_CHARS * 2 + 80)                  # force relative widths
             i = j
         else:
             i += 1
@@ -121,14 +152,27 @@ def polish(tex: str) -> str:
     head, sep, refs = tex.partition("\\section*{References}")
     refs = refs.replace("\\begin{itemize}", "\\begin{itemize}[label={}, leftmargin=1.4em, itemindent=-1.4em, itemsep=3pt]\n\\small", 1)
     tex = head + sep + refs
-    tex = re.sub(r"\\begin\{longtable\}.*?\\end\{longtable\}", keep_together, tex, flags=re.S)
+    tex = re.sub(r"\\begin\{longtable\}.*?\\end\{longtable\}", fixed_table, tex, flags=re.S)
     return tex.replace("\\begin{figure}", "\\begin{figure}[H]")
 
 
-def keep_together(match) -> str:
-    """Start a table on a new page if it would not fit on this one (tables here are short)."""
-    rows = match.group(0).count("\\\\")
-    return f"\\needspace{{{2 * rows + 4}\\baselineskip}}\n" + match.group(0)
+def fixed_table(match) -> str:
+    """Turn pandoc's page-breaking longtable into a table that stays in one piece (every table here is short).
+
+    A longtable that starts near the end of a page repeats its header on the next one; a [H] table moves whole.
+    """
+    tex = match.group(0)
+    top = tex.index("\\toprule")
+    caption = re.search(r"\\caption\{(.*?)\}\\tabularnewline", tex[:top], flags=re.S)
+    spec = tex[len("\\begin{longtable}[]"):caption.start() if caption else top].strip()
+    head_end = tex.find("\\endfirsthead") if "\\endfirsthead" in tex else tex.index("\\endhead")
+    head = tex[top:head_end].strip()
+    body = tex[tex.index("\\endlastfoot") + len("\\endlastfoot"):tex.index("\\end{longtable}")].strip()
+    lines = ["\\begin{table}[H]", "\\small\\sffamily"]
+    if caption:
+        lines.append(f"\\caption{{{caption.group(1)}}}")
+    lines += [f"\\begin{{tabular}}{spec}", head, body, "\\bottomrule\\noalign{}", "\\end{tabular}", "\\end{table}"]
+    return "\n".join(lines)
 
 
 def title_numbers() -> dict:
@@ -149,14 +193,14 @@ def main() -> Path:
     BUILD.mkdir(exist_ok=True)
     figures.build_all(REPO, BUILD / "figures", website_sizes())
     title, subtitle, summary, body = split_report((REPO / "reports" / "report.md").read_text(encoding="utf-8"))
-    body_tex = polish(pandoc(figure_links(column_widths(interval_dashes(table_captions(body))))))
+    body_tex = polish(pandoc(figure_links(column_widths(apa_numbers(interval_dashes(table_captions(body)))))))
     visual = "figures/title_visual.pdf" if (BUILD / "figures" / "title_visual.pdf").is_file() else ""
     tex = fill((HERE / "template.tex").read_text(encoding="utf-8"), {
         "title": title, "subtitle": subtitle, "short-title": title,
         "kicker": "Machine-learning project report",
         "author": os.environ.get("FML_REPORT_AUTHORS", "Members A, B, C, D and E"),
         "date": dt.date.today().strftime("%-d %B %Y"),
-        "title-visual": visual, "summary": pandoc(summary), "body": body_tex,
+        "title-visual": visual, "summary": pandoc(apa_numbers(summary)), "body": body_tex,
         **title_numbers(),
     })
     if not visual:

@@ -502,6 +502,18 @@
       "final2_tfidf_features": 0.6609,
       "final_llm": 0.9709
     },
+    "typical_articles": {
+      "train_share": 0.214,
+      "large_site_typical": 0,
+      "large_site_articles": 44,
+      "test_typical": 12,
+      "test_typical_found": {
+        "final2_word_counts": 12,
+        "final2_tfidf": 12,
+        "final2_tfidf_features": 12,
+        "final_llm": 12
+      }
+    },
     "table": [
       {
         "model": "final2_word_counts",
@@ -623,7 +635,7 @@
         "both_correct": 340,
         "both_wrong": 29,
         "p_value": 0.0,
-        "p_text": "< 0.0001"
+        "p_text": "< 0.001"
       }
     },
     "llm_stability": 0.992

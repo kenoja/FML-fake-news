@@ -705,6 +705,20 @@ def write_website_recall(y: np.ndarray, preds: dict[str, np.ndarray], websites: 
     return per_website
 
 
+def typical_articles(y: np.ndarray, preds: dict[str, np.ndarray], websites: np.ndarray, doc_ids: pd.Series) -> dict:
+    """Conspiracy articles that the corpus authors flag as typical in wording, and how many of those each model finds."""
+    frame = analysis_frame().merge(load_split()[["doc_id", "split"]], on="doc_id")
+    conspiracy = frame[frame["label"]]
+    typical = conspiracy["conspiracy_representative"].astype(bool)            # the corpus authors' own flag
+    in_site = (conspiracy["website"] == large_site(y, websites)).to_numpy()    # the largest test website
+    flag = doc_ids.map(frame.set_index("doc_id")["conspiracy_representative"]).astype(bool).to_numpy()
+    test_typical = y & flag                                                   # typical conspiracy test articles
+    return {"train_share": float(typical[conspiracy["split"].to_numpy() == "train"].mean()),
+            "large_site_typical": int(typical[in_site].sum()), "large_site_articles": int(in_site.sum()),
+            "test_typical": int(test_typical.sum()),
+            "test_typical_found": {m: int((preds[m] & test_typical).sum()) for m in preds}}
+
+
 def validation_vs_test(metrics: dict, table: pd.DataFrame, without: dict) -> pd.DataFrame:
     """Validation F1, test F1 and test F1 without the largest conspiracy website, for the four final models."""
     validation = {"final2_word_counts": metrics["word_counts"]["validation"]["f1"],
@@ -767,6 +781,7 @@ def comparison_stage() -> dict:
               "baseline": {"model": BASELINE_ID, "accuracy": float((~y).mean())},
               "per_website": per_website.to_dict("records"),
               "f1_without_large_site": without,
+              "typical_articles": typical_articles(y, preds, websites, llm_all[llm_all["pass"] == 1]["doc_id"]),
               "table": table.to_dict("records"), "mcnemar": mcnemar,
               "llm_stability": metrics["llm"]["repeat_agreement"]}
     write_metrics("comparison", round_floats(values, 4))

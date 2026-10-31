@@ -84,3 +84,11 @@ def test_table_writing_is_byte_identical_across_runs(tmp_path, monkeypatch):
     assert files and files == sorted(p.name for p in dirs[1].glob("*.csv"))
     for name in files:
         assert (dirs[0] / name).read_bytes() == (dirs[1] / name).read_bytes(), name
+
+
+def test_score_columns_always_have_three_decimals(tmp_path):
+    """0.48 next to 0.212 or 1.0 next to 0.974 looks like a different precision; settings such as C stay as they are."""
+    import pandas as pd
+    table = pd.DataFrame({"share": [0.48, 1.0, 0.2124], "C": [0.01, 1.0, 100.0], "articles": [3, 4, 5]})
+    text = results.write_table("t", table, tmp_path).read_text(encoding="utf-8")
+    assert "0.480,0.01,3" in text and "1.000,1.0,4" in text and "0.212,100.0,5" in text

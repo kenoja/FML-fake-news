@@ -1,3 +1,7 @@
+- Anthropic. (2026a). *Claude Code* [Computer software]. https://claude.com/product/claude-code
+- Anthropic. (2026b). *Claude Haiku 5.5* [Large language model]. https://www.anthropic.com/claude/haiku
+- Anthropic. (2026c). *Claude Opus 5.5* [Large language model]. https://www.anthropic.com/claude/opus
+- Anthropic. (2026d). *Claude Sonnet 5.5* [Large language model]. https://www.anthropic.com/claude/sonnet
 - Dietterich, T. G. (1998). Approximate statistical tests for comparing supervised classification learning algorithms. *Neural Computation*, *10*(7), 1895–1923. https://doi.org/10.1162/089976698300017197
 - Efron, B., & Tibshirani, R. J. (1993). *An introduction to the bootstrap*. Chapman & Hall.
 - Fong, A., Roozenbeek, J., Goldwert, D., Rathje, S., & van der Linden, S. (2021). The language of conspiracy: A psychological analysis of speech used by conspiracy theorists and their followers on Twitter. *Group Processes & Intergroup Relations*, *24*(4), 606–623. https://doi.org/10.1177/1368430220987596

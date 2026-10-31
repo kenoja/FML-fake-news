@@ -127,8 +127,8 @@ def test_scores_use_one_rounding_rule():
     """0.68 in one place and 0.684 in another looks like two different results; the report uses one rule."""
     text = re.sub(r"https?://\S+", " ", _body())
     scores = re.findall(r"(?:precision|recall|F1(?: score)?|p) (?:of |=|<|reached |is )?\s?(\d\.\d+)", text)
-    wrong = [x for x in scores if len(x.split(".")[1]) > DIGITS and x != "0.0001"]
-    assert not wrong, f"scores written with more than {DIGITS} decimals (except p < 0.0001): {wrong}"
+    wrong = [x for x in scores if len(x.split(".")[1]) != DIGITS and x != "0.05"]   # p-values too; 0.05 is the threshold
+    assert not wrong, f"scores and p-values not written with exactly {DIGITS} decimals: {wrong}"
     metrics = json.loads((REPO / "results" / "metrics.json").read_text(encoding="utf-8"))
     best = max(r["f1"] for r in metrics["comparison"]["table"])
     assert f"{best:.{DIGITS}f}" in text, "the best test F1 is not written with the standard rounding"
@@ -204,7 +204,7 @@ def test_every_three_decimal_number_in_sections_comes_from_results():
 def test_section_checker_catches_a_wrong_number():
     nums = source_numbers()
     assert section_mismatches("Precision is 0.985.", nums) == []
-    assert section_mismatches("Precision is 0.214.", nums) == ["0.214"]
+    assert section_mismatches("Precision is 0.616.", nums) == ["0.616"]
 
 
 def test_runtime_sentence_matches_run_info():

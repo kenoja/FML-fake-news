@@ -40,8 +40,18 @@ def write_table(name: str, df: pd.DataFrame, directory: Path | None = None) -> P
     directory = directory or results_dir() / "tables"
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / (name if name.endswith(".csv") else f"{name}.csv")
-    df.round(TABLE_DECIMALS).to_csv(path, index=False)
+    three_decimals(df.round(TABLE_DECIMALS)).to_csv(path, index=False)
     return path
+
+
+def three_decimals(df: pd.DataFrame) -> pd.DataFrame:
+    """Write every score column (all values from 0 to 1) with exactly three decimals: 0.480, 1.000."""
+    out = df.copy()
+    for column in out.select_dtypes("float").columns:
+        values = out[column].dropna()
+        if values.any() and values.between(0, 1).all():              # shares and scores, not settings such as C
+            out[column] = out[column].map(lambda x: "" if pd.isna(x) else f"{x:.{TABLE_DECIMALS}f}")
+    return out
 
 
 def savefig(fig, name: str, directory: Path | None = None) -> Path:

@@ -32,3 +32,19 @@ def test_restyling_keeps_every_number():
 def test_interval_dashes_only_touch_intervals():
     assert build_pdf.interval_dashes("0.607 (0.500 to 0.714)") == "0.607 (0.500–0.714)"
     assert build_pdf.interval_dashes("from 3,146 to 2,608") == "from 3,146 to 2,608"
+
+
+def test_apa_numbers_drop_the_leading_zero_only_for_scores():
+    """APA 7 writes values that cannot exceed 1 without a leading zero; C can exceed 1 and money is not a score."""
+    text = "F1 0.721 (0.614–0.824), p = 0.029, p < 0.001, recall 1.000, C = 0.01 from {0.01, 0.1, 1}, $0.26, 10.1162/x"
+    assert build_pdf.apa_numbers(text) == (
+        "F1 .721 (.614–.824), p = .029, p < .001, recall 1.000, C = 0.01 from {0.01, 0.1, 1}, $0.26, 10.1162/x")
+
+
+def test_short_entries_and_headers_get_enough_width():
+    """A narrow yes/no column next to long cells used to wrap its header one word per line."""
+    header = ["Method", "Trained on our data", "Settings"]
+    body = [["1. Word counts + logistic regression", "yes", "C from [0.01, 0.1, 1, 10, 100], class weight balanced"]]
+    trained = build_pdf.widths(header, body)[1]
+    assert trained >= len("Trained on"), "the header needs room for two lines"
+    assert build_pdf.widths(["Website", "Recall: TF-IDF + features"], [["Website 1", "0.684"]])[0] >= len("Website 1")

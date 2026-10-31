@@ -8,6 +8,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.ticker  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
@@ -34,6 +35,17 @@ def style(ax, grid="x"):
     for side in ("left", "bottom"):
         ax.spines[side].set_color(GRID)
     ax.tick_params(length=0)
+
+
+def apa(value: float) -> str:
+    """APA style for values that cannot exceed 1: three decimals, no leading zero (.721, 1.000)."""
+    text = f"{value:.3f}"
+    return text[1:] if text.startswith("0.") else text
+
+
+def apa_axis(ax):
+    """Tick labels of an F1 axis in the same style as the text (.90 instead of 0.90)."""
+    ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:.2f}".removeprefix("0")))
 
 
 def save(fig, path: Path):
@@ -94,12 +106,13 @@ def ablation(table: pd.DataFrame, path: Path):
         colour = NAVY if feat == "+ all three" else (INK if feat == "TF-IDF alone" else SLATE)
         ax.scatter(f1, y, s=46, color=colour, zorder=3)
         left = f1 < base
-        ax.text(f1 + (-0.0013 if left else 0.0013), y, f"{f1:.3f}", va="center", ha="right" if left else "left",
+        ax.text(f1 + (-0.0013 if left else 0.0013), y, apa(f1), va="center", ha="right" if left else "left",
                 fontsize=8.5, color=INK, fontweight="semibold" if feat in ("+ all three", "TF-IDF alone") else "normal")
     ax.axvline(base, color=SLATE, linewidth=0.8, linestyle=(0, (3, 3)), zorder=1)
     ax.set_yticks(range(len(rows))[::-1], [labels[f] for f in rows.index])
     ax.set_xlim(0.88, 0.94)
-    ax.set_xlabel("Validation F1 (conspiracy class; axis starts at 0.88)")
+    ax.set_xlabel("Validation F1 (conspiracy class; axis starts at .88)")
+    apa_axis(ax)
     save(fig, path)
 
 
@@ -116,12 +129,13 @@ def f1_drop(drop: pd.DataFrame, path: Path):
         ax.scatter(wo, i, s=60, facecolors="white", edgecolors=GOLD, linewidths=1.8, zorder=3,
                    label="Test without Website 4" if i == 0 else None)
         ax.scatter(test, i, s=40, color=NAVY, zorder=4, label="Test" if i == 0 else None)
-        ax.text(test, i - 0.32, f"{test:.3f}", ha="center", fontsize=7.5, color=NAVY, fontweight="semibold")
-        ax.text(wo, i + 0.2, f"{wo:.3f}", ha="center", fontsize=7.5, color=GOLD)
+        ax.text(test, i - 0.32, apa(test), ha="center", fontsize=7.5, color=NAVY, fontweight="semibold")
+        ax.text(wo, i + 0.2, apa(wo), ha="center", fontsize=7.5, color=GOLD)
     ax.set_yticks(rows.index, rows["Model"])
     ax.set_xlim(0.5, 1.0)
     ax.set_ylim(-0.6, len(rows) - 0.4)
-    ax.set_xlabel("F1 for the conspiracy class (axis starts at 0.5)")
+    ax.set_xlabel("F1 for the conspiracy class (axis starts at .50)")
+    apa_axis(ax)
     leg = ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3, frameon=False, fontsize=8)
     for t in leg.get_texts():
         t.set_color(INK)

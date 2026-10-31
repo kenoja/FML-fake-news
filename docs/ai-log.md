@@ -66,3 +66,7 @@ of 3 instead of a new test run.
 
 **Learned.** An honest test can make the headline weaker and the study more useful.
 
+**Follow-up (31 Oct).** The same session made number formats uniform in code (three decimals in every table; APA style
+without the leading zero in the PDF), added the corpus authors' typicality flag as evidence on Website 4, wrote the
+missing limitations, added APA references for the Claude models and tools, and fixed the table layout of the PDF. The
+owner chose the number style and will spot-check five Website 4 articles against the stance coder.

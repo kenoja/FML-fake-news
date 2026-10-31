@@ -105,7 +105,7 @@ Finally the rule is applied to each member answer and to the coder's answer for 
 
 ### Test scores
 
-All four final models were scored once on the same 410 test articles (96 conspiracy) from websites that no model had seen. The 95% bootstrap intervals (Efron & Tibshirani, 1993) treat articles as independent, although articles from one website are alike, so the real uncertainty is larger. Always answering "mainstream" reaches an accuracy of 0.766 and finds no conspiracy article.
+All four final models were scored once on the same 410 test articles (96 conspiracy) from websites that no model had seen. The 95% bootstrap intervals (Efron & Tibshirani, 1993) are too narrow for the reason given under Limitations. Always answering "mainstream" reaches an accuracy of 0.766 and finds no conspiracy article.
 
 <!-- output: results/tables/comparison_compact.csv | Precision, recall and F1 of the conspiracy class on the test articles, with 95% confidence intervals -->
 
@@ -123,7 +123,7 @@ Each pair is compared with an exact two-sided McNemar test (McNemar, 1947) on th
 
 **H2: The three feature groups improve TF-IDF.** Not supported: 22 articles are right only for TF-IDF and 14 only with the features (p = 0.243), and F1 is lower with the features (0.560 against 0.598), as on validation.
 
-**H3: The LLM beats the best logistic regression.** Supported: 4 articles are right only for TF-IDF and 37 only for the LLM (p < 0.0001); F1 is 0.795 against 0.598 and the intervals do not overlap. For all three tests F1 and McNemar point the same way.
+**H3: The LLM beats the best logistic regression.** Supported: 4 articles are right only for TF-IDF and 37 only for the LLM (p < 0.001); F1 is 0.795 against 0.598 and the intervals do not overlap.
 
 ### Why test scores are lower: Website 4
 
@@ -135,11 +135,11 @@ The main cause is one website. Website 4 supplies 44 of the 96 conspiracy test a
 
 <!-- output: results/tables/test_website_recall.csv | Recall of each model on the conspiracy articles of each test website (Website 4 holds 44 of the 96) -->
 
-Without Website 4 the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for TF-IDF + features and 0.971 for the LLM. For the LLM, Website 4 explains almost the whole drop (0.971 against 0.987 on validation). For the logistic regressions it is the largest single cause, but they stay well below their validation scores, which fits their partial reliance on how the training websites write. Judging by its titles, Website 4 publishes short partisan political news that mentions 9/11; among its 30 articles that the LLM missed, the stance coder found a conspiracy claim in none (27 make no claim, 2 report claims neutrally, 1 rejects them). Its texts read as mainstream; only its website rating says conspiracy. The split by website did what it should: it exposed that the data hold few conspiracy websites, one of which dominates the test set.
+Without Website 4 the F1 is 0.640 for word counts, 0.721 for TF-IDF, 0.661 for TF-IDF + features and 0.971 for the LLM. For the LLM, Website 4 explains almost the whole drop (0.971 against 0.987 on validation). For the logistic regressions it is the largest single cause, but they stay well below their validation scores, which fits their partial reliance on how the training websites write. Judging by its titles, Website 4 publishes short partisan political news that mentions 9/11; among its 30 articles that the LLM missed, the stance coder found a conspiracy claim in none (27 make no claim, 2 report claims neutrally, 1 rejects them). The corpus authors' own measure agrees: they flag a conspiracy article as typical when its wording is unusually close to the rest of the conspiracy corpus (Miani et al., 2022). None of Website 4's 44 articles is flagged, against 21.4% of the training conspiracy articles, and all four models found all 12 flagged test articles. Its texts read as mainstream; only its website rating says conspiracy.
 
 ### Why the models fail: label problems
 
-For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5) coded its stance towards conspiracy claims without seeing the website. A fixed rule calls an error a label problem when label and stance do not fit (a conspiracy-site article without an endorsed claim, or a mainstream article with one); otherwise it is a model error. Of the 70 wrongly classified articles, 69 have a readable coding. In short, about half of the errors that only one model makes are label problems (21 of 41, our main estimate); the upper end is 49 of 69, because the 28 articles both models missed are conspiracy-site articles that the rule counts as label problems whenever no claim is endorsed.
+For every test article that the best logistic regression or the LLM gets wrong, a second model (Claude Sonnet 5.5; Anthropic, 2026d) coded its stance towards conspiracy claims without seeing the website. A fixed rule calls an error a label problem when label and stance do not fit (a conspiracy-site article without an endorsed claim, or a mainstream article with one); otherwise it is a model error. Of the 70 wrongly classified articles, 69 have a readable coding. In short, about half of the errors that only one model makes are label problems (21 of 41, our main estimate); the upper end is 49 of 69, because the 28 articles both models missed are conspiracy-site articles that the rule counts as label problems whenever no claim is endorsed.
 
 <!-- output: results/tables/error_counts_plain.csv | Test articles wrongly classified, by who is wrong, and the share that are label problems -->
 
